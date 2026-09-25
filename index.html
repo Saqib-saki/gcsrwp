@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCS Rawalpindi Portal</title>
+<meta name="description" content="Govt. Graduate College Satellite Town, Rawalpindi — timetables, faculty workload, notices and resources.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GCS Portal">
+<meta name="application-name" content="GCS Portal">
+<meta name="theme-color" content="#10345c">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root {
+    --navy: #10345c; --navy-dark: #0a2440; --gold: #f2c14e; --red: #b3261e; --green: #1a7f4e;
+    --bg: #f4f6f9; --card-bg: #ffffff; --border: #e2e6ec; --text: #1a1a1a; --muted: #667085;
+    --accent: #10345c; --chip-bg: #eef2f7; --chip-text: #10345c; --press: rgba(16,52,92,0.06);
+    --name: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1319; --card-bg: #1a2028; --border: #2a323e; --text: #edf0f4; --muted: #98a2b3;
+      --accent: #9dc0ea; --chip-bg: #232b36; --chip-text: #cfd8e3; --press: rgba(255,255,255,0.05);
+      --name: #f28b82;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1319; --card-bg: #1a2028; --border: #2a323e; --text: #edf0f4; --muted: #98a2b3;
+    --accent: #9dc0ea; --chip-bg: #232b36; --chip-text: #cfd8e3; --press: rgba(255,255,255,0.05);
+    --name: #f28b82;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overscroll-behavior-y: none;
+  }
+  button { font-family: inherit; color: inherit; }
+
+  /* Header */
+  header.app-header {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark)); color: #fff;
+    padding-top: env(safe-area-inset-top, 0px); position: sticky; top: 0; z-index: 10;
+  }
+  .header-inner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; max-width: 720px; margin: 0 auto; }
+  .header-inner img { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; }
+  .header-titles { min-width: 0; flex: 1; }
+  .header-titles h1 { font-size: 1.02rem; margin: 0; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-titles p { font-size: 0.72rem; margin: 1px 0 0; color: #cfd8e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .back-btn {
+    background: rgba(255,255,255,0.14); border: none; color: #fff; width: 36px; height: 36px;
+    border-radius: 9px; font-size: 1.15rem; display: none; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .net-chip {
+    display: none; background: var(--gold); color: #3d2e00; font-size: 0.66rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+  }
+  body.offline .net-chip { display: inline-block; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 16px 48px; }
+
+  /* Banners */
+  .banner {
+    background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--gold);
+    border-radius: 10px; padding: 12px 40px 12px 14px; font-size: 0.84rem; margin-bottom: 14px;
+    display: none; position: relative; line-height: 1.4;
+  }
+  .banner b { color: var(--accent); }
+  .banner .dismiss {
+    position: absolute; top: 6px; right: 6px; background: none; border: none; color: var(--muted);
+    font-size: 1.1rem; cursor: pointer; width: 30px; height: 30px;
+  }
+  .banner .banner-btn {
+    display: inline-block; margin-top: 8px; background: var(--navy); color: #fff; border: none;
+    border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+  }
+
+  /* Home */
+  .hello { margin: 2px 2px 14px; }
+  .hello .today { font-size: 0.8rem; color: var(--muted); }
+  .hello .big { font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-top: 2px; }
+  .dev-credit {
+    display: flex; align-items: center; gap: 10px; background: var(--card-bg); border: 1px solid var(--border);
+    border-left: 4px solid var(--gold); border-radius: 12px; padding: 10px 14px; margin: 0 0 14px;
+  }
+  .dev-credit .dc-icon { font-size: 1.3rem; }
+  .dev-credit .dc-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .dev-credit .dc-name { font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+  .dev-credit .dc-dept { font-size: 0.74rem; color: var(--muted); }
+  .grid-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (min-width: 560px) { .grid-tiles { grid-template-columns: repeat(4, 1fr); } }
+  .tile {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 14px; text-align: left; cursor: pointer; display: flex; flex-direction: column;
+    gap: 8px; min-height: 116px; position: relative; transition: transform .08s ease;
+  }
+  .tile:active { transform: scale(0.97); }
+  .tile .emoji { font-size: 1.6rem; line-height: 1; }
+  .tile .tlabel { font-weight: 700; font-size: 0.93rem; }
+  .tile .tsub { font-size: 0.72rem; color: var(--muted); line-height: 1.3; }
+  .badge {
+    position: absolute; top: 10px; right: 10px; background: var(--red); color: #fff;
+    font-size: 0.68rem; font-weight: 800; min-width: 20px; height: 20px; border-radius: 10px;
+    display: none; align-items: center; justify-content: center; padding: 0 6px;
+  }
+  .quick {
+    margin-top: 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; display: none; align-items: center; gap: 12px; cursor: pointer; width: 100%; text-align: left;
+  }
+  .quick .q-emoji { font-size: 1.3rem; }
+  .quick .q-title { font-weight: 700; font-size: 0.9rem; }
+  .quick .q-sub { font-size: 0.74rem; color: var(--muted); }
+  .quick .chev { margin-left: auto; color: var(--muted); }
+
+  /* Views */
+  .view { display: none; animation: fade .15s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: .4; } to { opacity: 1; } }
+
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .card.pad { padding: 16px; }
+  .screen-title { font-size: 0.9rem; color: var(--muted); margin: 4px 2px 12px; }
+  .section-title { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 18px 2px 8px; }
+
+  .search {
+    width: 100%; font-size: 1rem; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text); margin-bottom: 12px;
+  }
+  .name-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: none;
+    border: none; border-bottom: 1px solid var(--border); padding: 14px 16px; font-size: 1rem;
+    font-weight: 600; color: var(--name); cursor: pointer;
+  }
+  .name-row:last-child { border-bottom: none; }
+  .name-row:active { background: var(--press); }
+  .name-row .idx { color: var(--muted); font-weight: 400; font-size: 0.82rem; width: 22px; flex-shrink: 0; }
+  .name-row .count { color: var(--muted); font-weight: 400; font-size: 0.76rem; margin-left: auto; }
+  .name-row .chev { color: var(--muted); font-weight: 400; }
+  .empty { padding: 22px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+
+  #workCard h2 { color: var(--name); border-bottom: 2px solid var(--name); padding-bottom: 10px; margin: 0 0 12px; font-size: 1.2rem; }
+  table.wl { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table.wl th, table.wl td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.wl tr:last-child td { border-bottom: none; }
+  table.wl th { color: var(--muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .overflow-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .period { font-weight: 800; color: var(--accent); white-space: nowrap; }
+
+  /* Timetable */
+  .tt-input-row { display: flex; gap: 8px; }
+  .tt-input-row input {
+    flex: 1; min-width: 0; font-size: 1.15rem; padding: 11px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  .btn-go { background: var(--navy); color: #fff; border: none; border-radius: 10px; padding: 0 20px; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+  .btn-secondary {
+    background: var(--chip-bg); color: var(--chip-text); border: none; border-radius: 10px;
+    padding: 11px 14px; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-row .btn-secondary { flex: 1; }
+  .tt-error { color: var(--red); font-size: 0.82rem; margin-top: 8px; min-height: 1em; }
+  .note { color: var(--muted); font-size: 0.76rem; margin: 10px 0 0; line-height: 1.4; }
+  .tt-summary-name { color: var(--accent); font-weight: 800; font-size: 1.2rem; margin: 0 0 4px; }
+  .tt-summary-sub { color: var(--muted); font-size: 0.86rem; margin: 0 0 10px; }
+  .pill { display: inline-block; background: var(--chip-bg); color: var(--chip-text); font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; margin: 2px 4px 2px 0; }
+  .ttnote { display: block; font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+  .rotate-tag { background: var(--gold); color: #4a3800; font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; vertical-align: middle; margin-left: 6px; text-transform: none; letter-spacing: 0; }
+
+  /* Notices */
+  .notice { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .notice:last-child { border-bottom: none; }
+  .notice .n-date { font-size: 0.72rem; color: var(--muted); }
+  .notice .n-title { font-weight: 700; font-size: 0.98rem; margin: 3px 0 6px; color: var(--accent); }
+  .notice .n-body { font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+  .notice .n-body a { color: var(--accent); }
+  .notice.pinned { background: linear-gradient(90deg, rgba(242,193,78,0.14), transparent 60%); }
+  .new-dot { display: inline-block; background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+
+  /* Resources */
+  a.res-row { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); color: inherit; text-decoration: none; }
+  a.res-row:last-child { border-bottom: none; }
+  a.res-row:active { background: var(--press); }
+  .res-row .r-title { font-weight: 700; font-size: 0.95rem; color: var(--accent); }
+  .res-row .r-desc { font-size: 0.78rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+  .res-row .r-host { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+  .res-row .chev { margin-left: auto; color: var(--muted); flex-shrink: 0; }
+
+  /* About */
+  .about p { font-size: 0.88rem; line-height: 1.5; margin: 0 0 10px; }
+  .about ol { font-size: 0.88rem; line-height: 1.55; padding-left: 20px; margin: 0 0 10px; }
+  .kv { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .kv:last-child { border-bottom: none; }
+  .kv span:first-child { color: var(--muted); }
+
+  footer.appfoot { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 26px; line-height: 1.6; }
+  footer.appfoot button { background: none; border: none; color: var(--accent); font-size: 0.76rem; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 4px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px);
+    background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; opacity: 0;
+    transition: all .2s ease; pointer-events: none; z-index: 50; max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <button class="back-btn" id="backBtn" aria-label="Back">&larr;</button>
+    <img src="icons/icon-192.png" alt="" onerror="this.style.display='none'">
+    <div class="header-titles">
+      <h1 id="headerTitle">GCS Rawalpindi Portal</h1>
+      <p id="headerSub">Govt. Graduate College Satellite Town, Rawalpindi</p>
+    </div>
+    <span class="net-chip" id="netChip">Offline</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div id="installBanner" class="banner" role="status">
+    <button class="dismiss" id="installDismiss" aria-label="Dismiss">&times;</button>
+    <span id="installText"></span>
+  </div>
+
+  <!-- HOME -->
+  <section class="view" id="view-home">
+    <div class="hello">
+      <div class="today" id="todayLine"></div>
+      <div class="big">Assalam-o-Alaikum</div>
+    </div>
+    <div class="dev-credit" id="devCredit">
+      <span class="dc-icon">👨‍🏫</span>
+      <span>
+        <div class="dc-label">Developed by</div>
+        <div class="dc-name" id="devName">Prof. Saqib Munawar</div>
+        <div class="dc-dept" id="devDept">Department of Statistics</div>
+      </span>
+    </div>
+    <div class="grid-tiles">
+      <button class="tile" data-go="/timetable">
+        <div class="emoji">🗓️</div>
+        <div class="tlabel">1st Year Time Table</div>
+        <div class="tsub">Find your classes by roll no.</div>
+      </button>
+      <button class="tile" data-go="/faculty">
+        <div class="emoji">🎓</div>
+        <div class="tlabel">Faculty Workload</div>
+        <div class="tsub" id="facultyTileSub">Statistics Dept.</div>
+      </button>
+      <button class="tile" data-go="/notices">
+        <span class="badge" id="noticeBadge"></span>
+        <div class="emoji">📢</div>
+        <div class="tlabel">Notices</div>
+        <div class="tsub" id="noticeTileSub">College announcements</div>
+      </button>
+      <button class="tile" data-go="/resources">
+        <div class="emoji">📚</div>
+        <div class="tlabel">Resources</div>
+        <div class="tsub" id="resTileSub">Useful links</div>
+      </button>
+    </div>
+    <button class="quick" id="quickRoll">
+      <span class="q-emoji">⚡</span>
+      <span><div class="q-title" id="quickRollTitle"></div><div class="q-sub">Open your saved time table</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
+  </section>
+
+  <!-- FACULTY LIST -->
+  <section class="view" id="view-faculty">
+    <input type="search" class="search" id="facultySearch" placeholder="Search name or course…" autocomplete="off">
+    <div class="card" id="nameList"></div>
+  </section>
+
+  <!-- FACULTY WORKLOAD -->
+  <section class="view" id="view-faculty-one">
+    <div class="card pad" id="workCard">
+      <h2 id="profName"></h2>
+      <div class="overflow-x">
+        <table class="wl">
+          <thead><tr><th>Year / Semester</th><th>Period</th><th>Course</th><th>Code</th><th>Room</th></tr></thead>
+          <tbody id="wlBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMETABLE INPUT -->
+  <section class="view" id="view-timetable">
+    <div class="card pad">
+      <p class="screen-title" style="margin-top:0">Enter your roll number to see your weekly class schedule.</p>
+      <form class="tt-input-row" id="rollForm">
+        <input type="number" inputmode="numeric" id="rollInput" placeholder="e.g. 432" min="1" max="1500" aria-label="Roll number">
+        <button class="btn-go" type="submit">Find</button>
+      </form>
+      <div id="rollError" class="tt-error"></div>
+      <p class="note">Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.</p>
+    </div>
+  </section>
+
+  <!-- TIMETABLE RESULT -->
+  <section class="view" id="view-timetable-one">
+    <div class="card pad" id="ttSummary"></div>
+
+    <div class="section-title">Daily classes</div>
+    <div class="card">
+      <div class="overflow-x">
+        <table class="wl">
+          <thead><tr><th>Period</th><th>Subject</th><th>Room</th><th>Teacher</th></tr></thead>
+          <tbody id="ttRowsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ttRotatingWrap">
+      <div class="section-title">Islamic Ed. / Ethics / Practicals <span class="rotate-tag">rotates weekly</span></div>
+      <div class="card pad">
+        <div class="overflow-x">
+          <table class="wl">
+            <thead><tr><th>Subject</th><th>Group</th><th>Room</th><th>Teacher</th></tr></thead>
+            <tbody id="ttRotatingBody"></tbody>
+          </table>
+        </div>
+        <p class="note" style="margin-bottom:0">These periods rotate week to week — check the department noticeboard for the current week's rotation.</p>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="ttAnother">Another roll no.</button>
+      <button class="btn-secondary" id="ttShare">Share</button>
+    </div>
+  </section>
+
+  <!-- NOTICES -->
+  <section class="view" id="view-notices">
+    <div class="card" id="noticeList"></div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section class="view" id="view-resources">
+    <div id="resList"></div>
+    <p class="note" style="text-align:center">Links open in your browser and need an internet connection.</p>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="view" id="view-about">
+    <div class="card pad about">
+      <p><b>GCS Rawalpindi Portal</b> is the college's web app for students and faculty. Once opened, it keeps working without internet and refreshes automatically whenever you're online.</p>
+      <div class="section-title" style="margin-top:6px">Install on your phone</div>
+      <ol>
+        <li><b>Android (Chrome):</b> tap the ⋮ menu → <i>Install app</i> or <i>Add to Home screen</i>.</li>
+        <li><b>iPhone (Safari):</b> tap Share <span aria-hidden="true">⎋</span> → <i>Add to Home Screen</i>.</li>
+        <li><b>Computer (Chrome / Edge):</b> click the install icon in the address bar.</li>
+      </ol>
+      <div class="section-title">Status</div>
+      <div class="kv"><span>Developed by</span><span id="aboutDev">Prof. Saqib Munawar</span></div>
+      <div class="kv"><span>Data last updated</span><span id="aboutUpdated">—</span></div>
+      <div class="kv"><span>Connection</span><span id="aboutNet">—</span></div>
+      <div class="kv"><span>Offline support</span><span id="aboutSW">—</span></div>
+      <div class="kv"><span>Installed as app</span><span id="aboutInstalled">—</span></div>
+      <div class="btn-row"><button class="btn-secondary" id="refreshBtn">Check for updates</button></div>
+    </div>
+  </section>
+
+  <footer class="appfoot">
+    <div id="footCollege">Govt. Graduate College Satellite Town, Rawalpindi</div>
+    <div id="footDev">Developed by Prof. Saqib Munawar, Department of Statistics</div>
+    <div id="footUpdated"></div>
+    <button data-go="/about">About &amp; install help</button>
+  </footer>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="timetable-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- helpers ---------- */
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k) { try { return localStorage.getItem('gcs.' + k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem('gcs.' + k, v); } catch (e) {} }
+  };
+  function linkify(text) {
+    return esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+  const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  /* ---------- data ---------- */
+  let DATA = { collegeName: 'Govt. Graduate College Satellite Town, Rawalpindi', appName: 'GCS Rawalpindi Portal', faculty: {}, notices: [], resources: [] };
+  let dataLoaded = false;
+
+  async function loadData() {
+    try {
+      const res = await fetch('data.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      DATA = Object.assign({ faculty: {}, notices: [], resources: [] }, d);
+      dataLoaded = true;
+    } catch (err) {
+      console.error('data.json failed to load', err);
+      dataLoaded = false;
+    }
+  }
+
+  /* ---------- routing (hash based, works with the phone's back button) ---------- */
+  const ROUTES = {
+    home:          { view: 'view-home',          title: () => DATA.appName || 'GCS Rawalpindi Portal', parent: null },
+    faculty:       { view: 'view-faculty',       title: () => 'Faculty Workload',   parent: '/' },
+    'faculty-one': { view: 'view-faculty-one',   title: () => 'Faculty Workload',   parent: '/faculty' },
+    timetable:     { view: 'view-timetable',     title: () => '1st Year Time Table', parent: '/' },
+    'timetable-one': { view: 'view-timetable-one', title: () => '1st Year Time Table', parent: '/timetable' },
+    notices:       { view: 'view-notices',       title: () => 'Notices',            parent: '/' },
+    resources:     { view: 'view-resources',     title: () => 'Resources',          parent: '/' },
+    about:         { view: 'view-about',         title: () => 'About & Help',       parent: '/' }
+  };
+
+  function parseHash() {
+    const raw = (location.hash || '').replace(/^#\/?/, '');
+    const [a, ...rest] = raw.split('/');
+    const arg = rest.length ? decodeURIComponent(rest.join('/')) : null;
+    if (!a) return { key: 'home' };
+    if (a === 'faculty') return arg ? { key: 'faculty-one', arg } : { key: 'faculty' };
+    if (a === 'timetable') return arg ? { key: 'timetable-one', arg } : { key: 'timetable' };
+    if (ROUTES[a]) return { key: a };
+    return { key: 'home' };
+  }
+
+  function go(path) {
+    const depth = (history.state && history.state.depth) || 0;
+    const target = '#' + path;
+    if (location.hash === target) { render(); return; }
+    history.pushState({ depth: depth + 1 }, '', target);
+    render();
+  }
+
+  function back() {
+    const r = parseHash();
+    const parent = ROUTES[r.key].parent || '/';
+    if (history.state && history.state.depth > 0) history.back();
+    else { history.replaceState({ depth: 0 }, '', '#' + parent); render(); }
+  }
+
+  function render() {
+    const r = parseHash();
+    const route = ROUTES[r.key];
+    let ok = true;
+
+    if (r.key === 'home') renderHome();
+    if (r.key === 'faculty') renderFacultyList();
+    if (r.key === 'faculty-one') ok = renderWorkload(r.arg);
+    if (r.key === 'timetable') renderRollInput();
+    if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
+    if (r.key === 'notices') renderNotices();
+    if (r.key === 'resources') renderResources();
+    if (r.key === 'about') renderAbout();
+    if (!ok) return;
+
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === route.view));
+    $('headerTitle').textContent = route.title();
+    $('backBtn').style.display = r.key === 'home' ? 'none' : 'flex';
+    document.title = r.key === 'home' ? (DATA.appName || 'GCS Rawalpindi Portal') : route.title() + ' · GCS Portal';
+    window.scrollTo(0, 0);
+  }
+
+  window.addEventListener('popstate', render);
+  $('backBtn').addEventListener('click', back);
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-go]');
+    if (el) { e.preventDefault(); if (el.dataset.go === '/faculty') $('facultySearch').value = ''; go(el.dataset.go); }
+  });
+
+  /* ---------- home ---------- */
+  function sortedNotices() {
+    return (DATA.notices || []).slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')));
+  }
+  function unseenCount() {
+    const seen = store.get('noticesSeen') || '';
+    return (DATA.notices || []).filter((n) => String(n.date || '') > seen).length;
+  }
+
+  function renderHome() {
+    $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const nf = Object.keys(DATA.faculty || {}).length;
+    $('facultyTileSub').textContent = nf ? nf + ' faculty · Statistics Dept.' : 'Statistics Dept.';
+    const nn = (DATA.notices || []).length;
+    $('noticeTileSub').textContent = nn ? nn + ' notice' + (nn > 1 ? 's' : '') : 'No notices yet';
+    const unseen = unseenCount();
+    const badge = $('noticeBadge');
+    badge.textContent = unseen; badge.style.display = unseen ? 'flex' : 'none';
+    const nr = (DATA.resources || []).length;
+    $('resTileSub').textContent = nr ? nr + ' useful link' + (nr > 1 ? 's' : '') : 'Useful links';
+
+    const saved = store.get('roll');
+    const q = $('quickRoll');
+    if (saved) { $('quickRollTitle').textContent = 'My time table — Roll ' + saved; q.style.display = 'flex'; }
+    else q.style.display = 'none';
+  }
+  $('quickRoll').addEventListener('click', () => { const s = store.get('roll'); if (s) go('/timetable/' + s); });
+
+  /* ---------- faculty ---------- */
+  function renderFacultyList() {
+    const term = $('facultySearch').value.trim().toLowerCase();
+    const names = Object.keys(DATA.faculty || {}).sort((a, b) => a.localeCompare(b));
+    const list = $('nameList');
+    if (!names.length) {
+      list.innerHTML = '<div class="empty">' + (dataLoaded ? 'No faculty listed yet.' : 'Couldn’t load faculty data. Connect to the internet once and try again.') + '</div>';
+      return;
+    }
+    const matches = names.filter((n) => {
+      if (!term) return true;
+      if (n.toLowerCase().includes(term)) return true;
+      return (DATA.faculty[n] || []).some((c) => [c.course, c.code, c.level].join(' ').toLowerCase().includes(term));
+    });
+    list.innerHTML = matches.length ? matches.map((n, i) => {
+      const k = (DATA.faculty[n] || []).length;
+      return '<button class="name-row" data-go="/faculty/' + encodeURIComponent(n) + '">' +
+        '<span class="idx">' + (i + 1) + '</span><span>' + esc(n) + '</span>' +
+        '<span class="count">' + k + ' class' + (k === 1 ? '' : 'es') + '</span><span class="chev">&rsaquo;</span></button>';
+    }).join('') : '<div class="empty">No match for “' + esc(term) + '”.</div>';
+  }
+  $('facultySearch').addEventListener('input', renderFacultyList);
+
+  function periodIndex(p) { const i = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].indexOf(String(p).trim()); return i < 0 ? 99 : i; }
+
+  function renderWorkload(name) {
+    const rows = (DATA.faculty || {})[name];
+    if (!rows) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    $('profName').textContent = name;
+    const sorted = rows.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
+    $('wlBody').innerHTML = sorted.length ? sorted.map((r) =>
+      '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + '</td><td>' + esc(r.code) + '</td><td>' + esc(r.room) + '</td></tr>'
+    ).join('') : '<tr><td colspan="5" class="empty">No classes listed.</td></tr>';
+    return true;
+  }
+
+  /* ---------- timetable ---------- */
+  const GROUP_NAMES = {
+    M: 'F.Sc Pre-Medical', E: 'F.Sc Pre-Engineering',
+    C1: 'I.C.S (Comp. Sci, Maths, Physics)', C2: 'I.C.S (Comp. Sci, Maths, Statistics)', C3: 'I.C.S (Comp. Sci, Maths, Economics)',
+    G: 'General Science', H: 'F.A (I.T) — Comp. Sci, Economics, Statistics',
+    F1: 'F.A (I.T) — Comp. Sci, Islamic Studies, History', F2: 'F.A (I.T) — Comp. Sci, Economics, Psychology',
+    F3: 'F.A (I.T) — Comp. Sci, Economics, Geography', F4: 'F.A (I.T) — Comp. Sci, Sociology, Psychology',
+    F5: 'F.A (I.T) — Comp. Sci, Islamic Studies, Arabic',
+    A1: 'F.A Humanities — Civics, Islamic Studies, Arabic', A2: 'F.A Humanities — Civics, Islamic Studies, History',
+    A3: 'F.A Humanities — Psychology, Islamic Studies, Health & P.E.', A4: 'F.A Humanities — Economics, Islamic Studies, Health & P.E.',
+    A5: 'F.A Humanities — History, Islamic Studies, Health & P.E.', A6: 'F.A Humanities — Civics, History, Geography',
+    A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT'
+  };
+
+  function renderRollInput() {
+    $('rollError').textContent = '';
+    const saved = store.get('roll');
+    $('rollInput').value = saved || '';
+    setTimeout(() => { if (!('ontouchstart' in window)) $('rollInput').focus(); }, 150);
+  }
+
+  $('rollForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const roll = parseInt($('rollInput').value, 10);
+    const err = $('rollError');
+    err.textContent = '';
+    if (!roll || roll < 1 || roll > 1500) { err.textContent = 'Enter a valid roll number (1–1500).'; return; }
+    if (typeof buildSchedule !== 'function') { err.textContent = 'Timetable data failed to load. Please refresh and try again.'; return; }
+    if (!buildSchedule(roll)) { err.textContent = 'No group found for roll number ' + roll + '. Please check with the college office.'; return; }
+    $('rollInput').blur();
+    go('/timetable/' + roll);
+  });
+
+  function renderTimetable(arg) {
+    const roll = parseInt(arg, 10);
+    const result = (typeof buildSchedule === 'function' && roll) ? buildSchedule(roll) : null;
+    if (!result) { history.replaceState(history.state, '', '#/timetable'); render(); return false; }
+    store.set('roll', String(roll));
+
+    $('ttSummary').innerHTML =
+      '<p class="tt-summary-name">Roll No. ' + roll + '</p>' +
+      '<p class="tt-summary-sub">' + esc(GROUP_NAMES[result.code] || result.group) + '</p>' +
+      '<span class="pill">Group ' + esc(result.code) + '</span>' +
+      (result.code !== 'D' ? '<span class="pill">' + (roll % 2 ? 'Odd' : 'Even') + ' section</span>' : '') +
+      (result.sheet ? '<span class="pill">' + esc(result.sheet) + ' sheet</span>' : '');
+
+    $('ttRowsBody').innerHTML = result.rows.length ? result.rows.map((r) =>
+      '<tr><td class="period">' + esc(r.period) + '</td><td>' + esc(r.subject) + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') +
+      '</td><td>' + esc(r.room) + '</td><td>' + esc(r.teacher) + '</td></tr>'
+    ).join('') : '<tr><td colspan="4">' + esc(result.note || 'No schedule available.') + '</td></tr>';
+
+    const rot = result.rotating || [];
+    $('ttRotatingWrap').style.display = rot.length ? 'block' : 'none';
+    $('ttRotatingBody').innerHTML = rot.map((r) =>
+      '<tr><td>' + esc(r.subject) + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.room) + '</td><td>' + esc(r.teacher) + '</td></tr>'
+    ).join('');
+    return true;
+  }
+
+  $('ttAnother').addEventListener('click', () => { go('/timetable'); $('rollInput').value = ''; });
+  $('ttShare').addEventListener('click', async () => {
+    const url = location.href;
+    const text = 'My 1st Year time table — GCS Rawalpindi';
+    try {
+      if (navigator.share) { await navigator.share({ title: text, url }); return; }
+      await navigator.clipboard.writeText(url); toast('Link copied');
+    } catch (e) { /* user cancelled */ }
+  });
+
+  /* ---------- notices ---------- */
+  function renderNotices() {
+    const seen = store.get('noticesSeen') || '';
+    const list = sortedNotices();
+    $('noticeList').innerHTML = list.length ? list.map((n) =>
+      '<article class="notice' + (n.pinned ? ' pinned' : '') + '">' +
+      '<div class="n-date">' + (n.pinned ? '📌 ' : '') + esc(fmtDate(n.date)) +
+      (String(n.date || '') > seen ? '<span class="new-dot">NEW</span>' : '') + '</div>' +
+      '<div class="n-title">' + esc(n.title) + '</div>' +
+      (n.body ? '<div class="n-body">' + linkify(n.body) + '</div>' : '') +
+      '</article>'
+    ).join('') : '<div class="empty">No notices right now. Check back later.</div>';
+    const newest = (DATA.notices || []).map((n) => String(n.date || '')).sort().pop();
+    if (newest) store.set('noticesSeen', newest);
+  }
+
+  /* ---------- resources ---------- */
+  function renderResources() {
+    const items = DATA.resources || [];
+    if (!items.length) { $('resList').innerHTML = '<div class="card"><div class="empty">No resources added yet.</div></div>'; return; }
+    const groups = {};
+    items.forEach((r) => { const c = r.category || 'General'; (groups[c] = groups[c] || []).push(r); });
+    $('resList').innerHTML = Object.keys(groups).map((cat) =>
+      '<div class="section-title">' + esc(cat) + '</div><div class="card">' +
+      groups[cat].map((r) => {
+        let host = ''; try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) {}
+        const safeUrl = /^https?:\/\//i.test(r.url || '') ? r.url : '#';
+        return '<a class="res-row" href="' + esc(safeUrl) + '" target="_blank" rel="noopener">' +
+          '<span><div class="r-title">' + esc(r.title) + '</div>' +
+          (r.description ? '<div class="r-desc">' + esc(r.description) + '</div>' : '') +
+          (host ? '<div class="r-host">' + esc(host) + '</div>' : '') +
+          '</span><span class="chev">&#8599;</span></a>';
+      }).join('') + '</div>'
+    ).join('');
+  }
+
+  /* ---------- about ---------- */
+  function renderAbout() {
+    $('aboutUpdated').textContent = DATA.updatedAt ? fmtDate(DATA.updatedAt) : '—';
+    $('aboutNet').textContent = navigator.onLine ? 'Online' : 'Offline (showing saved copy)';
+    $('aboutSW').textContent = ('serviceWorker' in navigator) ? (navigator.serviceWorker.controller ? 'Ready' : 'Setting up…') : 'Not supported by this browser';
+    $('aboutInstalled').textContent = isStandalone() ? 'Yes' : 'No (opened in browser)';
+  }
+  $('refreshBtn').addEventListener('click', async () => {
+    if (!navigator.onLine) { toast('You’re offline — connect to update'); return; }
+    try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch (e) {}
+    await loadData(); applyChrome(); render(); toast('Up to date');
+  });
+
+  /* ---------- chrome / network ---------- */
+  function applyChrome() {
+    $('headerSub').textContent = DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi';
+    $('footCollege').textContent = DATA.collegeName || '';
+    const dev = DATA.developer || '', dept = DATA.developerDept || '';
+    $('devCredit').style.display = dev ? 'flex' : 'none';
+    $('devName').textContent = dev; $('devDept').textContent = dept;
+    $('footDev').textContent = dev ? 'Developed by ' + dev + (dept ? ', ' + dept : '') : '';
+    $('aboutDev').textContent = dev || '—';
+    $('footUpdated').textContent = DATA.updatedAt ? 'Data updated ' + fmtDate(DATA.updatedAt) : '';
+  }
+  function netStatus() { document.body.classList.toggle('offline', !navigator.onLine); }
+  window.addEventListener('online', () => { netStatus(); loadData().then(() => { applyChrome(); render(); }); });
+  window.addEventListener('offline', netStatus);
+
+  /* ---------- install banner ---------- */
+  (function () {
+    if (isStandalone() || store.get('installDismissed') === '1') return;
+    const banner = $('installBanner'), text = $('installText');
+    $('installDismiss').addEventListener('click', (e) => { e.stopPropagation(); banner.style.display = 'none'; store.set('installDismissed', '1'); });
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      text.innerHTML = '<b>Install this app:</b> tap the Share icon in Safari, then <b>Add to Home Screen</b>.';
+      banner.style.display = 'block';
+      return;
+    }
+    let deferred = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); deferred = e;
+      text.innerHTML = '<b>Install GCS Portal</b> on this device — opens like an app and works offline.<br><button class="banner-btn" id="installBtn">Install</button>';
+      banner.style.display = 'block';
+      $('installBtn').addEventListener('click', async () => {
+        if (!deferred) return;
+        deferred.prompt(); await deferred.userChoice; deferred = null; banner.style.display = 'none';
+      });
+    });
+    window.addEventListener('appinstalled', () => { banner.style.display = 'none'; toast('Installed — find GCS Portal on your home screen'); });
+  })();
+
+  /* ---------- service worker ---------- */
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW registration failed', e));
+    });
+  }
+
+  /* ---------- start ---------- */
+  netStatus();
+  if (!history.state) history.replaceState({ depth: 0 }, '', location.hash || '#/');
+  loadData().then(() => {
+    applyChrome();
+    render();
+  });
+})();
+</script>
+</body>
+</html>

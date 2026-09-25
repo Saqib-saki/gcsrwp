@@ -1,0 +1,235 @@
+{
+  "collegeName": "Govt. Graduate College Satellite Town, Rawalpindi",
+  "appName": "GCS Rawalpindi Portal",
+  "developer": "Prof. Saqib Munawar",
+  "developerDept": "Department of Statistics",
+  "updatedAt": "2026-09-24",
+  "faculty": {
+    "Dr. Gulzar Ahmad": [
+      {
+        "level": "Sem-V",
+        "period": "I",
+        "course": "Probability and Probability Distributions-I",
+        "code": "Stat-303",
+        "room": "16"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "III",
+        "course": "Statistical Inference-I",
+        "code": "Stat-401",
+        "room": "17"
+      }
+    ],
+    "Dr. Javaid Iqbal": [
+      {
+        "level": "2nd-Year (Sec. C2-E)",
+        "period": "II",
+        "course": "Section C2-E",
+        "code": "—",
+        "room": "4"
+      },
+      {
+        "level": "Sem-V",
+        "period": "III",
+        "course": "Experimental Design",
+        "code": "Stat-301",
+        "room": "16"
+      }
+    ],
+    "Ms. Maryam Aslam": [
+      {
+        "level": "1st-Year",
+        "period": "II",
+        "course": "Section C2-Odd and Even",
+        "code": "—",
+        "room": "UB06"
+      },
+      {
+        "level": "2nd-Year (Sec. C2-E)",
+        "period": "IV",
+        "course": "Section H",
+        "code": "—",
+        "room": "4"
+      },
+      {
+        "level": "Sem-III",
+        "period": "V",
+        "course": "Statistical Methodology",
+        "code": "Stat-202",
+        "room": "19"
+      }
+    ],
+    "Ms. Rabia Hussain": [
+      {
+        "level": "Sem-I",
+        "period": "IV",
+        "course": "Introduction to Statistics",
+        "code": "Stat-101",
+        "room": "Stat-Lab"
+      },
+      {
+        "level": "Sem-III",
+        "period": "III",
+        "course": "Programming with R",
+        "code": "Stat-203",
+        "room": "Stat-Lab"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "V",
+        "course": "Research Methodology",
+        "code": "Stat-406",
+        "room": "17"
+      }
+    ],
+    "Pr. Aashir Shehzad": [
+      {
+        "level": "Sem-I",
+        "period": "III",
+        "course": "Probability and Statistics",
+        "code": "MS251",
+        "room": "—"
+      },
+      {
+        "level": "Sem-V",
+        "period": "II",
+        "course": "Sampling Techniques-I",
+        "code": "Stat-302",
+        "room": "16"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "I",
+        "course": "Operation Research",
+        "code": "Stat-412",
+        "room": "17"
+      }
+    ],
+    "Pr. Amin Iqbal": [
+      {
+        "level": "2nd-Year (Sec. C2-O)",
+        "period": "II",
+        "course": "Section C2-O",
+        "code": "—",
+        "room": "UB06"
+      },
+      {
+        "level": "Sem-III",
+        "period": "IV",
+        "course": "Regression Analysis",
+        "code": "Stat-201",
+        "room": "19"
+      }
+    ],
+    "Pr. Anwar": [
+      {
+        "level": "Sem-III",
+        "period": "VI",
+        "course": "TQ / Pak. Studies",
+        "code": "Q-003/GPST-201",
+        "room": "—"
+      }
+    ],
+    "Pr. Asif Rizvi": [
+      {
+        "level": "1st-Year",
+        "period": "IV",
+        "course": "Section H",
+        "code": "—",
+        "room": "UB06"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "VI",
+        "course": "C++ Comp. Prog. Language",
+        "code": "Stat-405",
+        "room": "17"
+      }
+    ],
+    "Pr. Irum": [
+      {
+        "level": "Sem-I",
+        "period": "III",
+        "course": "Calculus / Mathematics",
+        "code": "SMTH-101",
+        "room": "—"
+      }
+    ],
+    "Pr. Khurram Dad": [
+      {
+        "level": "Sem-III",
+        "period": "II",
+        "course": "Info & Comm. Tech. Expo",
+        "code": "GENG-201",
+        "room": "—"
+      }
+    ],
+    "Pr. Munwar Saqib": [
+      {
+        "level": "Sem-I",
+        "period": "V",
+        "course": "Quantitative Reasoning",
+        "code": "QR-I",
+        "room": "Stat-Lab"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "II",
+        "course": "Time Series Analysis",
+        "code": "Stat-411",
+        "room": "17"
+      },
+      {
+        "level": "Sem-VII",
+        "period": "IV",
+        "course": "Econometrics",
+        "code": "Stat-404",
+        "room": "17"
+      }
+    ],
+    "Pr. Taib": [
+      {
+        "level": "Sem-III",
+        "period": "VI",
+        "course": "TQ / Pak. Studies",
+        "code": "Q-003/GPST-201",
+        "room": "—"
+      }
+    ],
+    "Pr. Zafar": [
+      {
+        "level": "Sem-I",
+        "period": "I",
+        "course": "Islamiat / Ethics / TQ",
+        "code": "GIST/GETH-101",
+        "room": "—"
+      }
+    ],
+    "Pr. Zunaira": [
+      {
+        "level": "Sem-I",
+        "period": "II",
+        "course": "English",
+        "code": "GENG-101",
+        "room": "—"
+      }
+    ]
+  },
+  "notices": [
+    {
+      "date": "2026-09-24",
+      "title": "Welcome to the GCS Rawalpindi Portal",
+      "body": "Find your 1st Year class schedule by roll number, check faculty workload, and see college notices here.\n\nTip: install this app on your phone's home screen — it works even without internet once opened.",
+      "pinned": true
+    }
+  ],
+  "resources": [
+    {
+      "category": "Examinations",
+      "title": "BISE Rawalpindi",
+      "url": "https://www.biserawalpindi.edu.pk",
+      "description": "Board of Intermediate & Secondary Education — date sheets, roll number slips and results"
+    }
+  ]
+}
