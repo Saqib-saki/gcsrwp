@@ -3,7 +3,7 @@
   "appName": "GCS RWP",
   "developer": "Prof. Saqib Munawar & Prof. Aashir Shahzad",
   "developerDept": "Department of Statistics",
-  "updatedAt": "2026-09-25",
+  "updatedAt": "2026-09-26",
   "faculty": {
     "Dr. Gulzar Ahmad": [
       {
@@ -231,5 +231,49 @@
       "url": "https://www.biserawalpindi.edu.pk",
       "description": "Board of Intermediate & Secondary Education — date sheets, roll number slips and results"
     }
-  ]
+  ],
+  "staffLinks": {
+    "records": [
+      {
+        "label": "1st Year",
+        "url": "https://docs.google.com/spreadsheets/d/1aFmPbKw2mkJKXVXuLXql1RShSbpS4RrhMEckAv1O5nM/edit"
+      },
+      {
+        "label": "2nd Year",
+        "url": "https://docs.google.com/spreadsheets/d/1kPw5lRwSweXMfWhZAubYm1ZypcmE5rC4WDDC1kj3vXQ/edit"
+      },
+      {
+        "label": "BS",
+        "url": "https://docs.google.com/spreadsheets/d/1Gi8gY9Ibn8dSGG4ZinLepU46VMDzRnUCltIIYkwhd6o/edit"
+      }
+    ],
+    "results": [
+      {
+        "label": "1st Year",
+        "url": "https://docs.google.com/spreadsheets/d/1i17BeXx_dd4RVceJGv9XVYYUdGTIPJkaIJ7OnBdsvCc/edit"
+      },
+      {
+        "label": "2nd Year",
+        "url": "https://docs.google.com/spreadsheets/d/19ZkpEawJIhXaz_sib3fF9ZAGfuLhlEmHUoMavsSkm2o/edit"
+      },
+      {
+        "label": "BS",
+        "url": "https://docs.google.com/spreadsheets/d/10JwHVfBZwOh-7q8QMD-sv4mC2ySymS_X6_TqH5BF2R8/edit"
+      }
+    ],
+    "attendance": [
+      {
+        "label": "1st Year",
+        "url": "https://docs.google.com/spreadsheets/d/1k-mzpJ18dcIMe_YzfQreSiZXGgclojQDtD6BYadvH5I/edit"
+      },
+      {
+        "label": "2nd Year",
+        "url": "https://docs.google.com/spreadsheets/d/1nnj0oh70XljEUe00D6yTnMc7L1Hjs410ujxSa2llkHk/edit"
+      },
+      {
+        "label": "BS",
+        "url": "https://docs.google.com/spreadsheets/d/126qZoYMCBcH4yNA1zCsa2HW3MXJsMWDop-kvpoEeiMY/edit"
+      }
+    ]
+  }
 }
