@@ -132,6 +132,34 @@
   .pending-banner { background: #fff3d6; color: #5c3d00; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; margin-bottom: 12px; display: none; align-items: center; gap: 8px; }
   .pending-banner button { margin-left: auto; background: #5c3d00; color: #fff; border: none; border-radius: 8px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-family: inherit; }
   table.sum td.low { color: var(--red); font-weight: 800; }
+  /* attendance records */
+  .seg { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
+  .seg button { flex: 1 0 auto; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 20px; padding: 9px 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .seg button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .field-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .stu-head { display: flex; align-items: center; gap: 14px; }
+  .stu-head .pct-ring { width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; background: conic-gradient(var(--ring) calc(var(--p) * 1%), var(--chip-bg) 0); position: relative; }
+  .stu-head .pct-ring::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--card-bg); }
+  .stu-head .pct-ring span { position: relative; }
+  .stu-name { font-weight: 800; font-size: 1.08rem; color: var(--accent); }
+  .stu-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .hist-day { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 10px 14px 4px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .hist-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 0.86rem; }
+  .hist-row .per { font-weight: 800; color: var(--accent); width: 34px; flex-shrink: 0; }
+  .hist-row .sub { flex: 1; min-width: 0; }
+  .hist-row .sub small { display: block; color: var(--muted); font-size: 0.72rem; }
+  .tag { font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 1.2rem; color: var(--accent); }
+  .stat span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  table.wl tr.click { cursor: pointer; }
+  table.wl tr.click:active { background: var(--press); }
+  table.wl td.num, table.wl th.num { text-align: right; white-space: nowrap; }
+  .tbl-tools { display: flex; align-items: center; gap: 8px; margin: 18px 2px 8px; }
+  .tbl-tools .section-title { margin: 0; flex: 1; }
+  @media (max-width: 480px) { .hide-sm { display: none; } #view-rec table.wl { font-size: 0.8rem; } #view-rec table.wl th, #view-rec table.wl td { padding: 8px 5px; } }
+  .mini-btn { background: var(--chip-bg); color: var(--chip-text); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.76rem; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .c-P { background: #16372a; color: #7fd1a6; }
     :root:not([data-theme="light"]) .c-A { background: #3a1c1b; color: #f28b82; }
@@ -382,6 +410,7 @@
         <button class="btn-primary" id="attLoad">Load students</button>
         <div class="tt-error" id="attErr"></div>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
+        <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open attendance records (student-wise &amp; class-wise)</button>
       </div>
 
       <div id="attListWrap" style="display:none; margin-top:14px">
@@ -399,6 +428,67 @@
         <div class="section-title" id="attSumTitle"></div>
         <div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Roll</th><th>Name</th><th>Present</th><th>Lectures</th><th>%</th></tr></thead><tbody id="attSumBody"></tbody></table></div></div>
         <p class="note">Below 75% is shown in red. Counts include every subject marked for this group.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ATTENDANCE RECORDS (student-wise / class-wise / all students) -->
+  <section class="view" id="view-rec">
+    <div class="card pad" id="recLogin">
+      <p class="screen-title" style="margin-top:0">Teachers &amp; admin only. Sign in with the same name and PIN you use for Mark Attendance.</p>
+      <div class="field"><label for="recName">Your name</label><input id="recName" autocomplete="username" placeholder="e.g. Prof. Saqib Munawar"></div>
+      <div class="field"><label for="recPin">PIN</label><input id="recPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
+      <button class="btn-primary" id="recLoginBtn">Sign in</button>
+      <div class="tt-error" id="recLoginErr"></div>
+    </div>
+
+    <div id="recMain" style="display:none">
+      <div class="signed-in">👤 <span>Signed in as <b id="recWho"></b> <span class="lock-chip" id="recRole"></span></span><button class="link-btn" id="recLogout">Sign out</button></div>
+      <div class="seg" id="recTabs">
+        <button data-tab="find" class="on">🔎 Find student</button>
+        <button data-tab="classes" id="recTabClasses">👥 My classes</button>
+        <button data-tab="all" id="recTabAll" style="display:none">🏫 All students</button>
+      </div>
+
+      <!-- find a student -->
+      <div id="recFind">
+        <div class="card pad">
+          <label class="field-label" for="recRoll">College roll number</label>
+          <div class="tt-input-row">
+            <input id="recRoll" type="number" inputmode="numeric" placeholder="e.g. 433" min="1">
+            <button class="btn-go" id="recRollGo">Show</button>
+          </div>
+          <div class="tt-error" id="recRollErr"></div>
+          <p class="note" id="recFindNote"></p>
+        </div>
+        <div id="recStudent" style="display:none; margin-top:14px"></div>
+      </div>
+
+      <!-- teacher: classes they marked -->
+      <div id="recClasses" style="display:none">
+        <div class="card" id="recClassList"></div>
+        <p class="note" id="recClassNote">A class appears here once you have marked attendance for it.</p>
+        <div id="recClassWrap" style="display:none; margin-top:6px"></div>
+      </div>
+
+      <!-- admin: all students -->
+      <div id="recAll" style="display:none">
+        <div class="card pad">
+          <div class="field-row">
+            <div class="field"><label for="recFGroup">Group</label><select id="recFGroup"></select></div>
+            <div class="field"><label for="recFSection">Section</label><select id="recFSection"><option>All</option><option>Odd</option><option>Even</option><option>Urdu Batch 1</option><option>Urdu Batch 2</option><option>Urdu Batch 3</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="recFSearch">Search</label><input id="recFSearch" type="search" placeholder="Name or roll no."></div>
+            <div class="field"><label for="recFSort">Sort by</label><select id="recFSort"><option value="roll">Roll number</option><option value="pctAsc">Attendance % (lowest first)</option><option value="pctDesc">Attendance % (highest first)</option></select></div>
+          </div>
+          <div class="btn-row" style="margin-top:4px">
+            <button class="btn-secondary" id="recReload">↻ Refresh</button>
+            <button class="btn-secondary" id="recRebuild">Recalculate totals</button>
+          </div>
+          <div class="tt-error" id="recAllErr"></div>
+        </div>
+        <div id="recAllOut" style="margin-top:6px"></div>
       </div>
     </div>
   </section>
@@ -565,6 +655,7 @@
     resources:     { view: 'view-resources',     title: () => 'Resources',          parent: '/' },
     about:         { view: 'view-about',         title: () => 'About & Help',       parent: '/' },
     attendance:    { view: 'view-att',           title: () => 'Mark Attendance',    parent: '/' },
+    records:       { view: 'view-rec',           title: () => 'Attendance Records', parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
 
@@ -610,6 +701,7 @@
     if (r.key === 'about') renderAbout();
     if (r.key === 'staff') renderStaff(r.arg);
     if (r.key === 'attendance') renderAttendance();
+    if (r.key === 'records') renderRecords();
     if (!ok) return;
 
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === route.view));
@@ -807,13 +899,17 @@
     const sec = STAFF_SECTIONS[key];
     $('staffIntro').textContent = sec.intro;
     const items = ((DATA.staffLinks || {})[key]) || [];
-    $('staffList').innerHTML = items.length ? items.map((it) => {
+    const recRow = (DATA.attendanceApi && (key === 'records' || key === 'attendance'))
+      ? '<a class="res-row" href="#/records" data-go="/records"><span><div class="r-title">📊 1st Year attendance — student-wise &amp; class-wise</div>' +
+        '<div class="r-desc">Search by roll number, see your classes (admin: all students). Sign in with your PIN.</div></span><span class="chev">&rsaquo;</span></a>'
+      : '';
+    $('staffList').innerHTML = recRow + (items.length ? items.map((it) => {
       const ok = /^https:\/\//i.test(it.url || '');
       return '<a class="res-row' + (ok ? '' : ' disabled') + '" href="' + (ok ? esc(it.url) : '#') + '" target="_blank" rel="noopener">' +
         '<span><div class="r-title">' + esc(it.label) + '</div>' +
         '<div class="r-desc">' + (ok ? esc(it.note || 'Google Sheet · staff sign-in required') : 'Not linked yet — add the link in admin.html → Staff links') + '</div></span>' +
         '<span class="chev">' + (ok ? '🔒 &#8599;' : '') + '</span></a>';
-    }).join('') : '<div class="empty">Nothing set up yet. Add links in admin.html → Staff links.</div>';
+    }).join('') : (recRow ? '' : '<div class="empty">Nothing set up yet. Add links in admin.html → Staff links.</div>'));
   }
 
   /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
@@ -913,13 +1009,13 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
-      $('attPin').value = ''; renderAttendance();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher' }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('attLoginBtn').disabled = false; $('attLoginBtn').textContent = 'Sign in';
   });
   $('attPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('attLoginBtn').click(); });
-  $('attLogout').addEventListener('click', () => { attAuth = null; store.set('attAuth', ''); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; renderAttendance(); });
+  $('attLogout').addEventListener('click', () => { recSignOut(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; renderAttendance(); });
   ['attGroup', 'attSection'].forEach((id) => $(id).addEventListener('change', () => { fillSubjects(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; }));
   $('attSubject').addEventListener('change', () => {
     const v = $('attSubject').value, l = JSON.parse($('attSubject').dataset.list || '[]')[Number(v)];
@@ -1002,6 +1098,236 @@
       $('attSumWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to view the summary.' : e.message; }
     $('attSummaryBtn').textContent = 'View attendance summary for this group';
+  });
+
+  /* ---------- attendance records: student-wise, class-wise, all students ---------- */
+  let recScope = null, recTab = 'find', recAllRows = null, recClassData = null, recHistAll = false, recLastStudent = null;
+  const pctOf = (p, t) => (t ? Math.round(100 * p / t) : null);
+  const pctCell = (p, t) => { const v = pctOf(p, t); return '<td class="num' + (v !== null && v < 75 ? ' low' : '') + '">' + (v === null ? '—' : v + '%') + '</td>'; };
+  const groupLabel = (g) => g + ' — ' + String(GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '');
+  const secOf = (roll, section) => {
+    if (section === 'Odd') return roll % 2 === 1;
+    if (section === 'Even') return roll % 2 === 0;
+    const m = /^Urdu Batch ([123])$/.exec(section || ''); if (m) return (roll % 3 === 0 ? 3 : roll % 3) === Number(m[1]);
+    return true;
+  };
+  function recSignOut() {
+    attAuth = null; store.set('attAuth', ''); recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = '';
+  }
+  function recAuthFail(e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderRecords(); return true; } return false; }
+
+  function csvDownload(name, rows) {
+    const csv = rows.map((r) => r.map((v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
+
+  async function renderRecords() {
+    const signed = !!attAuth;
+    $('recLogin').style.display = signed ? 'none' : 'block';
+    $('recMain').style.display = signed ? 'block' : 'none';
+    if (!signed) { $('recName').value = store.get('attLastName') || ''; return; }
+    $('recWho').textContent = attAuth.name;
+    $('recRole').textContent = attAuth.role === 'Admin' ? 'Admin' : 'Teacher';
+    applyRole();
+    if (!recScope) {
+      try {
+        recScope = await attApi('scope');
+        attAuth.role = recScope.role; store.set('attAuth', JSON.stringify(attAuth));
+        $('recRole').textContent = recScope.role; applyRole();
+      } catch (e) {
+        if (recAuthFail(e)) return;
+        $('recRollErr').textContent = e.offline ? 'You need internet to see attendance records.' : e.message;
+      }
+    }
+    showRecTab(recTab);
+  }
+
+  function applyRole() {
+    const admin = attAuth && attAuth.role === 'Admin';
+    $('recTabAll').style.display = admin ? '' : 'none';
+    $('recTabClasses').style.display = admin ? 'none' : '';
+    if (admin && recTab === 'classes') recTab = 'all';
+    if (!admin && recTab === 'all') recTab = 'classes';
+    $('recFindNote').textContent = admin
+      ? 'As admin you can open any 1st Year student.'
+      : 'You can open students from the classes (group & section) you have marked attendance for.';
+  }
+
+  function showRecTab(tab) {
+    recTab = tab;
+    document.querySelectorAll('#recTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    $('recFind').style.display = tab === 'find' ? 'block' : 'none';
+    $('recClasses').style.display = tab === 'classes' ? 'block' : 'none';
+    $('recAll').style.display = tab === 'all' ? 'block' : 'none';
+    if (tab === 'classes') paintClassList();
+    if (tab === 'all') loadAll(false);
+  }
+  $('recTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showRecTab(b.dataset.tab); });
+
+  $('recLoginBtn').addEventListener('click', async () => {
+    const name = $('recName').value.trim(), pin = $('recPin').value.trim();
+    $('recLoginErr').textContent = '';
+    if (!name || !pin) { $('recLoginErr').textContent = 'Enter your name and PIN.'; return; }
+    $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
+    try {
+      const j = await attApi('login', {}, { name, pin });
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher' }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
+    } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
+    $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
+  });
+  $('recPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('recLoginBtn').click(); });
+  $('recLogout').addEventListener('click', () => { recSignOut(); renderRecords(); });
+
+  /* one student */
+  async function loadStudent(roll) {
+    $('recRollErr').textContent = '';
+    roll = parseInt(roll, 10);
+    if (!roll) { $('recRollErr').textContent = 'Enter a roll number.'; return; }
+    $('recRoll').value = roll;
+    $('recRollGo').disabled = true; $('recRollGo').textContent = '…';
+    try {
+      const j = await attApi('student', { roll });
+      recLastStudent = j; recHistAll = false; paintStudent();
+    } catch (e) {
+      if (!recAuthFail(e)) { $('recRollErr').textContent = e.offline ? 'You need internet to see attendance records.' : e.message; $('recStudent').style.display = 'none'; }
+    }
+    $('recRollGo').disabled = false; $('recRollGo').textContent = 'Show';
+  }
+  $('recRollGo').addEventListener('click', () => loadStudent($('recRoll').value));
+  $('recRoll').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadStudent($('recRoll').value); });
+
+  function paintStudent() {
+    const j = recLastStudent; if (!j) return;
+    const s = j.student, t = j.totals, p = pctOf(t.present, t.total);
+    const ring = p === null ? 'var(--muted)' : p < 75 ? 'var(--red)' : 'var(--green)';
+    const TAG = { Present: 'c-P', Absent: 'c-A', Leave: 'c-L' };
+    let h = '<div class="card pad"><div class="stu-head"><div class="pct-ring" style="--p:' + (p || 0) + ';--ring:' + ring + '"><span>' + (p === null ? '—' : p + '%') + '</span></div>' +
+      '<div><div class="stu-name">' + esc(s.name) + '</div><div class="stu-sub">Roll ' + s.roll + ' · ' + esc(groupLabel(s.group)) + '</div>' +
+      '<div class="stu-sub">' + esc(s.subjectGroup || '') + '</div></div></div>' +
+      '<div class="att-counts" style="margin:12px 0 0"><span class="c-P">Present ' + t.present + '</span><span class="c-A">Absent ' + t.absent + '</span><span class="c-L">Leave ' + t.leave + '</span><span style="color:var(--muted)">Lectures ' + t.total + '</span></div>' +
+      (p !== null && p < 75 ? '<p class="note" style="color:var(--red);font-weight:700">Below 75% attendance.</p>' : '') + '</div>';
+    if (!t.total) h += '<div class="card" style="margin-top:12px"><div class="empty">No attendance has been marked for this student yet.</div></div>';
+    else {
+      h += '<div class="section-title">Subject-wise</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Subject</th><th class="num">P</th><th class="num">A</th><th class="num">L</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>' +
+        j.subjects.map((x) => { const n = x.present + x.absent + x.leave; return '<tr><td>' + esc(x.subject) + '<span class="ttnote">' + esc(x.teachers.join(', ')) + '</span></td><td class="num">' + x.present + '</td><td class="num">' + x.absent + '</td><td class="num">' + x.leave + '</td><td class="num">' + n + '</td>' + pctCell(x.present, n) + '</tr>'; }).join('') +
+        '</tbody></table></div></div>';
+      const list = recHistAll ? j.history : j.history.filter((x) => x.status !== 'Present');
+      h += '<div class="tbl-tools"><div class="section-title">Day-by-day</div><button class="mini-btn" id="recHistToggle">' + (recHistAll ? 'Show absences only' : 'Show all lectures') + '</button><button class="mini-btn" id="recStuCsv">⬇ CSV</button></div><div class="card">';
+      if (!list.length) h += '<div class="empty">' + (recHistAll ? 'No lectures yet.' : 'No absences or leave — present in every lecture marked. 🎉') + '</div>';
+      let day = '';
+      list.forEach((x) => {
+        if (x.date !== day) { day = x.date; h += '<div class="hist-day">' + esc(new Date(x.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })) + '</div>'; }
+        h += '<div class="hist-row"><span class="per">' + esc(x.period) + '</span><span class="sub">' + esc(x.subject) + '<small>' + esc(x.teacher) + '</small></span><span class="tag ' + (TAG[x.status] || '') + '">' + esc(x.status) + '</span></div>';
+      });
+      h += '</div>';
+    }
+    $('recStudent').innerHTML = h; $('recStudent').style.display = 'block';
+    const tg = $('recHistToggle'); if (tg) tg.addEventListener('click', () => { recHistAll = !recHistAll; paintStudent(); });
+    const cv = $('recStuCsv'); if (cv) cv.addEventListener('click', () => csvDownload('Attendance_Roll_' + s.roll + '.csv',
+      [['Roll', 'Name', 'Group', 'Date', 'Period', 'Subject', 'Status', 'Teacher']].concat(j.history.map((x) => [s.roll, s.name, s.group, x.date, x.period, x.subject, x.status, x.teacher]))));
+  }
+
+  function openStudent(roll) { showRecTab('find'); loadStudent(roll); window.scrollTo(0, 0); }
+
+  /* a class table (used by teacher's classes) */
+  function studentTable(rows, opts) {
+    const mine = opts && opts.mine;
+    return '<div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Roll</th><th>Name</th>' + (opts && opts.group ? '<th>Group</th>' : '') +
+      '<th class="num">P</th><th class="num hide-sm">A</th><th class="num hide-sm">L</th><th class="num">Lect.</th><th class="num">%</th>' + (mine ? '<th class="num">My %</th>' : '') + '</tr></thead><tbody>' +
+      (rows.length ? rows.map((r) => '<tr class="click" data-roll="' + r.roll + '"><td class="period">' + r.roll + '</td><td>' + esc(r.name) + '</td>' + (opts && opts.group ? '<td>' + esc(r.group) + '</td>' : '') +
+        '<td class="num">' + r.present + '</td><td class="num hide-sm">' + r.absent + '</td><td class="num hide-sm">' + r.leave + '</td><td class="num">' + r.total + '</td>' + pctCell(r.present, r.total) +
+        (mine ? pctCell(r.myPresent, r.myTotal) : '') + '</tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
+      '</tbody></table></div></div>';
+  }
+  function statCards(rows) {
+    const marked = rows.filter((r) => r.total);
+    const avg = marked.length ? Math.round(marked.reduce((a, r) => a + 100 * r.present / r.total, 0) / marked.length) : null;
+    const low = marked.filter((r) => 100 * r.present / r.total < 75).length;
+    return '<div class="stat-grid"><div class="stat"><b>' + rows.length + '</b><span>Students</span></div><div class="stat"><b>' + (avg === null ? '—' : avg + '%') + '</b><span>Average</span></div>' +
+      '<div class="stat"><b style="color:' + (low ? 'var(--red)' : 'var(--accent)') + '">' + low + '</b><span>Below 75%</span></div></div>';
+  }
+  const rowsCsv = (rows, mine) => [['Roll', 'Name', 'Group', 'Present', 'Absent', 'Leave', 'Lectures', 'Attendance %'].concat(mine ? ['My lectures', 'My %'] : [])]
+    .concat(rows.map((r) => [r.roll, r.name, r.group, r.present, r.absent, r.leave, r.total, r.total ? Math.round(100 * r.present / r.total) : ''].concat(mine ? [r.myTotal, r.myTotal ? Math.round(100 * r.myPresent / r.myTotal) : ''] : [])));
+
+  function paintClassList() {
+    const cls = (recScope && recScope.classes) || [];
+    $('recClassList').innerHTML = cls.length ? cls.map((c) =>
+      '<button class="name-row" data-g="' + esc(c.group) + '" data-s="' + esc(c.section) + '"><span>' + esc(groupLabel(c.group)) + '</span><span class="count">' + esc(c.section === 'All' ? 'Whole group' : c.section) + '</span><span class="chev">&rsaquo;</span></button>'
+    ).join('') : '<div class="empty">No classes yet. Mark attendance for a class first — it will then appear here.</div>';
+  }
+  $('recClassList').addEventListener('click', async (e) => {
+    const b = e.target.closest('.name-row'); if (!b) return;
+    const group = b.dataset.g, section = b.dataset.s;
+    $('recClassWrap').style.display = 'block'; $('recClassWrap').innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const j = await attApi('classStats', { group, section });
+      recClassData = j;
+      const title = groupLabel(group) + (section !== 'All' ? ' · ' + section : '');
+      $('recClassWrap').innerHTML = '<div class="tbl-tools"><div class="section-title">' + esc(title) + '</div><button class="mini-btn" id="recClassCsv">⬇ CSV</button></div>' +
+        statCards(j.rows) + studentTable(j.rows, { mine: true }) +
+        '<p class="note">% = all subjects marked for the student. <b>My %</b> = only your own lectures. Tap a student for day-by-day detail. Below 75% in red.</p>';
+      $('recClassCsv').addEventListener('click', () => csvDownload('Attendance_' + group + '_' + section.replace(/\s+/g, '') + '.csv', rowsCsv(j.rows, true)));
+      $('recClassWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) { if (!recAuthFail(err)) $('recClassWrap').innerHTML = '<div class="tt-error">' + esc(err.offline ? 'You need internet.' : err.message) + '</div>'; }
+  });
+  $('recClassWrap').addEventListener('click', (e) => { const tr = e.target.closest('tr.click'); if (tr) openStudent(tr.dataset.roll); });
+
+  /* admin: every student */
+  async function loadAll(force) {
+    $('recAllErr').textContent = '';
+    if (!$('recFGroup').options.length) {
+      const gs = ((recScope && recScope.groups) || []).map((x) => x.group);
+      const order = ATT_GROUPS.filter((g) => gs.indexOf(g) >= 0).concat(gs.filter((g) => ATT_GROUPS.indexOf(g) < 0));
+      $('recFGroup').innerHTML = '<option value="">All groups</option>' + order.map((g) => '<option value="' + esc(g) + '">' + esc(groupLabel(g)) + '</option>').join('');
+    }
+    if (recAllRows && !force) { paintAll(); return; }
+    $('recAllOut').innerHTML = '<div class="empty">Loading all students…</div>';
+    try { recAllRows = (await attApi('allStats')).rows; paintAll(); }
+    catch (e) { if (!recAuthFail(e)) { $('recAllOut').innerHTML = ''; $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; } }
+  }
+  function paintAll() {
+    const all = recAllRows || [];
+    const g = $('recFGroup').value, sec = $('recFSection').value, q = $('recFSearch').value.trim().toLowerCase(), sort = $('recFSort').value;
+    let rows = all.filter((r) => (!g || r.group === g) && secOf(r.roll, sec) && (!q || String(r.roll) === q || r.name.toLowerCase().indexOf(q) >= 0));
+    const pv = (r) => (r.total ? r.present / r.total : (sort === 'pctAsc' ? 2 : -1));
+    if (sort === 'pctAsc') rows.sort((a, b) => pv(a) - pv(b) || a.roll - b.roll);
+    else if (sort === 'pctDesc') rows.sort((a, b) => pv(b) - pv(a) || a.roll - b.roll);
+    else rows.sort((a, b) => a.roll - b.roll);
+    let h = '';
+    if (!g && !q) {
+      const by = {};
+      all.filter((r) => secOf(r.roll, sec)).forEach((r) => { (by[r.group] = by[r.group] || []).push(r); });
+      const order = ATT_GROUPS.filter((x) => by[x]).concat(Object.keys(by).filter((x) => ATT_GROUPS.indexOf(x) < 0));
+      h += '<div class="section-title">Group-wise' + (sec !== 'All' ? ' · ' + esc(sec) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">Students</th><th class="num">Avg %</th><th class="num">Below 75%</th></tr></thead><tbody>' +
+        order.map((x) => {
+          const rs = by[x], m = rs.filter((r) => r.total);
+          const avg = m.length ? Math.round(m.reduce((a, r) => a + 100 * r.present / r.total, 0) / m.length) : null;
+          const low = m.filter((r) => 100 * r.present / r.total < 75).length;
+          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + rs.length + '</td><td class="num' + (avg !== null && avg < 75 ? ' low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</td><td class="num' + (low ? ' low' : '') + '">' + low + '</td></tr>';
+        }).join('') + '</tbody></table></div></div>';
+    }
+    h += '<div class="tbl-tools"><div class="section-title">' + (g ? esc(groupLabel(g)) : 'All students') + (sec !== 'All' ? ' · ' + esc(sec) : '') + '</div><button class="mini-btn" id="recAllCsv">⬇ CSV</button></div>' +
+      statCards(rows) + studentTable(rows, { group: !g }) + '<p class="note">Tap a student for subject-wise and day-by-day detail. Below 75% in red.</p>';
+    $('recAllOut').innerHTML = h;
+    $('recAllCsv').addEventListener('click', () => csvDownload('Attendance_' + (g || 'All') + (sec !== 'All' ? '_' + sec.replace(/\s+/g, '') : '') + '.csv', rowsCsv(rows, false)));
+  }
+  ['recFGroup', 'recFSection', 'recFSort'].forEach((id) => $(id).addEventListener('change', paintAll));
+  $('recFSearch').addEventListener('input', paintAll);
+  $('recAllOut').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr.click'); if (!tr) return;
+    if (tr.dataset.group) { $('recFGroup').value = tr.dataset.group; paintAll(); window.scrollTo(0, 0); }
+    else openStudent(tr.dataset.roll);
+  });
+  $('recReload').addEventListener('click', () => loadAll(true));
+  $('recRebuild').addEventListener('click', async () => {
+    $('recRebuild').disabled = true; $('recRebuild').textContent = 'Recalculating…';
+    try { await attApi('rebuild'); toast('Totals recalculated from the Log ✓'); await loadAll(true); }
+    catch (e) { if (!recAuthFail(e)) $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; }
+    $('recRebuild').disabled = false; $('recRebuild').textContent = 'Recalculate totals';
   });
 
   /* ---------- about ---------- */
