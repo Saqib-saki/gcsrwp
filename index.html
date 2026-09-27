@@ -105,6 +105,39 @@
   .staff-head { display: flex; align-items: center; gap: 8px; }
   .lock-chip { background: var(--chip-bg); color: var(--chip-text); font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: none; letter-spacing: 0; }
   .res-row.disabled { opacity: .55; pointer-events: none; }
+  .mark-btn { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 14px 16px; border-radius: 12px; border: none; cursor: pointer; text-align: left; background: var(--navy); color: #fff; }
+  .mark-btn .q-title { font-weight: 800; font-size: 0.95rem; }
+  .mark-btn .q-sub { font-size: 0.74rem; color: #cfd8e3; }
+  .mark-btn .chev { margin-left: auto; font-size: 1.2rem; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .field input, .field select { width: 100%; font-size: 1rem; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-primary { width: 100%; background: var(--navy); color: #fff; border: none; border-radius: 10px; padding: 13px 16px; font-size: 0.98rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .btn-primary:disabled { opacity: .5; }
+  .signed-in { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; margin-bottom: 12px; }
+  .signed-in b { color: var(--accent); }
+  .link-btn { background: none; border: none; color: var(--accent); font-weight: 700; font-size: 0.8rem; cursor: pointer; text-decoration: underline; margin-left: auto; font-family: inherit; }
+  .att-counts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .att-counts span { font-size: 0.78rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
+  .c-P { background: #e3f4ea; color: #146c43; } .c-A { background: #fdeceb; color: #b3261e; } .c-L { background: #fff3d6; color: #8a5a00; }
+  .att-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .att-row:last-child { border-bottom: none; }
+  .att-row .roll { font-weight: 800; color: var(--accent); width: 44px; flex-shrink: 0; }
+  .att-row .nm { flex: 1; font-size: 0.88rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .st-btn { width: 86px; flex-shrink: 0; border: none; border-radius: 20px; padding: 8px 0; font-weight: 800; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+  .st-P { background: #1a7f4e; color: #fff; } .st-A { background: #b3261e; color: #fff; } .st-L { background: #f2c14e; color: #3d2e00; }
+  .att-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 14px; display: flex; gap: 8px; }
+  .att-bar .btn-primary { box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .pending-banner { background: #fff3d6; color: #5c3d00; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; margin-bottom: 12px; display: none; align-items: center; gap: 8px; }
+  .pending-banner button { margin-left: auto; background: #5c3d00; color: #fff; border: none; border-radius: 8px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  table.sum td.low { color: var(--red); font-weight: 800; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .c-P { background: #16372a; color: #7fd1a6; }
+    :root:not([data-theme="light"]) .c-A { background: #3a1c1b; color: #f28b82; }
+    :root:not([data-theme="light"]) .c-L { background: #3a2f12; color: #f2c14e; }
+    :root:not([data-theme="light"]) .pending-banner { background: #3a2f12; color: #f2c14e; }
+  }
   .tile {
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
     padding: 16px 14px; text-align: left; cursor: pointer; display: flex; flex-direction: column;
@@ -296,6 +329,11 @@
         <div class="tsub">Class-wise attendance</div>
       </button>
     </div>
+    <button class="mark-btn" id="markBtn" data-go="/attendance" style="display:none">
+      <span style="font-size:1.4rem">📝</span>
+      <span><div class="q-title">Mark Attendance</div><div class="q-sub">Teachers · 1st Year · sign in with your PIN</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
     <button class="quick" id="quickRoll">
       <span class="q-emoji">⚡</span>
       <span><div class="q-title" id="quickRollTitle"></div><div class="q-sub">Open your saved time table</div></span>
@@ -311,6 +349,58 @@
     </div>
     <div class="card" id="staffList"></div>
     <p class="note" style="text-align:center" id="staffOffline">Opening a record needs an internet connection.</p>
+  </section>
+
+  <!-- MARK ATTENDANCE -->
+  <section class="view" id="view-att">
+    <div class="pending-banner" id="attPending"><span id="attPendingText"></span><button id="attSendNow">Send now</button></div>
+
+    <div class="card pad" id="attLogin">
+      <p class="screen-title" style="margin-top:0">Teachers only. Sign in with the name and PIN given to you by the admin.</p>
+      <div class="field"><label for="attName">Your name</label><input id="attName" autocomplete="username" placeholder="e.g. Prof. Saqib Munawar"></div>
+      <div class="field"><label for="attPin">PIN</label><input id="attPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
+      <button class="btn-primary" id="attLoginBtn">Sign in</button>
+      <div class="tt-error" id="attLoginErr"></div>
+    </div>
+
+    <div id="attMain" style="display:none">
+      <div class="card pad" id="attSetup">
+        <div class="signed-in">👤 <span>Signed in as <b id="attWho"></b></span><button class="link-btn" id="attLogout">Sign out</button></div>
+        <div class="field-row">
+          <div class="field"><label for="attDate">Date</label><input id="attDate" type="date"></div>
+          <div class="field"><label for="attClass">Class</label><select id="attClass"><option value="1st Year">1st Year</option></select></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="attGroup">Group</label><select id="attGroup"></select></div>
+          <div class="field"><label for="attSection">Section</label><select id="attSection"><option>All</option><option>Odd</option><option>Even</option><option>Urdu Batch 1</option><option>Urdu Batch 2</option><option>Urdu Batch 3</option></select></div>
+        </div>
+        <div class="field"><label for="attSubject">Lecture (period · subject)</label><select id="attSubject"></select></div>
+        <div class="field-row" id="attOtherRow" style="display:none">
+          <div class="field"><label for="attPeriod">Period</label><select id="attPeriod"><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option><option>VII</option></select></div>
+          <div class="field"><label for="attOtherSubj">Subject</label><input id="attOtherSubj" placeholder="Subject name"></div>
+        </div>
+        <button class="btn-primary" id="attLoad">Load students</button>
+        <div class="tt-error" id="attErr"></div>
+        <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
+      </div>
+
+      <div id="attListWrap" style="display:none; margin-top:14px">
+        <div class="section-title" id="attListTitle"></div>
+        <div class="att-counts" id="attCounts"></div>
+        <p class="note" style="margin:0 0 8px">Everyone starts as <b>Present</b>. Tap a student to switch Present → Absent → Leave.</p>
+        <div class="card" id="attList"></div>
+        <div class="att-bar">
+          <button class="btn-secondary" id="attAllP" style="flex:0 0 auto">All present</button>
+          <button class="btn-primary" id="attSubmit">Save attendance</button>
+        </div>
+      </div>
+
+      <div id="attSumWrap" style="display:none; margin-top:14px">
+        <div class="section-title" id="attSumTitle"></div>
+        <div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Roll</th><th>Name</th><th>Present</th><th>Lectures</th><th>%</th></tr></thead><tbody id="attSumBody"></tbody></table></div></div>
+        <p class="note">Below 75% is shown in red. Counts include every subject marked for this group.</p>
+      </div>
+    </div>
   </section>
 
   <!-- FACULTY LIST -->
@@ -474,6 +564,7 @@
     notices:       { view: 'view-notices',       title: () => 'Notices',            parent: '/' },
     resources:     { view: 'view-resources',     title: () => 'Resources',          parent: '/' },
     about:         { view: 'view-about',         title: () => 'About & Help',       parent: '/' },
+    attendance:    { view: 'view-att',           title: () => 'Mark Attendance',    parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
 
@@ -518,6 +609,7 @@
     if (r.key === 'resources') renderResources();
     if (r.key === 'about') renderAbout();
     if (r.key === 'staff') renderStaff(r.arg);
+    if (r.key === 'attendance') renderAttendance();
     if (!ok) return;
 
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === route.view));
@@ -724,6 +816,194 @@
     }).join('') : '<div class="empty">Nothing set up yet. Add links in admin.html → Staff links.</div>';
   }
 
+  /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
+  const ATT_GROUPS = ['M', 'E', 'C1', 'C2', 'C3', 'G', 'H', 'F1', 'F2', 'F3', 'F4', 'F5', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'D'];
+  let attAuth = null, attMarks = {}, attStudents = [], attCtx = null, attBusy = false;
+  try { attAuth = JSON.parse(store.get('attAuth') || 'null'); } catch (e) { attAuth = null; }
+  const attQueue = {
+    get() { try { return JSON.parse(store.get('attQueue') || '[]'); } catch (e) { return []; } },
+    set(q) { store.set('attQueue', JSON.stringify(q)); }
+  };
+
+  async function attApi(action, payload, auth) {
+    const url = DATA.attendanceApi;
+    if (!url) throw new Error('Attendance service is not set up yet.');
+    if (!navigator.onLine) { const e = new Error('offline'); e.offline = true; throw e; }
+    let res;
+    try {
+      res = await fetch(url, { method: 'POST', body: JSON.stringify(Object.assign({ action, auth: auth || attAuth }, payload || {})) });
+    } catch (err) { const e = new Error('offline'); e.offline = true; throw e; }
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'Something went wrong.');
+    return j;
+  }
+
+  function todayISO() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+  function groupRange(code) { return (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).find((g) => g[0] === code); }
+
+  function lecturesFor(group, section) {
+    const g = groupRange(group); if (!g || typeof buildSchedule !== 'function') return [];
+    const lo = g[1], odd = lo % 2 ? lo : lo + 1, even = lo % 2 ? lo + 1 : lo;
+    const rolls = section === 'Odd' ? [odd] : section === 'Even' ? [even] : [odd, even];
+    if (/^Urdu Batch/.test(section)) return [{ period: 'I', subject: 'Urdu', teacher: 'Batch ' + section.slice(-1) }];
+    const seen = {}, out = [];
+    rolls.forEach((r) => {
+      const res = buildSchedule(r); if (!res) return;
+      (res.rows || []).forEach((x) => { const k = x.period + '|' + x.subject; if (!seen[k]) { seen[k] = 1; out.push({ period: x.period, subject: x.subject, teacher: x.teacher }); } });
+      (res.rotating || []).forEach((x) => { const k = 'VI|' + x.subject; if (!seen[k]) { seen[k] = 1; out.push({ period: 'VI', subject: x.subject, teacher: x.teacher, rotating: true }); } });
+    });
+    return out;
+  }
+
+  function fillSubjects() {
+    const list = lecturesFor($('attGroup').value, $('attSection').value);
+    $('attSubject').innerHTML = list.map((l, i) =>
+      '<option value="' + i + '">' + (l.rotating ? 'VI/VII' : l.period) + ' · ' + esc(l.subject) + (l.teacher ? ' (' + esc(l.teacher) + ')' : '') + '</option>'
+    ).join('') + '<option value="other">Other subject / period…</option>';
+    $('attSubject').dataset.list = JSON.stringify(list);
+    $('attOtherRow').style.display = list.length ? 'none' : 'grid';
+    if (!list.length) $('attSubject').value = 'other';
+  }
+
+  function currentLecture() {
+    const v = $('attSubject').value;
+    if (v === 'other') return { period: $('attPeriod').value, subject: $('attOtherSubj').value.trim() };
+    const l = JSON.parse($('attSubject').dataset.list || '[]')[Number(v)];
+    return l ? { period: l.rotating ? $('attPeriod').value : l.period, subject: l.subject } : null;
+  }
+
+  function renderPending() {
+    const n = attQueue.get().length;
+    $('attPending').style.display = n ? 'flex' : 'none';
+    $('attPendingText').textContent = n + ' attendance sheet' + (n > 1 ? 's' : '') + ' saved on this phone, waiting for internet.';
+  }
+
+  async function flushQueue(silent) {
+    const q = attQueue.get(); if (!q.length || !navigator.onLine) { renderPending(); return; }
+    const left = [];
+    for (const item of q) {
+      try { await attApi('submit', item.payload, item.auth); } catch (e) { if (e.offline) left.push(item); else left.push(Object.assign(item, { error: e.message })); }
+    }
+    attQueue.set(left); renderPending();
+    if (!silent) toast(left.length ? left.length + ' could not be sent yet' : 'Saved attendance sent ✓');
+  }
+  window.addEventListener('online', () => flushQueue(true));
+  $('attSendNow').addEventListener('click', () => flushQueue(false));
+
+  function renderAttendance() {
+    renderPending();
+    const signed = !!attAuth;
+    $('attLogin').style.display = signed ? 'none' : 'block';
+    $('attMain').style.display = signed ? 'block' : 'none';
+    if (!signed) { $('attName').value = store.get('attLastName') || ''; return; }
+    $('attWho').textContent = attAuth.name;
+    if (!$('attDate').value) $('attDate').value = todayISO();
+    if (!$('attGroup').options.length) {
+      $('attGroup').innerHTML = ATT_GROUPS.map((g) => '<option value="' + g + '">' + g + ' — ' + esc((GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</option>').join('');
+      const last = store.get('attLastGroup'); if (last) $('attGroup').value = last;
+      fillSubjects();
+    }
+    flushQueue(true);
+  }
+
+  $('attLoginBtn').addEventListener('click', async () => {
+    const name = $('attName').value.trim(), pin = $('attPin').value.trim();
+    $('attLoginErr').textContent = '';
+    if (!name || !pin) { $('attLoginErr').textContent = 'Enter your name and PIN.'; return; }
+    $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
+    try {
+      const j = await attApi('login', {}, { name, pin });
+      attAuth = { name: j.teacher, pin }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      $('attPin').value = ''; renderAttendance();
+    } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
+    $('attLoginBtn').disabled = false; $('attLoginBtn').textContent = 'Sign in';
+  });
+  $('attPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('attLoginBtn').click(); });
+  $('attLogout').addEventListener('click', () => { attAuth = null; store.set('attAuth', ''); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; renderAttendance(); });
+  ['attGroup', 'attSection'].forEach((id) => $(id).addEventListener('change', () => { fillSubjects(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; }));
+  $('attSubject').addEventListener('change', () => {
+    const v = $('attSubject').value, l = JSON.parse($('attSubject').dataset.list || '[]')[Number(v)];
+    $('attOtherRow').style.display = (v === 'other' || (l && l.rotating)) ? 'grid' : 'none';
+    $('attOtherSubj').parentElement.style.display = v === 'other' ? 'block' : 'none';
+    $('attListWrap').style.display = 'none';
+  });
+
+  function paintList() {
+    const c = { P: 0, A: 0, L: 0 };
+    attStudents.forEach((s) => c[attMarks[s.roll]]++);
+    $('attCounts').innerHTML = '<span class="c-P">Present ' + c.P + '</span><span class="c-A">Absent ' + c.A + '</span><span class="c-L">Leave ' + c.L + '</span><span style="color:var(--muted)">Total ' + attStudents.length + '</span>';
+    $('attSubmit').textContent = 'Save attendance (' + attStudents.length + ')';
+  }
+  const LABEL = { P: 'Present', A: 'Absent', L: 'Leave' }, NEXT = { P: 'A', A: 'L', L: 'P' };
+
+  $('attLoad').addEventListener('click', async () => {
+    $('attErr').textContent = ''; $('attSumWrap').style.display = 'none';
+    const lec = currentLecture(), date = $('attDate').value;
+    if (!date) { $('attErr').textContent = 'Choose a date.'; return; }
+    if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
+    attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value };
+    store.set('attLastGroup', attCtx.group);
+    $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
+    try {
+      const [r, s] = await Promise.all([attApi('roster', attCtx), attApi('getSession', attCtx)]);
+      attStudents = r.students; attMarks = {};
+      const back = { Present: 'P', Absent: 'A', Leave: 'L' };
+      attStudents.forEach((st) => { attMarks[st.roll] = back[s.marks[st.roll]] || 'P'; });
+      const already = Object.keys(s.marks).length;
+      $('attListTitle').textContent = attCtx.group + (attCtx.section !== 'All' ? ' (' + attCtx.section + ')' : '') + ' · Period ' + attCtx.period + ' · ' + attCtx.subject + ' · ' + fmtDate(attCtx.date);
+      $('attList').innerHTML = attStudents.length ? attStudents.map((st) =>
+        '<div class="att-row"><span class="roll">' + st.roll + '</span><span class="nm">' + esc(st.name) + '</span>' +
+        '<button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>'
+      ).join('') : '<div class="empty">No students found for this group/section.</div>';
+      $('attListWrap').style.display = 'block'; paintList();
+      if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
+      $('attListWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to load the student list.' : e.message; if (/PIN|sign in/i.test(e.message)) { attAuth = null; store.set('attAuth', ''); renderAttendance(); } }
+    $('attLoad').disabled = false; $('attLoad').textContent = 'Load students';
+  });
+
+  $('attList').addEventListener('click', (e) => {
+    const b = e.target.closest('.st-btn'); if (!b) return;
+    const r = Number(b.dataset.roll); attMarks[r] = NEXT[attMarks[r]];
+    b.className = 'st-btn st-' + attMarks[r]; b.textContent = LABEL[attMarks[r]]; paintList();
+  });
+  $('attAllP').addEventListener('click', () => { attStudents.forEach((s) => { attMarks[s.roll] = 'P'; }); $('attList').querySelectorAll('.st-btn').forEach((b) => { b.className = 'st-btn st-P'; b.textContent = 'Present'; }); paintList(); });
+
+  $('attSubmit').addEventListener('click', async () => {
+    if (!attCtx || !attStudents.length || attBusy) return;
+    attBusy = true; $('attSubmit').disabled = true; $('attSubmit').textContent = 'Saving…';
+    const payload = Object.assign({}, attCtx, { marks: attStudents.map((s) => ({ roll: s.roll, status: attMarks[s.roll] })) });
+    try {
+      const j = await attApi('submit', payload);
+      toast('Saved ✓ ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : ''));
+      $('attListWrap').style.display = 'none'; window.scrollTo(0, 0);
+    } catch (e) {
+      if (e.offline) {
+        const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
+        toast('No internet — saved on this phone. It will be sent automatically.');
+        $('attListWrap').style.display = 'none';
+      } else { toast(e.message); }
+    }
+    attBusy = false; $('attSubmit').disabled = false; paintList();
+  });
+
+  $('attSummaryBtn').addEventListener('click', async () => {
+    $('attErr').textContent = ''; $('attListWrap').style.display = 'none';
+    const group = $('attGroup').value, section = $('attSection').value;
+    $('attSummaryBtn').textContent = 'Loading summary…';
+    try {
+      const j = await attApi('summary', { group, section });
+      $('attSumTitle').textContent = 'Attendance summary · ' + group + (section !== 'All' ? ' (' + section + ')' : '');
+      $('attSumBody').innerHTML = j.rows.map((r) => {
+        const pct = r.total ? Math.round(100 * r.present / r.total) : null;
+        return '<tr><td class="period">' + r.roll + '</td><td>' + esc(r.name) + '</td><td>' + r.present + '</td><td>' + r.total + '</td><td class="' + (pct !== null && pct < 75 ? 'low' : '') + '">' + (pct === null ? '—' : pct + '%') + '</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="empty">No students.</td></tr>';
+      $('attSumWrap').style.display = 'block';
+      $('attSumWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to view the summary.' : e.message; }
+    $('attSummaryBtn').textContent = 'View attendance summary for this group';
+  });
+
   /* ---------- about ---------- */
   function renderAbout() {
     $('aboutUpdated').textContent = DATA.updatedAt ? fmtDate(DATA.updatedAt) : '—';
@@ -746,6 +1026,7 @@
     $('devName').textContent = dev; $('devDept').textContent = dept;
     $('footDev').textContent = dev ? 'Developed by ' + dev + (dept ? ', ' + dept : '') : '';
     $('aboutDev').textContent = dev || '—';
+    $('markBtn').style.display = DATA.attendanceApi ? 'flex' : 'none';
     $('footUpdated').textContent = DATA.updatedAt ? 'Data updated ' + fmtDate(DATA.updatedAt) : '';
   }
   function netStatus() { document.body.classList.toggle('offline', !navigator.onLine); }

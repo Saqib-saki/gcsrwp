@@ -3,7 +3,7 @@
   "appName": "GCS RWP",
   "developer": "Prof. Saqib Munawar & Prof. Aashir Shahzad",
   "developerDept": "Department of Statistics",
-  "updatedAt": "2026-09-26",
+  "updatedAt": "2026-09-27",
   "faculty": {
     "Dr. Gulzar Ahmad": [
       {
@@ -276,5 +276,6 @@
         "url": "https://docs.google.com/spreadsheets/d/126qZoYMCBcH4yNA1zCsa2HW3MXJsMWDop-kvpoEeiMY/edit"
       }
     ]
-  }
+  },
+  "attendanceApi": "https://script.google.com/macros/s/AKfycbwJaHeWGXadRXS795nZ7pAtDghM-pY_2Xc6xqscH5-hW_XsVM3rMk8-cshBB9GXTsIy1Q/exec"
 }
