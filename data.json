@@ -220,8 +220,10 @@
     {
       "date": "2026-09-28",
       "title": "GCS RWP Portal launches on Thursday, 8 October 2026 — be ready!",
-      "body": "Our college app goes live officially on Thursday, 8 October 2026.\n\nStudents: see your class time table by roll number, and check your own attendance and monthly test results with your roll number and date of birth.\n\nTeachers: mark attendance during your period and enter monthly test marks using your name and PIN. PIN slips will be given to you before the launch.\n\nInstall it on your phone now: open https://saqib-saki.github.io/gcsrwp/ then Chrome ⋮ → Install app (Android) or Share → Add to Home Screen (iPhone).",
-      "pinned": true
+      "body": "Our college app goes live officially on Thursday, 8 October 2026.\n\nStudents: see your class time table by roll number, and check your own attendance and monthly test results with your roll number and date of birth.\n\nTeachers: mark attendance during your period and enter monthly test marks using your name and PIN. PIN slips will be given to you before the launch.\n\nInstall it on your phone now: scan the QR code below with your phone camera, then tap Chrome ⋮ → Install app (Android) or Share → Add to Home Screen (iPhone). You can also show this QR code to your classmates.",
+      "pinned": true,
+      "image": "icons/qr-install.png",
+      "imageCaption": "Scan to open GCS RWP Portal"
     },
     {
       "date": "2026-09-24",

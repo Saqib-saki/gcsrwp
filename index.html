@@ -315,6 +315,9 @@
   .notice .n-date { font-size: 0.72rem; color: var(--muted); }
   .notice .n-title { font-weight: 700; font-size: 0.98rem; margin: 3px 0 6px; color: var(--accent); }
   .notice .n-body { font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+  .notice .n-img { margin-top: 10px; text-align: center; }
+  .notice .n-img img { width: 200px; max-width: 70%; height: auto; border-radius: 10px; background: #fff; padding: 8px; border: 1px solid var(--border); }
+  .notice .n-cap { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
   .notice .n-body a { color: var(--accent); }
   .notice.pinned { background: linear-gradient(90deg, rgba(242,193,78,0.14), transparent 60%); }
   .new-dot { display: inline-block; background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
@@ -1164,6 +1167,7 @@
       (String(n.date || '') > seen ? '<span class="new-dot">NEW</span>' : '') + '</div>' +
       '<div class="n-title">' + esc(n.title) + '</div>' +
       (n.body ? '<div class="n-body">' + linkify(n.body) + '</div>' : '') +
+      (n.image ? '<div class="n-img"><img src="' + esc(n.image) + '" alt="' + esc(n.imageCaption || 'Notice image') + '" loading="lazy">' + (n.imageCaption ? '<div class="n-cap">' + esc(n.imageCaption) + '</div>' : '') + '</div>' : '') +
       '</article>'
     ).join('') : '<div class="empty">No notices right now. Check back later.</div>';
     const newest = (DATA.notices || []).map((n) => String(n.date || '')).sort().pop();
