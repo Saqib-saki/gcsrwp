@@ -135,6 +135,8 @@
   /* enter marks */
   .mark-btn-2 { background: #1a5d4a; }
   .mark-btn-3 { background: #6b2d5c; }
+  .soon-card { text-align: center; padding: 18px 12px; margin: 4px 0 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--chip-bg); color: var(--chip-text); font-size: 0.86rem; }
+  .soon-card b { display: block; font-size: 1rem; margin: 4px 0; color: var(--text); }
   .tnote { font-size: 0.78rem; margin: 2px 0 10px; padding: 7px 10px; border-radius: 10px; background: var(--chip-bg); color: var(--chip-text); }
   .tnote.late { background: #fdeedb; color: #8a4b00; } .tnote.wait { background: #fde4e1; color: #9b1c1c; } .tnote.ok { background: #dff3e6; color: #17603a; }
   .bd-per { font-weight: 800; font-size: 0.82rem; color: var(--muted); margin: 14px 2px 6px; display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: .04em; }
@@ -464,8 +466,10 @@
         <div class="signed-in">👤 <span>Signed in as <b id="attWho"></b></span><button class="link-btn" id="attLogout">Sign out</button></div>
         <div class="field-row">
           <div class="field"><label for="attDate">Date</label><input id="attDate" type="date"></div>
-          <div class="field"><label for="attClass">Class</label><select id="attClass"><option value="1st Year">1st Year</option></select></div>
+          <div class="field"><label for="attClass">Class</label><select id="attClass"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="BS 1st Semester">BS · 1st Semester</option><option value="BS 3rd Semester">BS · 3rd Semester</option><option value="BS 5th Semester">BS · 5th Semester</option><option value="BS 7th Semester">BS · 7th Semester</option></select></div>
         </div>
+        <div class="soon-card" id="attSoon" style="display:none"></div>
+        <div id="attBody">
         <div class="field-row">
           <div class="field"><label for="attGroup">Group</label><select id="attGroup"></select></div>
           <div class="field"><label for="attSection">Section</label><select id="attSection"><option>All</option><option>Odd</option><option>Even</option><option>Urdu Batch 1</option><option>Urdu Batch 2</option><option>Urdu Batch 3</option></select></div>
@@ -480,6 +484,7 @@
         <div class="tt-error" id="attErr"></div>
         <p class="note" id="attScopeNote" style="margin-top:6px"></p>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
+        </div>
         <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open student records (attendance &amp; results)</button>
         <button class="link-btn" id="attBoardLink" data-go="/board" style="margin:6px 0 0; display:none">📋 Principal’s Board (admins)</button>
       </div>
@@ -519,8 +524,10 @@
         <div class="signed-in">👤 <span>Signed in as <b id="mkWho"></b></span><button class="link-btn" id="mkLogout">Sign out</button></div>
         <div class="field-row">
           <div class="field"><label for="mkTest">Test</label><select id="mkTest"></select></div>
-          <div class="field"><label for="mkClass">Class</label><select id="mkClass"><option>1st Year</option></select></div>
+          <div class="field"><label for="mkClass">Class</label><select id="mkClass"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="BS 1st Semester">BS · 1st Semester</option><option value="BS 3rd Semester">BS · 3rd Semester</option><option value="BS 5th Semester">BS · 5th Semester</option><option value="BS 7th Semester">BS · 7th Semester</option></select></div>
         </div>
+        <div class="soon-card" id="mkSoon" style="display:none"></div>
+        <div id="mkBody">
         <div class="field-row">
           <div class="field"><label for="mkGroup">Group</label><select id="mkGroup"></select></div>
           <div class="field"><label for="mkSection">Section</label><select id="mkSection"><option>All</option><option>Odd</option><option>Even</option><option>Urdu Batch 1</option><option>Urdu Batch 2</option><option>Urdu Batch 3</option></select></div>
@@ -531,6 +538,7 @@
         <button class="btn-primary" id="mkLoad">Load students</button>
         <div class="tt-error" id="mkErr"></div>
         <p class="note" id="mkNote"></p>
+        </div>
       </div>
 
       <div id="mkListWrap" style="display:none; margin-top:14px">
@@ -1469,6 +1477,20 @@
     paintTimeNote();
   });
   $('attPeriod').addEventListener('change', paintTimeNote);
+  /* Class chooser: only 1st Year is set up; 2nd Year and BS show a "coming soon" card */
+  function classSoon(pre) {
+    const v = $(pre + 'Class').value, ready = v === '1st Year';
+    $(pre + 'Body').style.display = ready ? '' : 'none';
+    const c = $(pre + 'Soon');
+    c.style.display = ready ? 'none' : 'block';
+    if (!ready) c.innerHTML = (v.indexOf('BS') === 0 ? '🎓' : '📘') + '<b>' + esc(v) + '</b>' +
+      (pre === 'att' ? 'Attendance for this class will open here' : 'Marks entry for this class will open here') +
+      ' once its student list and timetable are added to the portal.';
+    if (pre === 'att') { $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; }
+    else $('mkListWrap').style.display = 'none';
+  }
+  $('attClass').addEventListener('change', () => classSoon('att'));
+  $('mkClass').addEventListener('change', () => classSoon('mk'));
   $('attDate').addEventListener('change', paintTimeNote);
 
   function paintList() {
