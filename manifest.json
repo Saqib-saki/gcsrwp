@@ -19,7 +19,7 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "1st Year Time Table", "short_name": "Time Table", "url": "./#/timetable", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Time Table", "short_name": "Time Table", "url": "./#/timetable", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Faculty Workload", "short_name": "Faculty", "url": "./#/faculty", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Notices", "short_name": "Notices", "url": "./#/notices", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]

@@ -262,6 +262,11 @@
     font-weight: 600; color: var(--name); cursor: pointer;
   }
   .name-row:last-child { border-bottom: none; }
+  .tt-menu-sub { font-size: 0.74rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .name-row.sub { padding-left: 28px; font-size: 0.9rem; }
+  #view-tt-menu .name-row .chev { margin-left: auto; }
+  #view-tt-menu .name-row .idx { min-width: 26px; }
+  #ttBsToggle.open #ttBsChev { transform: rotate(90deg); }
   .name-row:active { background: var(--press); }
   .name-row .idx { color: var(--muted); font-weight: 400; font-size: 0.82rem; width: 22px; flex-shrink: 0; }
   .name-row .count { color: var(--muted); font-weight: 400; font-size: 0.76rem; margin-left: auto; }
@@ -372,8 +377,8 @@
     <div class="grid-tiles">
       <button class="tile" data-go="/timetable">
         <div class="emoji">🗓️</div>
-        <div class="tlabel">1st Year Time Table</div>
-        <div class="tsub">Find your classes by roll no.</div>
+        <div class="tlabel">Time Table</div>
+        <div class="tsub">1st Year · 2nd Year · BS</div>
       </button>
       <button class="tile tile-hi" data-go="/my">
         <div class="emoji">🎯</div>
@@ -676,6 +681,31 @@
     </div>
   </section>
 
+  <!-- TIMETABLE MENU -->
+  <section class="view" id="view-tt-menu">
+    <p class="screen-title">Choose your class.</p>
+    <div class="card">
+      <button class="name-row" data-go="/timetable/y1"><span class="idx">1</span><span><b>1st Year</b><div class="tt-menu-sub">F.Sc · I.C.S · F.A · by roll number</div></span><span class="chev">&rsaquo;</span></button>
+      <button class="name-row" data-go="/timetable/y2"><span class="idx">2</span><span><b>2nd Year</b><div class="tt-menu-sub">F.Sc · I.C.S · by roll number</div></span><span class="chev">&rsaquo;</span></button>
+      <button class="name-row" id="ttBsToggle"><span class="idx">BS</span><span><b>BS</b><div class="tt-menu-sub">1st · 3rd · 5th · 7th semester</div></span><span class="chev" id="ttBsChev">&rsaquo;</span></button>
+      <div id="ttBsList" style="display:none">
+        <button class="name-row sub" data-go="/timetable/bs/1"><span class="idx"></span><span>1st Semester</span><span class="chev">&rsaquo;</span></button>
+        <button class="name-row sub" data-go="/timetable/bs/3"><span class="idx"></span><span>3rd Semester</span><span class="chev">&rsaquo;</span></button>
+        <button class="name-row sub" data-go="/timetable/bs/5"><span class="idx"></span><span>5th Semester</span><span class="chev">&rsaquo;</span></button>
+        <button class="name-row sub" data-go="/timetable/bs/7"><span class="idx"></span><span>7th Semester</span><span class="chev">&rsaquo;</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BS (coming soon) -->
+  <section class="view" id="view-tt-bs">
+    <div class="card pad" style="text-align:center">
+      <div style="font-size:2.2rem">🗓️</div>
+      <p class="tt-summary-name" id="ttBsTitle" style="margin:8px 0 4px"></p>
+      <p class="note" style="margin:0">This timetable will be added soon. Please check the department noticeboard for now.</p>
+    </div>
+  </section>
+
   <!-- TIMETABLE INPUT -->
   <section class="view" id="view-timetable">
     <div class="card pad">
@@ -685,7 +715,7 @@
         <button class="btn-go" type="submit">Find</button>
       </form>
       <div id="rollError" class="tt-error"></div>
-      <p class="note">Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.</p>
+      <p class="note" id="ttCoverage">Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.</p>
     </div>
   </section>
 
@@ -704,7 +734,7 @@
     </div>
 
     <div id="ttRotatingWrap">
-      <div class="section-title">Islamic Ed. / Ethics / Practicals <span class="rotate-tag">rotates weekly</span></div>
+      <div class="section-title"><span id="ttRotTitle">Islamic Ed. / Ethics / Practicals</span> <span class="rotate-tag">rotates weekly</span></div>
       <div class="card pad">
         <div class="overflow-x">
           <table class="wl">
@@ -712,7 +742,7 @@
             <tbody id="ttRotatingBody"></tbody>
           </table>
         </div>
-        <p class="note" style="margin-bottom:0">These periods rotate week to week — check the department noticeboard for the current week's rotation.</p>
+        <p class="note" style="margin-bottom:0" id="ttRotNote">These periods rotate week to week — check the department noticeboard for the current week's rotation.</p>
       </div>
     </div>
 
@@ -764,6 +794,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="timetable-engine.js"></script>
+<script src="timetable-engine-2.js"></script>
 <script>
 (function () {
   'use strict';
@@ -813,8 +844,10 @@
     home:          { view: 'view-home',          title: () => DATA.appName || 'GCS Rawalpindi Portal', parent: null },
     faculty:       { view: 'view-faculty',       title: () => 'Faculty Workload',   parent: '/' },
     'faculty-one': { view: 'view-faculty-one',   title: () => 'Faculty Workload',   parent: '/faculty' },
-    timetable:     { view: 'view-timetable',     title: () => '1st Year Time Table', parent: '/' },
-    'timetable-one': { view: 'view-timetable-one', title: () => '1st Year Time Table', parent: '/timetable' },
+    'tt-menu':     { view: 'view-tt-menu',       title: () => 'Time Table',         parent: '/' },
+    'tt-bs':       { view: 'view-tt-bs',         title: () => 'BS Time Table',      parent: '/timetable' },
+    timetable:     { view: 'view-timetable',     title: () => yearLabel(ttYear) + ' Time Table', parent: '/timetable' },
+    'timetable-one': { view: 'view-timetable-one', title: () => yearLabel(ttYear) + ' Time Table', parent: () => '/timetable/y' + ttYear },
     notices:       { view: 'view-notices',       title: () => 'Notices',            parent: '/' },
     resources:     { view: 'view-resources',     title: () => 'Resources',          parent: '/' },
     about:         { view: 'view-about',         title: () => 'About & Help',       parent: '/' },
@@ -832,7 +865,14 @@
     const arg = rest.length ? decodeURIComponent(rest.join('/')) : null;
     if (!a) return { key: 'home' };
     if (a === 'faculty') return arg ? { key: 'faculty-one', arg } : { key: 'faculty' };
-    if (a === 'timetable') return arg ? { key: 'timetable-one', arg } : { key: 'timetable' };
+    if (a === 'timetable') {
+      if (!arg) return { key: 'tt-menu' };
+      const bs = /^bs\/(\d)$/.exec(arg); if (bs) return { key: 'tt-bs', arg: bs[1] };
+      const y = /^y([12])(?:\/(\d+))?$/.exec(arg);
+      if (y) { ttYear = Number(y[1]); return y[2] ? { key: 'timetable-one', arg: y[2] } : { key: 'timetable' }; }
+      if (/^\d+$/.test(arg)) { ttYear = 1; return { key: 'timetable-one', arg }; } // old links: #/timetable/433
+      return { key: 'tt-menu' };
+    }
     if (a === 'staff') return STAFF_SECTIONS[arg] ? { key: 'staff', arg } : { key: 'home' };
     if (ROUTES[a]) return { key: a };
     return { key: 'home' };
@@ -848,7 +888,7 @@
 
   function back() {
     const r = parseHash();
-    const parent = ROUTES[r.key].parent || '/';
+    const p0 = ROUTES[r.key].parent, parent = (typeof p0 === 'function' ? p0() : p0) || '/';
     if (history.state && history.state.depth > 0) history.back();
     else { history.replaceState({ depth: 0 }, '', '#' + parent); render(); }
   }
@@ -862,6 +902,7 @@
     if (r.key === 'faculty') renderFacultyList();
     if (r.key === 'faculty-one') ok = renderWorkload(r.arg);
     if (r.key === 'timetable') renderRollInput();
+    if (r.key === 'tt-bs') $('ttBsTitle').textContent = 'BS · ' + ({ 1: '1st', 3: '3rd', 5: '5th', 7: '7th' }[r.arg] || r.arg) + ' Semester';
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
     if (r.key === 'notices') renderNotices();
     if (r.key === 'resources') renderResources();
@@ -910,12 +951,13 @@
     const nr = (DATA.resources || []).length;
     $('resTileSub').textContent = nr ? nr + ' useful link' + (nr > 1 ? 's' : '') : 'Useful links';
 
-    const saved = store.get('roll');
+    const saved = store.get('roll'), sy = Number(store.get('rollYear') || 1);
     const q = $('quickRoll');
-    if (saved) { $('quickRollTitle').textContent = 'My time table — Roll ' + saved; q.style.display = 'flex'; }
+    if (saved) { $('quickRollTitle').textContent = 'My time table — ' + yearLabel(sy) + ', Roll ' + saved; q.style.display = 'flex'; }
     else q.style.display = 'none';
   }
-  $('quickRoll').addEventListener('click', () => { const s = store.get('roll'); if (s) go('/timetable/' + s); });
+  $('quickRoll').addEventListener('click', () => { const s = store.get('roll'); if (s) go('/timetable/y' + (store.get('rollYear') || 1) + '/' + s); });
+  $('ttBsToggle').addEventListener('click', () => { const open = $('ttBsList').style.display === 'none'; $('ttBsList').style.display = open ? 'block' : 'none'; $('ttBsToggle').classList.toggle('open', open); });
 
   /* ---------- faculty ---------- */
   function renderFacultyList() {
@@ -967,10 +1009,16 @@
     A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT'
   };
 
+  let ttYear = 1;
+  const yearLabel = (y) => (y === 2 ? '2nd Year' : '1st Year');
+  const schedFor = (roll) => (ttYear === 2 ? (typeof buildSchedule2 === 'function' ? buildSchedule2(roll) : null) : (typeof buildSchedule === 'function' ? buildSchedule(roll) : null));
   function renderRollInput() {
     $('rollError').textContent = '';
     const saved = store.get('roll');
     $('rollInput').value = saved || '';
+    $('ttCoverage').textContent = ttYear === 2
+      ? 'Covers 2nd Year F.Sc (M, E) and I.C.S (C1, C2, C3, H). B.Star, G2 and Arts groups will be added soon.'
+      : 'Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.';
     setTimeout(() => { if (!('ontouchstart' in window)) $('rollInput').focus(); }, 150);
   }
 
@@ -980,21 +1028,25 @@
     const err = $('rollError');
     err.textContent = '';
     if (!roll || roll < 1 || roll > 1500) { err.textContent = 'Enter a valid roll number (1–1500).'; return; }
-    if (typeof buildSchedule !== 'function') { err.textContent = 'Timetable data failed to load. Please refresh and try again.'; return; }
-    if (!buildSchedule(roll)) { err.textContent = 'No group found for roll number ' + roll + '. Please check with the college office.'; return; }
+    const res = schedFor(roll);
+    if (!res && typeof (ttYear === 2 ? window.buildSchedule2 : window.buildSchedule) !== 'function') { err.textContent = 'Timetable data failed to load. Please refresh and try again.'; return; }
+    if (!res) { err.textContent = 'No group found for roll number ' + roll + '. Please check with the college office.'; return; }
+    if (!res.code) { err.textContent = res.note; return; }
     $('rollInput').blur();
-    go('/timetable/' + roll);
+    go('/timetable/y' + ttYear + '/' + roll);
   });
 
   function renderTimetable(arg) {
     const roll = parseInt(arg, 10);
-    const result = (typeof buildSchedule === 'function' && roll) ? buildSchedule(roll) : null;
-    if (!result) { history.replaceState(history.state, '', '#/timetable'); render(); return false; }
-    store.set('roll', String(roll));
+    const result = roll ? schedFor(roll) : null;
+    if (!result || !result.code) { history.replaceState(history.state, '', '#/timetable/y' + ttYear); render(); return false; }
+    store.set('roll', String(roll)); store.set('rollYear', String(ttYear));
+    $('ttRotTitle').textContent = ttYear === 2 ? 'Periods VI & VII — Pak. Studies / Tarjuma-tul-Quran / Ethics / Practicals' : 'Islamic Ed. / Ethics / Practicals';
+    $('ttRotNote').textContent = ttYear === 2 ? 'Numbers in brackets are as printed on the college timetable. These periods rotate — check the department noticeboard for this week.' : 'These periods rotate week to week — check the department noticeboard for the current week\'s rotation.';
 
     $('ttSummary').innerHTML =
       '<p class="tt-summary-name">Roll No. ' + roll + '</p>' +
-      '<p class="tt-summary-sub">' + esc(GROUP_NAMES[result.code] || result.group) + '</p>' +
+      '<p class="tt-summary-sub">' + yearLabel(ttYear) + ' · ' + esc((ttYear === 2 ? GROUP_NAMES_2 : GROUP_NAMES)[result.code] || result.group) + '</p>' +
       '<span class="pill">Group ' + esc(result.code) + '</span>' +
       (result.code !== 'D' ? '<span class="pill">' + (roll % 2 ? 'Odd' : 'Even') + ' section</span>' : '') +
       (result.sheet ? '<span class="pill">' + esc(result.sheet) + ' sheet</span>' : '');
@@ -1012,10 +1064,10 @@
     return true;
   }
 
-  $('ttAnother').addEventListener('click', () => { go('/timetable'); $('rollInput').value = ''; });
+  $('ttAnother').addEventListener('click', () => { go('/timetable/y' + ttYear); $('rollInput').value = ''; });
   $('ttShare').addEventListener('click', async () => {
     const url = location.href;
-    const text = 'My 1st Year time table — GCS Rawalpindi';
+    const text = 'My ' + yearLabel(ttYear) + ' time table — GCS Rawalpindi';
     try {
       if (navigator.share) { await navigator.share({ title: text, url }); return; }
       await navigator.clipboard.writeText(url); toast('Link copied');
