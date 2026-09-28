@@ -39,48 +39,48 @@ function buildSchedule2(roll) {
   const rot = (subject, group, room, teacher) => rotating.push({ subject, group, room: R(room), teacher });
 
   if (code === "M" || code === "E") {
-    add("I", "Physics", odd ? 5 : 6, odd ? "Mr. Asghar" : "Ms. Zarmeen", "M + E (" + (odd ? "Odd" : "Even") + ")");
-    add("II", "Chemistry", odd ? 5 : 6, odd ? "Ms. Noor" : "Dr. Tehmina", "M + E (" + (odd ? "Odd" : "Even") + ")");
-    add("III", "English", 5, "Mr. Fazal", "M + E together");
-    add("IV", "Urdu", 5, "Dr. Zia", "M + E together");
-    if (code === "M") add("V", "Biology", 5, "Mr. Ghaffar");
-    else add("V", "Mathematics", 6, "Ms. Iram");
-    rot("VI · Pak. Studies (3-4)", "E + M", 5, "Mr. Amir");
-    rot("VI · Tarjuma-tul-Quran (1-2)", "E + M + B.Star", 5, "Mr. Abaid");
-    rot("VII · Physics Practical (5-5)", "M + E", "Lab", "Mr. Asghar + Ms. Zarmeen");
-    rot("VII · Chemistry Practical (6-6)", "M + E", "Lab", "Ms. Noor + Dr. Tehmina");
-    if (code === "M") rot("VII · Biology Practical (4-4)", "M", "Lab", "Mr. Ghaffar");
+    add("I", "Physics", odd ? 5 : 6, odd ? "Prof. Muhammad Asghar" : "Prof. Zarmeen Malik", "M + E (" + (odd ? "Odd" : "Even") + ")");
+    add("II", "Chemistry", odd ? 5 : 6, odd ? "Prof. Noor ul Aen" : "Prof. Tehmina Akhtar", "M + E (" + (odd ? "Odd" : "Even") + ")");
+    add("III", "English", 5, "Prof. Fazal Mehmood", "M + E together");
+    add("IV", "Urdu", 5, "Prof. Amjad Zia", "M + E together");
+    if (code === "M") add("V", "Biology", 5, "Prof. Abdul Ghaffar Anjum");
+    else add("V", "Mathematics", 6, "Prof. Iram Naz");
+    rot("VI · Pak. Studies (3-4)", "E + M", 5, "Prof. Aamir Hayat");
+    rot("VI · Tarjuma-tul-Quran (1-2)", "E + M + B.Star", 5, "Prof. Abaid Ullah Tariq");
+    rot("VII · Physics Practical (5-5)", "M + E", "Lab", "Prof. Muhammad Asghar + Prof. Zarmeen Malik");
+    rot("VII · Chemistry Practical (6-6)", "M + E", "Lab", "Prof. Noor ul Aen + Prof. Tehmina Akhtar");
+    if (code === "M") rot("VII · Biology Practical (4-4)", "M", "Lab", "Prof. Abdul Ghaffar Anjum");
     return { code, group: "F.Sc (Science)", sheet: "2nd Year Science", rows, rotating };
   }
 
   // I.C.S groups — C1, C2, C3, H
-  const urdu = () => add("III", "Urdu", odd ? 1 : 2, odd ? "Dr. Faiza" : "Ms. Tahira", "C1, C2, C3, G2, H (" + (odd ? "Odd" : "Even") + ")");
+  const urdu = () => add("III", "Urdu", odd ? 1 : 2, odd ? "Prof. Faiza Iftekhar" : "Prof. Tahira Ghafoor", "C1, C2, C3, G2, H (" + (odd ? "Odd" : "Even") + ")");
   if (code === "C1") {
-    add("I", "Physics", odd ? 1 : 2, odd ? "Mr. Asif Khan" : "Ms. Amir-un-Nisa", "C1 (" + (odd ? "Odd" : "Even") + ")");
-    add("II", "Computer Science", "LT2", "Mr. Tuseef", "C1 (Odd + Even)");
+    add("I", "Physics", odd ? 1 : 2, odd ? "Prof. Muhammad Asif" : "Prof. Amir-ul-Nisa", "C1 (" + (odd ? "Odd" : "Even") + ")");
+    add("II", "Computer Science", "LT2", "Prof. Tuseef Ahmad", "C1 (Odd + Even)");
     urdu();
-    add("IV", "Mathematics", odd ? 2 : 1, odd ? "Ms. Sumaya" : "Mr. Imran", "C1 (" + (odd ? "Odd" : "Even") + ")");
-    add("V", "English", odd ? 1 : 2, odd ? "Ms. Ayesha" : "Mr. Azam", "C1 (" + (odd ? "Odd" : "Even") + ")");
-    rot("VI · Tarjuma-tul-Quran (1-2)", "C1 + B.Star", 1, "Mr. Zafar");
-    rot("VI · Pak. Studies (3-4)", "C1 (" + (odd ? "Odd" : "Even") + ")", odd ? 1 : 2, odd ? "Mr. Naseer" : "Mr. Muttaher");
-    rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Mr. Ashar");
-    rot("VII · Physics Practical (6-6)", "C1 (" + (odd ? "Odd" : "Even") + ")", "Lab", odd ? "Mr. Asif Khan" : "Ms. Amir-un-Nisa");
-    rot("VII · Computer Practical (2-2)", "C1", "Lab", "Mr. Tuseef");
+    add("IV", "Mathematics", odd ? 2 : 1, odd ? "Prof. Sumayya Mohsin" : "Mr. Imran", "C1 (" + (odd ? "Odd" : "Even") + ")");
+    add("V", "English", odd ? 1 : 2, odd ? "Prof. Aisha Rehmat" : "Prof. Muhammad Azam Mughal", "C1 (" + (odd ? "Odd" : "Even") + ")");
+    rot("VI · Tarjuma-tul-Quran (1-2)", "C1 + B.Star", 1, "Prof. Hafiz Zafar Mehmood");
+    rot("VI · Pak. Studies (3-4)", "C1 (" + (odd ? "Odd" : "Even") + ")", odd ? 1 : 2, odd ? "Prof. Naseer Ahmed Ansir" : "Prof. Muhammad Muttaher Bashir");
+    rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Prof. Ashar Shahzad");
+    rot("VII · Physics Practical (6-6)", "C1 (" + (odd ? "Odd" : "Even") + ")", "Lab", odd ? "Prof. Muhammad Asif" : "Prof. Amir-ul-Nisa");
+    rot("VII · Computer Practical (2-2)", "C1", "Lab", "Prof. Tuseef Ahmad");
     return { code, group: "I.C.S", sheet: "2nd Year I.C.S", rows, rotating };
   }
 
   // C2, C3, H share Computer (I), Urdu (III) and English (V)
   add("I", "Computer Science", "LT2", "Mr. Ahmed", "C2 + C3 + H");
-  if (code === "C2") add("II", "Statistics", odd ? 4 : 3, odd ? "Mr. Amin" : "Dr. Javaid", odd ? "C2 (Odd)" : "C2 (Even) + G2");
-  else add("II", "Economics", odd ? 10 : 2, odd ? "Ms. Hina" : "Mr. Farhan", "C3 + H + D1 + B3 (" + (odd ? "Odd" : "Even") + ")");
+  if (code === "C2") add("II", "Statistics", odd ? 4 : 3, odd ? "Prof. Amin Iqbal" : "Prof. Javaid Iqbal", odd ? "C2 (Odd)" : "C2 (Even) + G2");
+  else add("II", "Economics", odd ? 10 : 2, odd ? "Prof. Hina Irshad" : "Prof. Farhan Mahmood", "C3 + H + D1 + B3 (" + (odd ? "Odd" : "Even") + ")");
   urdu();
-  if (code === "H") add("IV", "Statistics", 4, "Ms. Maryam", "H");
-  else add("IV", "Mathematics", 3, "Ms. Misbah", "C2 + C3 + G2");
-  add("V", "English", odd ? 3 : 4, odd ? "Ms. Zunaira" : "Mr. Asif", "C2 + C3 + G + H (" + (odd ? "Odd" : "Even") + ")");
-  rot("VI · Tarjuma-tul-Quran (1-2)", "C2 + C3 + H", 2, "Dr. Tahir");
-  rot("VI · Pak. Studies (3-4)", "C2 + C3 + G2 + H", 3, "Mr. Taib");
-  rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Mr. Ashar");
-  if (code === "C2") rot("VII · Statistics Practical (1-1)", "C2-I + C2-II", "Lab", "Ms. Maryam");
+  if (code === "H") add("IV", "Statistics", 4, "Prof. Maryam Aslam", "H");
+  else add("IV", "Mathematics", 3, "Prof. Misbah Rani", "C2 + C3 + G2");
+  add("V", "English", odd ? 3 : 4, odd ? "Prof. Zunaira Abbas" : "Prof. Asif Abbas", "C2 + C3 + G + H (" + (odd ? "Odd" : "Even") + ")");
+  rot("VI · Tarjuma-tul-Quran (1-2)", "C2 + C3 + H", 2, "Prof. Syed M. Tahir Shah");
+  rot("VI · Pak. Studies (3-4)", "C2 + C3 + G2 + H", 3, "Prof. Ahmad Taib Arif");
+  rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Prof. Ashar Shahzad");
+  if (code === "C2") rot("VII · Statistics Practical (1-1)", "C2-I + C2-II", "Lab", "Prof. Maryam Aslam");
   rot("VII · Computer Practical (2-2)", "C2 + C3 + H", "Lab", "Mr. Ahmed");
   return { code, group: "I.C.S", sheet: "2nd Year I.C.S", rows, rotating };
 }

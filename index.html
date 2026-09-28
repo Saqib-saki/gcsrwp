@@ -264,6 +264,11 @@
   .name-row:last-child { border-bottom: none; }
   .tt-menu-sub { font-size: 0.74rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
   .name-row.sub { padding-left: 28px; font-size: 0.9rem; }
+  .prof-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #10345c, #1d5a93); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex: 0 0 auto; }
+  .prof-av.sm { width: 34px; height: 34px; font-size: 0.78rem; margin-right: 4px; }
+  .prof-card { display: flex; gap: 14px; align-items: center; }
+  .prof-sub { font-size: 0.82rem; color: var(--muted); margin-top: 3px; }
+  #nameList .name-row b { font-weight: 700; }
   #view-tt-menu .name-row .chev { margin-left: auto; }
   #view-tt-menu .name-row .idx { min-width: 26px; }
   #ttBsToggle.open #ttBsChev { transform: rotate(90deg); }
@@ -664,21 +669,18 @@
 
   <!-- FACULTY LIST -->
   <section class="view" id="view-faculty">
-    <input type="search" class="search" id="facultySearch" placeholder="Search name or course…" autocomplete="off">
-    <div class="card" id="nameList"></div>
+    <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
+    <div id="nameList"></div>
   </section>
 
   <!-- FACULTY WORKLOAD -->
   <section class="view" id="view-faculty-one">
-    <div class="card pad" id="workCard">
-      <h2 id="profName"></h2>
-      <div class="overflow-x">
-        <table class="wl">
-          <thead><tr><th>Year / Semester</th><th>Period</th><th>Course</th><th>Code</th><th>Room</th></tr></thead>
-          <tbody id="wlBody"></tbody>
-        </table>
-      </div>
+    <div class="card pad prof-card" id="workCard">
+      <div class="prof-av" id="profAv"></div>
+      <div><h2 id="profName" style="margin:0"></h2><div class="prof-sub" id="profSub"></div></div>
     </div>
+    <div id="profStats" class="stat-grid" style="margin-top:12px"></div>
+    <div id="wlOut"></div>
   </section>
 
   <!-- TIMETABLE MENU -->
@@ -795,6 +797,7 @@
 
 <script src="timetable-engine.js"></script>
 <script src="timetable-engine-2.js"></script>
+<script src="staff.js"></script>
 <script>
 (function () {
   'use strict';
@@ -941,8 +944,7 @@
   function renderHome() {
     if ($('boardBtn')) $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const nf = Object.keys(DATA.faculty || {}).length;
-    $('facultyTileSub').textContent = nf ? nf + ' faculty · Statistics Dept.' : 'Statistics Dept.';
+    $('facultyTileSub').textContent = (typeof STAFF !== 'undefined' ? STAFF.length : 0) + ' faculty · profiles';
     const nn = (DATA.notices || []).length;
     $('noticeTileSub').textContent = nn ? nn + ' notice' + (nn > 1 ? 's' : '') : 'No notices yet';
     const unseen = unseenCount();
@@ -960,38 +962,108 @@
   $('ttBsToggle').addEventListener('click', () => { const open = $('ttBsList').style.display === 'none'; $('ttBsList').style.display = open ? 'block' : 'none'; $('ttBsToggle').classList.toggle('open', open); });
 
   /* ---------- faculty ---------- */
+  /* ---------- faculty: full staff list + profile with workload (from the timetables) ---------- */
+  const DESIG_ORDER = ['Principal', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Librarian'];
+  const staffList = () => (typeof STAFF !== 'undefined' ? STAFF : []);
+  const PERIOD_TIMES = { I: '8:30–9:15', II: '9:15–10:00', III: '10:00–10:45', IV: '10:45–11:30', V: '11:30–12:15', VI: '12:15–1:00', VII: '1:00–1:45' };
+  let wlIndex = null;
+  /** {teacherName: [{year, period, klass, subject, room, rotating}]} built from the 1st and 2nd Year timetables */
+  function workloadIndex() {
+    if (wlIndex) return wlIndex;
+    const out = {}, seen = {};
+    const put = (name, e) => { const k = name + '|' + e.year + '|' + e.period + '|' + e.subject + '|' + e.room + '|' + e.klass; if (seen[k]) return; seen[k] = 1; (out[name] = out[name] || []).push(e); };
+    const years = [[1, typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], typeof buildSchedule === 'function' ? buildSchedule : null],
+                   [2, typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : [], typeof buildSchedule2 === 'function' ? buildSchedule2 : null]];
+    years.forEach(([year, ranges, fn]) => {
+      if (!fn) return;
+      const slots = {};
+      ranges.forEach(([g, lo, hi]) => {
+        const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+        const map = {};
+        rolls.forEach((r) => {
+          const res = fn(r); if (!res || !res.code) return;
+          (res.rows || []).forEach((x) => {
+            const k = x.period + '|' + x.subject + '|' + x.teacher + '|' + x.room;
+            const e = map[k] || (map[k] = { x, rolls: [] }); if (e.rolls.indexOf(r) < 0) e.rolls.push(r);
+          });
+          (res.rotating || []).forEach((x) => {
+            String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+              const m = /^(VI|VII) · (.*)$/.exec(x.subject);
+              put(t, { year, period: m ? m[1] : 'VI/VII', klass: x.group, subject: m ? m[2] : x.subject, room: x.room || '', rotating: true });
+            });
+          });
+        });
+        Object.keys(map).forEach((k) => {
+          const e = map[k], secs = sectionsOf(e.rolls, rolls);
+          secs.forEach((sec) => {
+            const sk = e.x.period + '|' + e.x.subject + '|' + e.x.teacher + '|' + e.x.room + '|' + sec;
+            (slots[sk] = slots[sk] || { x: e.x, sec, groups: [] }).groups.push(g);
+          });
+        });
+      });
+      Object.keys(slots).forEach((k) => {
+        const sl = slots[k];
+        String(sl.x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
+          put(t, { year, period: sl.x.period, klass: sl.groups.join(', ') + (sl.sec !== 'All' ? ' (' + sl.sec + ')' : ''), subject: sl.x.subject, room: sl.x.room || '' }));
+      });
+    });
+    wlIndex = out;
+    return out;
+  }
+  const bsRows = (name) => ((DATA.faculty || {})[name] || []).filter((r) => !/year/i.test(String(r.level || '')));
+  function subjectsOf(name) {
+    const set = {};
+    (workloadIndex()[name] || []).forEach((e) => { if (!e.rotating) set[normSubj(e.subject)] = 1; });
+    return Object.keys(set);
+  }
+
   function renderFacultyList() {
     const term = $('facultySearch').value.trim().toLowerCase();
-    const names = Object.keys(DATA.faculty || {}).sort((a, b) => a.localeCompare(b));
-    const list = $('nameList');
-    if (!names.length) {
-      list.innerHTML = '<div class="empty">' + (dataLoaded ? 'No faculty listed yet.' : 'Couldn’t load faculty data. Connect to the internet once and try again.') + '</div>';
-      return;
-    }
-    const matches = names.filter((n) => {
-      if (!term) return true;
-      if (n.toLowerCase().includes(term)) return true;
-      return (DATA.faculty[n] || []).some((c) => [c.course, c.code, c.level].join(' ').toLowerCase().includes(term));
+    const wl = workloadIndex();
+    const all = staffList().map((s) => Object.assign({}, s, { n: (wl[s.name] || []).filter((e) => !e.rotating).length + bsRows(s.name).length, subj: s.subject || subjectsOf(s.name).join(', ') }));
+    const matches = all.filter((s) => !term || [s.name, s.designation, s.subj].join(' ').toLowerCase().includes(term));
+    if (!matches.length) { $('nameList').innerHTML = '<div class="card"><div class="empty">No match for “' + esc(term) + '”.</div></div>'; return; }
+    let h = '';
+    DESIG_ORDER.concat(['Other']).forEach((d) => {
+      const list = matches.filter((s) => (DESIG_ORDER.indexOf(s.designation) < 0 ? 'Other' : s.designation) === d);
+      if (!list.length) return;
+      h += '<div class="section-title">' + esc(d === 'Professor' ? 'Professors' : d === 'Principal' ? 'Principal' : d + 's') + ' <span class="rotate-tag" style="background:var(--chip-bg);color:var(--chip-text)">' + list.length + '</span></div><div class="card">' +
+        list.map((s) => '<button class="name-row" data-go="/faculty/' + encodeURIComponent(s.name) + '"><span class="prof-av sm">' + esc(initials(s.name)) + '</span>' +
+          '<span><b>' + esc(s.name) + '</b><div class="tt-menu-sub">' + esc(s.subj || s.designation) + '</div></span>' +
+          '<span class="count">' + (s.n ? s.n + ' class' + (s.n === 1 ? '' : 'es') : '') + '</span><span class="chev">&rsaquo;</span></button>').join('') + '</div>';
     });
-    list.innerHTML = matches.length ? matches.map((n, i) => {
-      const k = (DATA.faculty[n] || []).length;
-      return '<button class="name-row" data-go="/faculty/' + encodeURIComponent(n) + '">' +
-        '<span class="idx">' + (i + 1) + '</span><span>' + esc(n) + '</span>' +
-        '<span class="count">' + k + ' class' + (k === 1 ? '' : 'es') + '</span><span class="chev">&rsaquo;</span></button>';
-    }).join('') : '<div class="empty">No match for “' + esc(term) + '”.</div>';
+    $('nameList').innerHTML = h;
   }
   $('facultySearch').addEventListener('input', renderFacultyList);
+  function initials(n) { return String(n).replace(/^(Prof|Dr|Mr|Ms)\.\s+/, '').replace(/^(Muhammad|M\.|Syed|Hafiz|Malik)\s+/i, '').split(/[\s-]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join(''); }
 
   function periodIndex(p) { const i = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].indexOf(String(p).trim()); return i < 0 ? 99 : i; }
 
   function renderWorkload(name) {
-    const rows = (DATA.faculty || {})[name];
-    if (!rows) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    const st = staffList().find((x) => x.name === name);
+    if (!st) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    const all = (workloadIndex()[name] || []).slice().sort((a, b) => a.year - b.year || periodIndex(a.period) - periodIndex(b.period));
+    const fixed = all.filter((e) => !e.rotating), rot = all.filter((e) => e.rotating), bs = bsRows(name);
+    const subj = st.subject || subjectsOf(name).join(', ');
+    $('profAv').textContent = initials(name);
     $('profName').textContent = name;
-    const sorted = rows.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
-    $('wlBody').innerHTML = sorted.length ? sorted.map((r) =>
-      '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + '</td><td>' + esc(r.code) + '</td><td>' + esc(r.room) + '</td></tr>'
-    ).join('') : '<tr><td colspan="5" class="empty">No classes listed.</td></tr>';
+    $('profSub').innerHTML = esc(st.designation) + (subj ? ' · ' + esc(subj) : '');
+    const periods = new Set(fixed.map((e) => e.year + e.period));
+    $('profStats').innerHTML = '<div class="stat"><b>' + fixed.length + '</b><span>Intermediate classes</span></div>' +
+      '<div class="stat"><b>' + bs.length + '</b><span>BS classes</span></div><div class="stat"><b>' + rot.length + '</b><span>VI–VII / practicals</span></div>';
+    const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
+      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : esc(e.klass)) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    let h = '';
+    [1, 2].forEach((y) => {
+      const rows = fixed.filter((e) => e.year === y);
+      if (rows.length) h += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false);
+    });
+    if (bs.length) h += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
+      bs.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    if (rot.length) h += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
+    if (!h) h = '<div class="card"><div class="empty">No classes are assigned to ' + esc(name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
+    h += '<p class="note">From the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) timetables' + (bs.length ? ' and the Statistics Department BS workload' : '') + '. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.</p>';
+    $('wlOut').innerHTML = h;
     return true;
   }
 
