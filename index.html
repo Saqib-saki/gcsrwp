@@ -134,6 +134,25 @@
   table.sum td.low { color: var(--red); font-weight: 800; }
   /* enter marks */
   .mark-btn-2 { background: #1a5d4a; }
+  .mark-btn-3 { background: #6b2d5c; }
+  .tnote { font-size: 0.78rem; margin: 2px 0 10px; padding: 7px 10px; border-radius: 10px; background: var(--chip-bg); color: var(--chip-text); }
+  .tnote.late { background: #fdeedb; color: #8a4b00; } .tnote.wait { background: #fde4e1; color: #9b1c1c; } .tnote.ok { background: #dff3e6; color: #17603a; }
+  .bd-per { font-weight: 800; font-size: 0.82rem; color: var(--muted); margin: 14px 2px 6px; display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: .04em; }
+  .bd-row { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .bd-row:last-child { border-bottom: none; }
+  .bd-row .bd-main { flex: 1; min-width: 0; }
+  .bd-row .bd-t { font-weight: 700; font-size: 0.86rem; }
+  .bd-row .bd-s { font-size: 0.74rem; color: var(--muted); }
+  .bd-b { font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 20px; white-space: nowrap; }
+  .b-ok { background: #dff3e6; color: #17603a; } .b-late { background: #fdeedb; color: #8a4b00; } .b-miss { background: #fde4e1; color: #9b1c1c; }
+  .b-now { background: #e3ecfb; color: #1d4f9c; } .b-up { background: var(--chip-bg); color: var(--muted); } .b-off { background: #efe6fb; color: #5b2a9c; } .b-adm { background: #e6f0f0; color: #245b5b; }
+  .stat-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+  table.bd-wk { font-size: 0.8rem; } table.bd-wk th, table.bd-wk td { padding: 8px 5px; } table.bd-wk th { text-transform: none; }
+  .stat-grid.g4 .stat { padding: 8px; } .stat-grid.g4 .stat b { font-size: 1.1rem; }
+  @media (prefers-color-scheme: dark) {
+    .b-ok, .tnote.ok { background: #183d2a; color: #9be3b7; } .b-late, .tnote.late { background: #3d2c14; color: #f5c27a; } .b-miss, .tnote.wait { background: #43201f; color: #f5a3a0; }
+    .b-now { background: #1c2e4d; color: #9cc0f5; } .b-off { background: #2e2045; color: #c9a8f5; } .b-adm { background: #1c3535; color: #9fd6d6; }
+  }
   .mk-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
   .mk-row:last-child { border-bottom: none; }
   .mk-row .roll { font-weight: 800; color: var(--accent); width: 42px; flex-shrink: 0; }
@@ -397,6 +416,11 @@
       <span><div class="q-title">Enter Marks</div><div class="q-sub">Teachers · monthly tests · sign in with your PIN</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
+    <button class="mark-btn mark-btn-3" id="boardBtn" data-go="/board" style="display:none">
+      <span style="font-size:1.4rem">📋</span>
+      <span><div class="q-title">Principal’s Board</div><div class="q-sub">Admins · who marked attendance today, weekly report</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
     <button class="quick" id="quickRoll">
       <span class="q-emoji">⚡</span>
       <span><div class="q-title" id="quickRollTitle"></div><div class="q-sub">Open your saved time table</div></span>
@@ -442,11 +466,13 @@
           <div class="field"><label for="attPeriod">Period</label><select id="attPeriod"><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option><option>VII</option></select></div>
           <div class="field"><label for="attOtherSubj">Subject</label><input id="attOtherSubj" placeholder="Subject name"></div>
         </div>
+        <div class="tnote" id="attTimeNote" style="display:none"></div>
         <button class="btn-primary" id="attLoad">Load students</button>
         <div class="tt-error" id="attErr"></div>
         <p class="note" id="attScopeNote" style="margin-top:6px"></p>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
         <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open student records (attendance &amp; results)</button>
+        <button class="link-btn" id="attBoardLink" data-go="/board" style="margin:6px 0 0; display:none">📋 Principal’s Board (admins)</button>
       </div>
 
       <div id="attListWrap" style="display:none; margin-top:14px">
@@ -511,6 +537,50 @@
   </section>
 
   <!-- ATTENDANCE RECORDS (student-wise / class-wise / all students) -->
+  <section class="view" id="view-board">
+    <div class="card pad" id="bdLogin">
+      <p class="screen-title" style="margin-top:0">Principal &amp; admins only. Sign in with your name and PIN.</p>
+      <div class="field"><label for="bdName">Your name</label><input id="bdName" autocomplete="username" placeholder="e.g. Dr. Athar Qaseem (Principal)"></div>
+      <div class="field"><label for="bdPin">PIN</label><input id="bdPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
+      <button class="btn-primary" id="bdLoginBtn">Sign in</button>
+      <div class="tt-error" id="bdLoginErr"></div>
+    </div>
+    <div id="bdMain" style="display:none">
+      <div class="signed-in">👤 <span>Signed in as <b id="bdWho"></b></span><button class="link-btn" id="bdLogout">Sign out</button></div>
+      <div id="bdNotAdmin" class="card pad" style="display:none"><p style="margin:0">Only the Principal and admins can see this board.</p></div>
+      <div id="bdAdmin">
+        <div class="seg" id="bdTabs">
+          <button data-tab="day" class="on">📋 Day board</button>
+          <button data-tab="week">📅 Weekly report</button>
+        </div>
+        <div id="bdDay">
+          <div class="card pad">
+            <div class="field-row">
+              <div class="field"><label for="bdDate">Date</label><input id="bdDate" type="date"></div>
+              <div class="field"><label for="bdFilter">Show</label><select id="bdFilter"><option value="all">All lectures</option><option value="miss">❌ Not marked</option><option value="late">⏰ Late / 📵 offline</option></select></div>
+            </div>
+            <button class="btn-primary" id="bdReload">↻ Refresh</button>
+            <div class="tt-error" id="bdErr"></div>
+          </div>
+          <div id="bdStats" class="stat-grid g4" style="margin-top:12px"></div>
+          <div id="bdList"></div>
+          <p class="note" id="bdNote"></p>
+        </div>
+        <div id="bdWeek" style="display:none">
+          <div class="card pad">
+            <div class="field-row">
+              <div class="field"><label for="bdFrom">From</label><input id="bdFrom" type="date"></div>
+              <div class="field"><label for="bdTo">To</label><input id="bdTo" type="date"></div>
+            </div>
+            <button class="btn-primary" id="bdWeekGo">Show report</button>
+            <div class="tt-error" id="bdWeekErr"></div>
+          </div>
+          <div id="bdWeekOut" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="view" id="view-rec">
     <div class="card pad" id="recLogin">
       <p class="screen-title" style="margin-top:0">Teachers &amp; admin only. Sign in with the same name and PIN you use for Mark Attendance.</p>
@@ -735,6 +805,7 @@
     attendance:    { view: 'view-att',           title: () => 'Mark Attendance',    parent: '/' },
     records:       { view: 'view-rec',           title: () => 'Student Records', parent: '/' },
     marks:         { view: 'view-marks',         title: () => 'Enter Marks',        parent: '/' },
+    board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
 
@@ -782,6 +853,7 @@
     if (r.key === 'attendance') renderAttendance();
     if (r.key === 'records') renderRecords();
     if (r.key === 'marks') renderMarks();
+    if (r.key === 'board') renderBoard();
     if (!ok) return;
 
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === route.view));
@@ -808,6 +880,7 @@
   }
 
   function renderHome() {
+    if ($('boardBtn')) $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const nf = Object.keys(DATA.faculty || {}).length;
     $('facultyTileSub').textContent = nf ? nf + ' faculty · Statistics Dept.' : 'Statistics Dept.';
@@ -1015,6 +1088,42 @@
   }
 
   function todayISO() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+
+  /* ---------- bell times (attendance time rule, from the Bell Times sheet) ---------- */
+  let BELL = null; try { BELL = JSON.parse(store.get('bell') || 'null'); } catch (e) {}
+  function setBell(b) { if (b && b.periods) { BELL = b; store.set('bell', JSON.stringify(b)); } }
+  async function refreshBell() { if (!attAuth || !navigator.onLine) return; try { setBell(await attApi('bell')); paintTimeNote(); } catch (e) {} }
+  const fmtHM = (m) => { const h = Math.floor(m / 60), mm = m % 60; return (((h + 11) % 12) + 1) + ':' + (mm < 10 ? '0' : '') + mm; };
+  function periodWin(period, iso) {
+    const p = BELL && BELL.periods && BELL.periods[String(period).trim()]; if (!p) return null;
+    const wd = new Date(iso + 'T12:00:00Z').getUTCDay(); if (wd === 0) return null;
+    return wd === 5 ? p.fri : p.week;
+  }
+  const nowMinLocal = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+  const isAdminUser = () => !!(attAuth && attAuth.role === 'Admin');
+  /** {state: wait|ok|late|none, text} for the chosen lecture, as a teacher would be judged now */
+  function timeState(period) {
+    const today = todayISO();
+    if (!BELL || BELL.rule === false) return { state: 'none', text: '' };
+    if (new Date(today + 'T12:00:00Z').getUTCDay() === 0) return { state: 'wait', text: 'No classes today (Sunday).' };
+    const w = periodWin(period, today); if (!w) return { state: 'none', text: '' };
+    const n = nowMinLocal(), span = fmtHM(w[0]) + '–' + fmtHM(w[1]);
+    if (n < w[0]) return { state: 'wait', text: '⏳ Period ' + period + ' is ' + span + '. You can mark attendance from ' + fmtHM(w[0]) + '.' };
+    if (n < w[1]) return { state: 'ok', text: '✅ Period ' + period + ' is on now (' + span + ') — saving now counts as On time. ' + (w[1] - n) + ' min left.' };
+    return { state: 'late', text: '⏰ Period ' + period + ' ended at ' + fmtHM(w[1]) + '. You can still save today, but it will show as Late.' };
+  }
+  function paintTimeNote() {
+    const el = $('attTimeNote'); if (!el || !attAuth) return;
+    const admin = isAdminUser();
+    $('attDate').disabled = !admin && !!(BELL && BELL.rule !== false);
+    if (!admin && BELL && BELL.rule !== false) $('attDate').value = todayISO();
+    $('attBoardLink').style.display = admin ? 'block' : 'none';
+    if (admin) { el.style.display = 'block'; el.className = 'tnote'; el.textContent = 'Admin: you can enter or correct any date and period.'; return; }
+    const lec = currentLecture();
+    const t = timeState(lec ? lec.period : '');
+    el.style.display = t.text ? 'block' : 'none'; el.className = 'tnote ' + t.state; el.textContent = t.text;
+  }
+  setInterval(() => { if (parseHash().key === 'attendance') paintTimeNote(); }, 30000);
   function groupRange(code) { return (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).find((g) => g[0] === code); }
 
   function lecturesFor(group, section) {
@@ -1136,6 +1245,15 @@
     $('attSubject').dataset.list = JSON.stringify(list);
     $('attOtherRow').style.display = list.length ? 'none' : 'grid';
     if (!list.length) $('attSubject').value = 'other';
+    else pickCurrentLecture(list);
+    paintTimeNote();
+  }
+  /** pre-select the lecture that is on now (or the next one) */
+  function pickCurrentLecture(list) {
+    if (!BELL || $('attDate').value !== todayISO()) return;
+    const n = nowMinLocal(); let best = -1;
+    list.forEach((l, i) => { if (l.rotating) return; const w = periodWin(l.period, todayISO()); if (!w) return; if (n >= w[0] && n < w[1]) best = i; });
+    if (best >= 0) $('attSubject').value = String(best);
   }
 
   function currentLecture() {
@@ -1179,6 +1297,8 @@
       attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; store.set('attAuth', JSON.stringify(attAuth)); fillAttGroups(); }).catch(() => {});
     }
     if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
+    if (!BELL || BELL.today !== todayISO()) refreshBell();
+    paintTimeNote();
     flushQueue(true);
   }
 
@@ -1190,6 +1310,7 @@
     try {
       const j = await attApi('login', {}, { name, pin });
       attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('attLoginBtn').disabled = false; $('attLoginBtn').textContent = 'Sign in';
@@ -1203,7 +1324,10 @@
     $('attOtherRow').style.display = (v === 'other' || (l && l.rotating)) ? 'grid' : 'none';
     $('attOtherSubj').parentElement.style.display = v === 'other' ? 'block' : 'none';
     $('attListWrap').style.display = 'none';
+    paintTimeNote();
   });
+  $('attPeriod').addEventListener('change', paintTimeNote);
+  $('attDate').addEventListener('change', paintTimeNote);
 
   function paintList() {
     const c = { P: 0, A: 0, L: 0 };
@@ -1218,6 +1342,7 @@
     const lec = currentLecture(), date = $('attDate').value;
     if (!date) { $('attErr').textContent = 'Choose a date.'; return; }
     if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
+    if (!isAdminUser()) { const t = timeState(lec.period); if (t.state === 'wait') { $('attErr').textContent = 'Not yet — you can load the list when the period starts.'; return; } }
     attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value };
     store.set('attLastGroup', attCtx.group);
     $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
@@ -1252,10 +1377,12 @@
     const payload = Object.assign({}, attCtx, { marks: attStudents.map((s) => ({ roll: s.roll, status: attMarks[s.roll] })) });
     try {
       const j = await attApi('submit', payload);
-      toast('Saved ✓ ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : ''));
+      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry' };
+      toast('Saved ✓ ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : '') + (TL[j.timing] || ''));
       $('attListWrap').style.display = 'none'; window.scrollTo(0, 0);
     } catch (e) {
       if (e.offline) {
+        payload.queuedAt = Date.now();
         const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('No internet — saved on this phone. It will be sent automatically.');
         $('attListWrap').style.display = 'none';
@@ -1833,6 +1960,208 @@
   });
 
   /* ---------- chrome / network ---------- */
+
+  /* ---------- Principal's board: who marked attendance, on time or late ---------- */
+  let allLecCache = null;
+  /** every fixed lecture in the timetable: [{group, section, period, subject, teacher}] (rotating VI/VII not included) */
+  function allLectures() {
+    if (allLecCache) return allLecCache;
+    const out = [], seen = {};
+    (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).forEach(([g, lo, hi]) => {
+      const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+      const map = {};
+      rolls.forEach((r) => {
+        const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res) return;
+        (res.rows || []).forEach((x) => {
+          if (!x.period || !x.subject) return;
+          const k = x.period + '|' + x.subject + '|' + (x.teacher || '');
+          const e = map[k] || (map[k] = { period: x.period, subject: x.subject, teacher: x.teacher || '', rolls: [] });
+          if (e.rolls.indexOf(r) < 0) e.rolls.push(r);
+        });
+      });
+      Object.keys(map).forEach((k) => {
+        const e = map[k];
+        sectionsOf(e.rolls, rolls).forEach((sec) => {
+          const key = g + '|' + sec + '|' + e.period + '|' + e.subject;
+          if (seen[key]) return; seen[key] = 1;
+          out.push({ group: g, section: sec, period: e.period, subject: e.subject, teacher: e.teacher });
+        });
+      });
+    });
+    out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group, undefined, { numeric: true }) || a.section.localeCompare(b.section));
+    allLecCache = out;
+    return out;
+  }
+  const noLogin = (t) => /^\s*(cti|tba|—|-)?\s*$/i.test(String(t || ''));
+  const secCompat = (a, b) => a === b || a === 'All' || b === 'All';
+  const sameSubj = (a, b) => normSubj(a).toLowerCase() === normSubj(b).toLowerCase();
+  /** match the lectures saved on one date to the timetable; returns {items, extra} */
+  function boardDay(date, rows, info) {
+    const day = rows.filter((r) => r.date === date), used = new Set();
+    const wd = new Date(date + 'T12:00:00Z').getUTCDay();
+    const items = wd === 0 ? [] : allLectures().map((e) => {
+      const slot = day.filter((r) => r.period === e.period && r.group === e.group && secCompat(r.section, e.section));
+      const hit = slot.find((r) => sameSubj(r.subject, e.subject)) || slot[0] || null;
+      if (hit) used.add(hit);
+      const win = periodWin(e.period, date);
+      let st;
+      if (hit) st = hit.status === 'Late' ? 'late' : hit.status === 'Offline' ? 'off' : hit.status === 'Admin' ? 'adm' : 'ok';
+      else if (noLogin(e.teacher)) st = 'cti';
+      else if (date < info.today) st = 'miss';
+      else if (date > info.today || !win) st = 'up';
+      else st = info.nowMin >= win[1] ? 'miss' : info.nowMin >= win[0] ? 'now' : 'up';
+      return Object.assign({}, e, { hit, st, win });
+    });
+    const extra = day.filter((r) => !used.has(r));
+    return { items, extra };
+  }
+  const BADGE = {
+    ok: (h) => '<span class="bd-b b-ok">✅ ' + esc(h.first) + '</span>',
+    late: (h) => '<span class="bd-b b-late">⏰ Late ' + esc(h.first) + '</span>',
+    off: (h) => '<span class="bd-b b-off">📵 Sent later</span>',
+    adm: () => '<span class="bd-b b-adm">🛠 Admin</span>',
+    miss: () => '<span class="bd-b b-miss">❌ Not marked</span>',
+    now: () => '<span class="bd-b b-now">⏳ On now</span>',
+    up: () => '<span class="bd-b b-up">Upcoming</span>',
+    cti: () => '<span class="bd-b b-up">CTI · no login</span>'
+  };
+  let bdTab = 'day', bdData = null;
+  function renderBoard() {
+    const signed = !!attAuth;
+    $('bdLogin').style.display = signed ? 'none' : 'block';
+    $('bdMain').style.display = signed ? 'block' : 'none';
+    if (!signed) { $('bdName').value = store.get('attLastName') || ''; return; }
+    $('bdWho').textContent = attAuth.name;
+    const admin = isAdminUser();
+    $('bdNotAdmin').style.display = admin ? 'none' : 'block';
+    $('bdAdmin').style.display = admin ? 'block' : 'none';
+    if (!admin) return;
+    if (!$('bdDate').value) $('bdDate').value = todayISO();
+    if (!$('bdFrom').value) { const d = new Date(todayISO() + 'T12:00:00Z'); const back = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - back); $('bdFrom').value = d.toISOString().slice(0, 10); $('bdTo').value = todayISO(); }
+    showBdTab(bdTab);
+  }
+  function showBdTab(tab) {
+    bdTab = tab;
+    document.querySelectorAll('#bdTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    $('bdDay').style.display = tab === 'day' ? 'block' : 'none';
+    $('bdWeek').style.display = tab === 'week' ? 'block' : 'none';
+    if (tab === 'day') loadBoardDay();
+  }
+  $('bdTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showBdTab(b.dataset.tab); });
+  $('bdLoginBtn').addEventListener('click', async () => {
+    const name = $('bdName').value.trim(), pin = $('bdPin').value.trim();
+    $('bdLoginErr').textContent = '';
+    if (!name || !pin) { $('bdLoginErr').textContent = 'Enter your name and PIN.'; return; }
+    $('bdLoginBtn').disabled = true;
+    try {
+      const j = await attApi('login', {}, { name, pin });
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
+    } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
+    $('bdLoginBtn').disabled = false;
+  });
+  $('bdPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('bdLoginBtn').click(); });
+  $('bdLogout').addEventListener('click', () => { recSignOut(); renderBoard(); });
+  $('bdReload').addEventListener('click', () => loadBoardDay());
+  $('bdDate').addEventListener('change', () => loadBoardDay());
+  $('bdFilter').addEventListener('change', () => paintBoardDay());
+
+  async function loadBoardDay() {
+    const date = $('bdDate').value || todayISO();
+    $('bdErr').textContent = ''; $('bdReload').disabled = true; $('bdReload').textContent = 'Loading…';
+    try {
+      const j = await attApi('lectures', { from: date, to: date });
+      setBell({ rule: j.rule, periods: j.periods, today: j.today, nowMin: j.nowMin, weekday: j.weekday });
+      bdData = { date, j };
+      paintBoardDay();
+    } catch (e) { if (!recAuthFail(e)) $('bdErr').textContent = e.offline ? 'You need internet to see the board.' : /Unknown action/.test(e.message) ? 'The attendance service needs the v4 update (Apps Script → Manage deployments → New version).' : e.message; if (/PIN|sign in/i.test(e.message)) renderBoard(); }
+    $('bdReload').disabled = false; $('bdReload').textContent = '↻ Refresh';
+  }
+  function paintBoardDay() {
+    if (!bdData) return;
+    const { date, j } = bdData;
+    if (new Date(date + 'T12:00:00Z').getUTCDay() === 0) { $('bdStats').innerHTML = ''; $('bdList').innerHTML = '<div class="card pad empty">Sunday — no classes.</div>'; $('bdNote').textContent = ''; return; }
+    const { items, extra } = boardDay(date, j.rows, j);
+    const cnt = (f) => items.filter(f).length;
+    const done = cnt((x) => x.st === 'ok' || x.st === 'adm'), late = cnt((x) => x.st === 'late' || x.st === 'off'), miss = cnt((x) => x.st === 'miss'), wait = cnt((x) => x.st === 'now' || x.st === 'up');
+    $('bdStats').innerHTML = '<div class="stat"><b>' + done + '</b><span>✅ On time</span></div><div class="stat"><b>' + late + '</b><span>⏰ Late</span></div>' +
+      '<div class="stat"><b style="color:var(--red)">' + miss + '</b><span>❌ Not marked</span></div><div class="stat"><b>' + wait + '</b><span>⏳ Still to come</span></div>';
+    const f = $('bdFilter').value;
+    const show = (x) => f === 'all' || (f === 'miss' ? x.st === 'miss' : (x.st === 'late' || x.st === 'off'));
+    const periods = [];
+    items.forEach((x) => { if (periods.indexOf(x.period) < 0) periods.push(x.period); });
+    let h = '';
+    periods.forEach((p) => {
+      const list = items.filter((x) => x.period === p && show(x)); if (!list.length) return;
+      const w = periodWin(p, date);
+      const live = w && date === j.today ? (j.nowMin >= w[1] ? 'done' : j.nowMin >= w[0] ? 'on now' : '') : '';
+      h += '<div class="bd-per"><span>Period ' + esc(p) + (w ? ' · ' + fmtHM(w[0]) + '–' + fmtHM(w[1]) : '') + '</span><span>' + live + '</span></div><div class="card">' +
+        list.map((x) => {
+          const hit = x.hit;
+          const sub = hit ? esc(hit.teacher) + ' · P ' + hit.present + ' · A ' + hit.absent + (hit.leave ? ' · L ' + hit.leave : '') + (hit.last !== hit.first ? ' · corrected ' + esc(hit.last) : '') +
+            (!sameSubj(hit.subject, x.subject) ? ' · marked as ' + esc(hit.subject) : '') + (hit.section !== x.section ? ' · marked for ' + esc(hit.section) : '') + (hit.note ? '<br>' + esc(hit.note) : '')
+            : esc(x.teacher || '—');
+          return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + esc(x.group) + (x.section !== 'All' ? ' · ' + esc(x.section) : '') + ' — ' + esc(x.subject) + '</div><div class="bd-s">' + sub + '</div></div>' + BADGE[x.st](hit || {}) + '</div>';
+        }).join('') + '</div>';
+    });
+    if (f === 'all' && extra.length) {
+      h += '<div class="bd-per"><span>Other lectures marked (substitute / VI–VII / not in timetable)</span></div><div class="card">' + extra.sort((a, b) => periodIndex(a.period) - periodIndex(b.period)).map((r) => {
+        const st = r.status === 'Late' ? 'late' : r.status === 'Offline' ? 'off' : r.status === 'Admin' ? 'adm' : 'ok';
+        return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + esc(r.period) + ' · ' + esc(r.group) + (r.section !== 'All' ? ' · ' + esc(r.section) : '') + ' — ' + esc(r.subject) + '</div><div class="bd-s">' + esc(r.teacher) + ' · P ' + r.present + ' · A ' + r.absent + (r.note ? '<br>' + esc(r.note) : '') + '</div></div>' + BADGE[st](r) + '</div>';
+      }).join('') + '</div>';
+    }
+    $('bdList').innerHTML = h || '<div class="card pad empty">Nothing to show for this filter.</div>';
+    $('bdNote').textContent = 'Based on the fixed timetable (Periods I–V). ✅ saved during the period · ⏰ saved after it ended · 📵 saved on a phone without internet and sent later (phone time shown). Updated ' + fmtHM(j.nowMin) + '.';
+  }
+
+  $('bdWeekGo').addEventListener('click', async () => {
+    const from = $('bdFrom').value, to = $('bdTo').value;
+    $('bdWeekErr').textContent = '';
+    if (!from || !to || from > to) { $('bdWeekErr').textContent = 'Choose a valid date range.'; return; }
+    $('bdWeekGo').disabled = true; $('bdWeekGo').textContent = 'Loading…';
+    try {
+      const j = await attApi('lectures', { from, to });
+      paintWeek(from, to, j);
+    } catch (e) { if (!recAuthFail(e)) $('bdWeekErr').textContent = e.offline ? 'You need internet.' : e.message; }
+    $('bdWeekGo').disabled = false; $('bdWeekGo').textContent = 'Show report';
+  });
+  function paintWeek(from, to, j) {
+    const days = [];
+    for (let d = new Date(from + 'T12:00:00Z'); d.toISOString().slice(0, 10) <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+      const iso = d.toISOString().slice(0, 10);
+      if (d.getUTCDay() === 0 || iso > j.today) continue;
+      if (!j.rows.some((r) => r.date === iso)) continue; // nobody marked anything → holiday / no classes
+      days.push(iso);
+    }
+    const T = {};
+    const add = (name) => T[name] || (T[name] = { name, due: 0, ok: 0, late: 0, off: 0, miss: 0, missed: [] });
+    days.forEach((iso) => {
+      boardDay(iso, j.rows, j).items.forEach((x) => {
+        if (x.st === 'cti' || x.st === 'up' || x.st === 'now') return;
+        String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+          const e = add(t); e.due++;
+          if (x.st === 'ok' || x.st === 'adm') e.ok++; else if (x.st === 'late') e.late++; else if (x.st === 'off') e.off++;
+          else { e.miss++; e.missed.push(fmtDate(iso) + ' · ' + x.period + ' · ' + x.group + (x.section !== 'All' ? ' ' + x.section : '') + ' ' + x.subject); }
+        });
+      });
+    });
+    const list = Object.keys(T).map((k) => T[k]).sort((a, b) => b.miss - a.miss || b.late - a.late || a.name.localeCompare(b.name));
+    const pct = (e) => e.due ? Math.round(100 * e.ok / e.due) : 0;
+    const tot = list.reduce((a, e) => ({ due: a.due + e.due, ok: a.ok + e.ok, late: a.late + e.late + e.off, miss: a.miss + e.miss }), { due: 0, ok: 0, late: 0, miss: 0 });
+    let h = '<div class="stat-grid g4"><div class="stat"><b>' + days.length + '</b><span>Days counted</span></div><div class="stat"><b>' + (tot.due ? Math.round(100 * tot.ok / tot.due) : 0) + '%</b><span>✅ On time</span></div>' +
+      '<div class="stat"><b>' + tot.late + '</b><span>⏰ Late</span></div><div class="stat"><b style="color:var(--red)">' + tot.miss + '</b><span>❌ Not marked</span></div></div>';
+    h += '<div class="card" style="overflow-x:auto"><table class="wl sum bd-wk"><thead><tr><th>Teacher</th><th class="num">Due</th><th class="num">✅</th><th class="num">⏰</th><th class="num">📵</th><th class="num">❌</th><th class="num">On time</th></tr></thead><tbody>' +
+      list.map((e) => '<tr><td>' + esc(e.name) + '</td><td class="num">' + e.due + '</td><td class="num">' + e.ok + '</td><td class="num">' + e.late + '</td><td class="num">' + e.off + '</td><td class="num' + (e.miss ? ' low' : '') + '">' + e.miss + '</td><td class="num' + (pct(e) < 75 ? ' low' : '') + '">' + pct(e) + '%</td></tr>').join('') +
+      '</tbody></table></div>';
+    const withMiss = list.filter((e) => e.missed.length);
+    if (withMiss.length) h += '<div class="bd-per"><span>Lectures not marked</span></div><div class="card pad">' + withMiss.map((e) => '<details><summary><b>' + esc(e.name) + '</b> — ' + e.missed.length + '</summary><ul style="margin:6px 0 10px;padding-left:18px;font-size:0.8rem">' + e.missed.map((m) => '<li>' + esc(m) + '</li>').join('') + '</ul></details>').join('') + '</div>';
+    h += '<button class="link-btn" id="bdWeekCsv" style="margin-top:10px">⬇ Download CSV</button>';
+    h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended; CTI lectures are not counted.</p>';
+    $('bdWeekOut').innerHTML = h;
+    $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + from + '_to_' + to + '.csv',
+      [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
+  }
+
   function applyChrome() {
     $('headerSub').textContent = DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi';
     $('footCollege').textContent = DATA.collegeName || '';
@@ -1842,6 +2171,7 @@
     $('footDev').textContent = dev ? 'Developed by ' + dev + (dept ? ', ' + dept : '') : '';
     $('aboutDev').textContent = dev || '—';
     $('markBtn').style.display = DATA.attendanceApi ? 'flex' : 'none';
+    $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('marksBtn').style.display = DATA.attendanceApi ? 'flex' : 'none';
     $('footUpdated').textContent = DATA.updatedAt ? 'Data updated ' + fmtDate(DATA.updatedAt) : '';
   }
