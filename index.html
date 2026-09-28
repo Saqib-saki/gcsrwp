@@ -444,6 +444,7 @@
         </div>
         <button class="btn-primary" id="attLoad">Load students</button>
         <div class="tt-error" id="attErr"></div>
+        <p class="note" id="attScopeNote" style="margin-top:6px"></p>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
         <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open student records (attendance &amp; results)</button>
       </div>
@@ -1030,8 +1031,105 @@
     return out;
   }
 
+  /* ---------- which classes does the signed-in teacher take? (from the timetable) ---------- */
+  const SECTIONS_ALL = ['All', 'Odd', 'Even', 'Urdu Batch 1', 'Urdu Batch 2', 'Urdu Batch 3'];
+  const nameKey = (n) => String(n || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/^\s*(prof|pro|pr|dr|mr|ms|mrs|miss|sir)\.?\s+/, '').replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+  function nearSame(a, b) {
+    if (a === b) return true;
+    if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
+    let i = 0, j = 0, e = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++e > 1) return false;
+      if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+    }
+    return e + (a.length - i) + (b.length - j) <= 1;
+  }
+  function subjOk(group, subj) {
+    const t = (attAuth && attAuth.teaches) || [];
+    const mine = t.filter((x) => x.group === group);
+    if (!t.length) return true;
+    return mine.some((x) => normSubj(x.subject).toLowerCase() === normSubj(subj).toLowerCase());
+  }
+  function isMe(teacherField, subj, group) {
+    const me = nameKey(attAuth && attAuth.name);
+    if (!me) return false;
+    return String(teacherField || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && subjOk(group, subj);
+  }
+  function sectionsOf(mine, all) {
+    const eq = (a, b) => a.length === b.length && a.every((x) => b.indexOf(x) >= 0);
+    if (mine.length === all.length) return ['All'];
+    if (eq(mine, all.filter((r) => r % 2 === 1))) return ['Odd'];
+    if (eq(mine, all.filter((r) => r % 2 === 0))) return ['Even'];
+    const out = [];
+    [1, 2, 3].forEach((k) => { const b = all.filter((r) => (r % 3 === 0 ? 3 : r % 3) === k); if (b.length && b.every((r) => mine.indexOf(r) >= 0)) out.push('Urdu Batch ' + k); });
+    return out.length ? out : ['All'];
+  }
+  let myClassesCache = null;
+  /** [{group, section, lectures:[{period, subject, teacher, rotating}]}] for the signed-in teacher; [] if not found in the timetable */
+  function myClasses() {
+    if (!attAuth) return [];
+    const key = attAuth.name + '|' + JSON.stringify(attAuth.teaches || []);
+    if (myClassesCache && myClassesCache.key === key) return myClassesCache.list;
+    const out = {};
+    (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).forEach(([g, lo, hi]) => {
+      const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+      const map = {};
+      rolls.forEach((r) => {
+        const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res) return;
+        (res.rows || []).map((x) => ({ period: x.period, subject: x.subject, teacher: x.teacher }))
+          .concat((res.rotating || []).map((x) => ({ period: 'VI', subject: x.subject, teacher: x.teacher, rotating: true })))
+          .forEach((x) => {
+            const k = x.period + '|' + x.subject;
+            const e = map[k] || (map[k] = { period: x.period, subject: x.subject, rotating: !!x.rotating, teacher: x.teacher, mine: [], all: [] });
+            if (e.all.indexOf(r) < 0) e.all.push(r);
+            if (isMe(x.teacher, x.subject, g) && e.mine.indexOf(r) < 0) { e.mine.push(r); e.teacher = x.teacher; }
+          });
+      });
+      Object.keys(map).forEach((k) => {
+        const e = map[k]; if (!e.mine.length) return;
+        sectionsOf(e.mine, e.all).forEach((sec) => {
+          const ck = g + '|' + sec;
+          const c = out[ck] || (out[ck] = { group: g, section: sec, lectures: [] });
+          c.lectures.push({ period: e.period, subject: e.subject, teacher: e.teacher, rotating: e.rotating });
+        });
+      });
+    });
+    const list = Object.keys(out).map((k) => out[k]);
+    myClassesCache = { key, list };
+    return list;
+  }
+  const limitToMine = () => attAuth && attAuth.role !== 'Admin' && myClasses().length > 0;
+  function groupOpts(groups) {
+    return groups.map((g) => '<option value="' + g + '">' + g + ' — ' + esc((GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</option>').join('');
+  }
+  function fillAttGroups() {
+    const mine = limitToMine();
+    const groups = mine ? ATT_GROUPS.filter((g) => myClasses().some((c) => c.group === g)) : ATT_GROUPS;
+    const prev = $('attGroup').value || store.get('attLastGroup');
+    $('attGroup').innerHTML = groupOpts(groups);
+    if (prev && groups.indexOf(prev) >= 0) $('attGroup').value = prev;
+    $('attGroup').dataset.who = attAuth ? attAuth.name : '';
+    $('attScopeNote').textContent = !attAuth || attAuth.role === 'Admin' ? '' : mine
+      ? 'Showing only your classes from the timetable. Use "Other subject / period…" for a substitute lecture.'
+      : 'Your name was not found in the timetable, so all groups are shown. Ask the admin to check your name/subjects in the Teachers sheet.';
+    fillAttSections();
+  }
+  function fillAttSections() {
+    const g = $('attGroup').value;
+    const secs = limitToMine() ? SECTIONS_ALL.filter((s) => myClasses().some((c) => c.group === g && c.section === s)) : SECTIONS_ALL;
+    const prev = $('attSection').value;
+    $('attSection').innerHTML = (secs.length ? secs : SECTIONS_ALL).map((s) => '<option>' + s + '</option>').join('');
+    if (prev && secs.indexOf(prev) >= 0) $('attSection').value = prev;
+    fillSubjects();
+  }
+
   function fillSubjects() {
-    const list = lecturesFor($('attGroup').value, $('attSection').value);
+    const g = $('attGroup').value, sec = $('attSection').value;
+    const list = limitToMine()
+      ? myClasses().filter((c) => c.group === g && c.section === sec).reduce((a, c) => a.concat(c.lectures), [])
+        .sort((a, b) => periodIndex(a.period) - periodIndex(b.period))
+      : lecturesFor(g, sec);
     $('attSubject').innerHTML = list.map((l, i) =>
       '<option value="' + i + '">' + (l.rotating ? 'VI/VII' : l.period) + ' · ' + esc(l.subject) + (l.teacher ? ' (' + esc(l.teacher) + ')' : '') + '</option>'
     ).join('') + '<option value="other">Other subject / period…</option>';
@@ -1077,11 +1175,10 @@
     if (!signed) { $('attName').value = store.get('attLastName') || ''; return; }
     $('attWho').textContent = attAuth.name;
     if (!$('attDate').value) $('attDate').value = todayISO();
-    if (!$('attGroup').options.length) {
-      $('attGroup').innerHTML = ATT_GROUPS.map((g) => '<option value="' + g + '">' + g + ' — ' + esc((GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</option>').join('');
-      const last = store.get('attLastGroup'); if (last) $('attGroup').value = last;
-      fillSubjects();
+    if (!attAuth.teaches && navigator.onLine) {
+      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; store.set('attAuth', JSON.stringify(attAuth)); fillAttGroups(); }).catch(() => {});
     }
+    if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
     flushQueue(true);
   }
 
@@ -1099,7 +1196,8 @@
   });
   $('attPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('attLoginBtn').click(); });
   $('attLogout').addEventListener('click', () => { recSignOut(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; renderAttendance(); });
-  ['attGroup', 'attSection'].forEach((id) => $(id).addEventListener('change', () => { fillSubjects(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; }));
+  $('attGroup').addEventListener('change', () => { fillAttSections(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; });
+  $('attSection').addEventListener('change', () => { fillSubjects(); $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; });
   $('attSubject').addEventListener('change', () => {
     const v = $('attSubject').value, l = JSON.parse($('attSubject').dataset.list || '[]')[Number(v)];
     $('attOtherRow').style.display = (v === 'other' || (l && l.rotating)) ? 'grid' : 'none';
@@ -1217,6 +1315,15 @@
     $('mkSubject').innerHTML = list.map((s) => '<option>' + esc(s) + '</option>').join('') + (isAdmin() ? '<option value="__other">Other subject…</option>' : '');
     const last = store.get('mkLastSubject'); if (last && list.indexOf(last) >= 0) $('mkSubject').value = last;
     $('mkOtherWrap').style.display = $('mkSubject').value === '__other' ? 'block' : 'none';
+    fillMkSections();
+  }
+  function fillMkSections() {
+    const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase();
+    const secs = limitToMine() ? SECTIONS_ALL.filter((s) => myClasses().some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
+    const use = secs.length ? secs : SECTIONS_ALL;
+    const prev = $('mkSection').value;
+    $('mkSection').innerHTML = use.map((s) => '<option>' + s + '</option>').join('');
+    if (prev && use.indexOf(prev) >= 0) $('mkSection').value = prev;
   }
   const mkSubjectVal = () => ($('mkSubject').value === '__other' ? $('mkOther').value.trim() : $('mkSubject').value);
 
@@ -1255,7 +1362,7 @@
   $('mkLogout').addEventListener('click', () => { recSignOut(); $('mkListWrap').style.display = 'none'; renderMarks(); });
   $('mkGroup').addEventListener('change', () => { fillMkSubjects(); $('mkListWrap').style.display = 'none'; });
   ['mkSection', 'mkTest'].forEach((id) => $(id).addEventListener('change', () => { $('mkListWrap').style.display = 'none'; }));
-  $('mkSubject').addEventListener('change', () => { $('mkOtherWrap').style.display = $('mkSubject').value === '__other' ? 'block' : 'none'; $('mkListWrap').style.display = 'none'; });
+  $('mkSubject').addEventListener('change', () => { $('mkOtherWrap').style.display = $('mkSubject').value === '__other' ? 'block' : 'none'; fillMkSections(); $('mkListWrap').style.display = 'none'; });
   $('mkSendNow').addEventListener('click', () => flushQueue(false));
 
   function mkTotal() { return Number($('mkTotal').value); }
