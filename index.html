@@ -224,6 +224,10 @@
   .tile .emoji { font-size: 1.6rem; line-height: 1; }
   .tile .tlabel { font-weight: 700; font-size: 0.93rem; }
   .tile .tsub { font-size: 0.72rem; color: var(--muted); line-height: 1.3; }
+  .tile-hi { background: linear-gradient(135deg, #10345c, #1d5a93); border-color: transparent; color: #fff; }
+  .tile-hi .tsub { color: #cfdcec; }
+  .grid-staff4 .tile { min-height: 96px; padding: 13px 12px; gap: 6px; }
+  .grid-staff4 .tile .emoji { font-size: 1.35rem; }
   .badge {
     position: absolute; top: 10px; right: 10px; background: var(--red); color: #fff;
     font-size: 0.68rem; font-weight: 800; min-width: 20px; height: 20px; border-radius: 10px;
@@ -371,10 +375,10 @@
         <div class="tlabel">1st Year Time Table</div>
         <div class="tsub">Find your classes by roll no.</div>
       </button>
-      <button class="tile" data-go="/faculty">
-        <div class="emoji">🎓</div>
-        <div class="tlabel">Faculty Workload</div>
-        <div class="tsub" id="facultyTileSub">Statistics Dept.</div>
+      <button class="tile tile-hi" data-go="/my">
+        <div class="emoji">🎯</div>
+        <div class="tlabel">My Attendance &amp; Results</div>
+        <div class="tsub">Roll no. + date of birth</div>
       </button>
       <button class="tile" data-go="/notices">
         <span class="badge" id="noticeBadge"></span>
@@ -388,34 +392,29 @@
         <div class="tsub" id="resTileSub">Useful links</div>
       </button>
     </div>
-    <div class="section-title staff-head">🔒 Staff area <span class="lock-chip">teachers only</span></div>
-    <div class="grid-tiles grid-staff">
-      <button class="tile" data-go="/staff/records">
+    <div class="section-title staff-head">🔒 Staff area <span class="lock-chip">teachers only · PIN</span></div>
+    <div class="grid-tiles grid-staff4">
+      <button class="tile" id="markBtn" data-go="/attendance">
+        <div class="emoji">✅</div>
+        <div class="tlabel">Mark Attendance</div>
+        <div class="tsub">During your period</div>
+      </button>
+      <button class="tile" id="marksBtn" data-go="/marks">
+        <div class="emoji">✍️</div>
+        <div class="tlabel">Enter Marks</div>
+        <div class="tsub">Monthly tests</div>
+      </button>
+      <button class="tile" data-go="/records">
         <div class="emoji">🗂️</div>
         <div class="tlabel">Student Records</div>
-        <div class="tsub">1st Year · 2nd Year · BS</div>
+        <div class="tsub">Attendance &amp; results</div>
       </button>
-      <button class="tile" data-go="/staff/results">
-        <div class="emoji">📊</div>
-        <div class="tlabel">Results Reports</div>
-        <div class="tsub">Class-wise results</div>
-      </button>
-      <button class="tile" data-go="/staff/attendance">
-        <div class="emoji">✅</div>
-        <div class="tlabel">Attendance Record</div>
-        <div class="tsub">Class-wise attendance</div>
+      <button class="tile" data-go="/faculty">
+        <div class="emoji">🎓</div>
+        <div class="tlabel">Faculty Workload</div>
+        <div class="tsub" id="facultyTileSub">Statistics Dept.</div>
       </button>
     </div>
-    <button class="mark-btn" id="markBtn" data-go="/attendance" style="display:none">
-      <span style="font-size:1.4rem">📝</span>
-      <span><div class="q-title">Mark Attendance</div><div class="q-sub">Teachers · 1st Year · sign in with your PIN</div></span>
-      <span class="chev">&rsaquo;</span>
-    </button>
-    <button class="mark-btn mark-btn-2" id="marksBtn" data-go="/marks" style="display:none">
-      <span style="font-size:1.4rem">✍️</span>
-      <span><div class="q-title">Enter Marks</div><div class="q-sub">Teachers · monthly tests · sign in with your PIN</div></span>
-      <span class="chev">&rsaquo;</span>
-    </button>
     <button class="mark-btn mark-btn-3" id="boardBtn" data-go="/board" style="display:none">
       <span style="font-size:1.4rem">📋</span>
       <span><div class="q-title">Principal’s Board</div><div class="q-sub">Admins · who marked attendance today, weekly report</div></span>
@@ -537,6 +536,22 @@
   </section>
 
   <!-- ATTENDANCE RECORDS (student-wise / class-wise / all students) -->
+  <section class="view" id="view-my">
+    <div class="card pad" id="myForm">
+      <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
+      <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
+      <div class="field"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
+      <button class="btn-primary" id="myGo">Show my record</button>
+      <div class="tt-error" id="myErr"></div>
+      <p class="note">Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.</p>
+    </div>
+    <div id="myOut" style="display:none">
+      <div class="signed-in">🎯 <span>Your record</span><button class="link-btn" id="myAgain">Check another roll no.</button></div>
+      <div id="myStudent"></div>
+      <p class="note" style="text-align:center">Attendance and marks are entered by your teachers. If something looks wrong, tell your teacher.</p>
+    </div>
+  </section>
+
   <section class="view" id="view-board">
     <div class="card pad" id="bdLogin">
       <p class="screen-title" style="margin-top:0">Principal &amp; admins only. Sign in with your name and PIN.</p>
@@ -639,6 +654,7 @@
         <div id="recAllOut" style="margin-top:6px"></div>
       </div>
     </div>
+    <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Other records in Google Sheets (2nd Year, BS)</button>
   </section>
 
   <!-- FACULTY LIST -->
@@ -805,6 +821,7 @@
     attendance:    { view: 'view-att',           title: () => 'Mark Attendance',    parent: '/' },
     records:       { view: 'view-rec',           title: () => 'Student Records', parent: '/' },
     marks:         { view: 'view-marks',         title: () => 'Enter Marks',        parent: '/' },
+    my:            { view: 'view-my',            title: () => 'My Attendance & Results', parent: '/' },
     board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
@@ -854,6 +871,7 @@
     if (r.key === 'records') renderRecords();
     if (r.key === 'marks') renderMarks();
     if (r.key === 'board') renderBoard();
+    if (r.key === 'my') renderMy();
     if (!ok) return;
 
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === route.view));
@@ -1635,6 +1653,7 @@
 
   function applyRole() {
     const admin = attAuth && attAuth.role === 'Admin';
+    $('recSheetsLink').style.display = admin ? 'block' : 'none';
     $('recTabAll').style.display = admin ? '' : 'none';
     $('recTabClasses').style.display = admin ? 'none' : '';
     if (admin && recTab === 'classes') recTab = 'all';
@@ -1747,7 +1766,7 @@
     });
     return s + '</svg>';
   }
-  function resultsHtml(j) {
+  function resultsHtml(j, pre) {
     const R = j.results, tests = j.tests || TESTS_DEF;
     let h = '<div class="section-title">📝 Test results</div>';
     if (!R || !Object.keys(R.tests || {}).length) return h + '<div class="card"><div class="empty">No test marks have been entered for this student yet.</div></div>';
@@ -1761,7 +1780,7 @@
     h += '<div class="card chart-card"><h3>Overall % by test</h3><div class="sub">All subjects combined · dashed line = 33% pass mark</div>' + lineSvg(tests.map(shortTest), vals) + '</div>';
     const subs = Object.keys(cur.subjects).sort();
     h += '<div class="card chart-card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><h3>Subject-wise %</h3><div class="sub">Red = below 33%</div></div>' +
-      '<select class="mini-sel" id="recStuTest">' + has.map((t) => '<option value="' + esc(t) + '"' + (t === recStuTest ? ' selected' : '') + '>' + esc(shortTest(t)) + '</option>').join('') + '</select></div>' +
+      '<select class="mini-sel" id="' + (pre || 'rec') + 'StuTest">' + has.map((t) => '<option value="' + esc(t) + '"' + (t === recStuTest ? ' selected' : '') + '>' + esc(shortTest(t)) + '</option>').join('') + '</select></div>' +
       barSvg(subs.map((sName) => { const x = cur.subjects[sName]; return { label: sName, absent: x.status === 'Absent', pct: x.status === 'Absent' ? 0 : r1(100 * x.obt / x.total), detail: x.obt + '/' + x.total }; })) + '</div>';
     const allSubs = {}; has.forEach((t) => Object.keys(R.tests[t].subjects).forEach((k) => { allSubs[k] = 1; }));
     h += '<div class="card" style="margin-top:12px"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Subject</th>' + has.map((t) => '<th class="num">' + esc(shortTest(t)) + '</th>').join('') + '</tr></thead><tbody>' +
@@ -1777,8 +1796,11 @@
     return h;
   }
 
-  function paintStudent() {
-    const j = recLastStudent; if (!j) return;
+  let myLast = null;
+  function paintStudent(box) {
+    box = box || 'recStudent';
+    const pre = box === 'myStudent' ? 'my' : 'rec';
+    const j = pre === 'my' ? myLast : recLastStudent; if (!j) return;
     const s = j.student, t = j.totals, p = pctOf(t.present, t.total);
     const ring = p === null ? 'var(--muted)' : p < 75 ? 'var(--red)' : 'var(--green)';
     const TAG = { Present: 'c-P', Absent: 'c-A', Leave: 'c-L' };
@@ -1787,7 +1809,7 @@
       '<div class="stu-sub">' + esc(s.subjectGroup || '') + '</div></div></div>' +
       '<div class="att-counts" style="margin:12px 0 0"><span class="c-P">Present ' + t.present + '</span><span class="c-A">Absent ' + t.absent + '</span><span class="c-L">Leave ' + t.leave + '</span><span style="color:var(--muted)">Lectures ' + t.total + '</span></div>' +
       (p !== null && p < 75 ? '<p class="note" style="color:var(--red);font-weight:700">Below 75% attendance.</p>' : '') + '</div>';
-    h += resultsHtml(j);
+    h += resultsHtml(j, pre);
     h += '<div class="section-title">✅ Attendance</div>';
     if (!t.total) h += '<div class="card" style="margin-top:12px"><div class="empty">No attendance has been marked for this student yet.</div></div>';
     else {
@@ -1795,7 +1817,7 @@
         j.subjects.map((x) => { const n = x.present + x.absent + x.leave; return '<tr><td>' + esc(x.subject) + '<span class="ttnote">' + esc(x.teachers.join(', ')) + '</span></td><td class="num">' + x.present + '</td><td class="num">' + x.absent + '</td><td class="num">' + x.leave + '</td><td class="num">' + n + '</td>' + pctCell(x.present, n) + '</tr>'; }).join('') +
         '</tbody></table></div></div>';
       const list = recHistAll ? j.history : j.history.filter((x) => x.status !== 'Present');
-      h += '<div class="tbl-tools"><div class="section-title">Day-by-day</div><button class="mini-btn" id="recHistToggle">' + (recHistAll ? 'Show absences only' : 'Show all lectures') + '</button><button class="mini-btn" id="recStuCsv">⬇ CSV</button></div><div class="card">';
+      h += '<div class="tbl-tools"><div class="section-title">Day-by-day</div><button class="mini-btn" id="' + pre + 'HistToggle">' + (recHistAll ? 'Show absences only' : 'Show all lectures') + '</button><button class="mini-btn" id="' + pre + 'StuCsv">⬇ CSV</button></div><div class="card">';
       if (!list.length) h += '<div class="empty">' + (recHistAll ? 'No lectures yet.' : 'No absences or leave — present in every lecture marked. 🎉') + '</div>';
       let day = '';
       list.forEach((x) => {
@@ -1804,12 +1826,41 @@
       });
       h += '</div>';
     }
-    $('recStudent').innerHTML = h; $('recStudent').style.display = 'block';
-    const st = $('recStuTest'); if (st) st.addEventListener('change', () => { recStuTest = st.value; paintStudent(); });
-    const tg = $('recHistToggle'); if (tg) tg.addEventListener('click', () => { recHistAll = !recHistAll; paintStudent(); });
-    const cv = $('recStuCsv'); if (cv) cv.addEventListener('click', () => csvDownload('Attendance_Roll_' + s.roll + '.csv',
+    $(box).innerHTML = h; $(box).style.display = 'block';
+    const st = $(pre + 'StuTest'); if (st) st.addEventListener('change', () => { recStuTest = st.value; paintStudent(box); });
+    const tg = $(pre + 'HistToggle'); if (tg) tg.addEventListener('click', () => { recHistAll = !recHistAll; paintStudent(box); });
+    const cv = $(pre + 'StuCsv'); if (cv) cv.addEventListener('click', () => csvDownload('Attendance_Roll_' + s.roll + '.csv',
       [['Roll', 'Name', 'Group', 'Date', 'Period', 'Subject', 'Status', 'Teacher']].concat(j.history.map((x) => [s.roll, s.name, s.group, x.date, x.period, x.subject, x.status, x.teacher]))));
   }
+
+  /* ---------- a student's own record (roll no + date of birth) ---------- */
+  function renderMy() {
+    if (!$('myRoll').value) $('myRoll').value = store.get('roll') || '';
+    $('myForm').style.display = myLast ? 'none' : 'block';
+    $('myOut').style.display = myLast ? 'block' : 'none';
+  }
+  async function loadMy() {
+    const roll = parseInt($('myRoll').value, 10), dob = $('myDob').value;
+    $('myErr').textContent = '';
+    if (!roll) { $('myErr').textContent = 'Enter your college roll number.'; return; }
+    if (!dob) { $('myErr').textContent = 'Enter your date of birth.'; return; }
+    const url = DATA.attendanceApi;
+    if (!url) { $('myErr').textContent = 'This service is not set up yet.'; return; }
+    if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
+    $('myGo').disabled = true; $('myGo').textContent = 'Checking…';
+    try {
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, dob }) });
+      const j = await res.json();
+      if (!j.ok) throw new Error(/PIN|sign in/i.test(j.error || '') ? 'This service is being updated — please try again a little later.' : (j.error || 'Something went wrong.'));
+      store.set('roll', String(roll));
+      myLast = j; recHistAll = false; recStuTest = null;
+      renderMy(); paintStudent('myStudent'); window.scrollTo(0, 0);
+    } catch (e) { $('myErr').textContent = /Failed to fetch|NetworkError/i.test(e.message) ? 'Could not connect. Check your internet and try again.' : e.message; }
+    $('myGo').disabled = false; $('myGo').textContent = 'Show my record';
+  }
+  $('myGo').addEventListener('click', loadMy);
+  $('myDob').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
+  $('myAgain').addEventListener('click', () => { myLast = null; $('myDob').value = ''; $('myStudent').innerHTML = ''; renderMy(); });
 
   function openStudent(roll) { showRecTab('find'); loadStudent(roll); window.scrollTo(0, 0); }
 
@@ -2170,9 +2221,9 @@
     $('devName').textContent = dev; $('devDept').textContent = dept;
     $('footDev').textContent = dev ? 'Developed by ' + dev + (dept ? ', ' + dept : '') : '';
     $('aboutDev').textContent = dev || '—';
-    $('markBtn').style.display = DATA.attendanceApi ? 'flex' : 'none';
+    $('markBtn').style.display = DATA.attendanceApi ? '' : 'none';
     $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
-    $('marksBtn').style.display = DATA.attendanceApi ? 'flex' : 'none';
+    $('marksBtn').style.display = DATA.attendanceApi ? '' : 'none';
     $('footUpdated').textContent = DATA.updatedAt ? 'Data updated ' + fmtDate(DATA.updatedAt) : '';
   }
   function netStatus() { document.body.classList.toggle('offline', !navigator.onLine); }
