@@ -1443,9 +1443,9 @@
     attQueue.set(left); renderPending();
     if (!silent) toast(left.length ? left.length + ' could not be sent yet' : 'Saved sheets sent ✓');
   }
-  window.addEventListener('online', () => flushQueue(true));
+  window.addEventListener('online', () => { flushQueue(true).then(() => { if (attQueue.get().length) scheduleRetry(); }); });
   let retryTimer = null;
-  function scheduleRetry() { if (retryTimer) return; retryTimer = setTimeout(async () => { retryTimer = null; await flushQueue(true); if (attQueue.get().length && navigator.onLine) scheduleRetry(); }, 45000 + Math.floor(Math.random() * 30000)); }
+  function scheduleRetry() { if (retryTimer) return; retryTimer = setTimeout(async () => { retryTimer = null; await flushQueue(true); if (attQueue.get().length) scheduleRetry(); }, 45000 + Math.floor(Math.random() * 30000)); }
   if (attQueue.get().length) scheduleRetry();
   $('attSendNow').addEventListener('click', () => flushQueue(false));
 
@@ -1563,7 +1563,7 @@
         payload.queuedAt = Date.now();
         const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('No internet — saved on this phone. It will be sent automatically.');
-        $('attListWrap').style.display = 'none';
+        $('attListWrap').style.display = 'none'; scheduleRetry();
       } else if (/^BUSY/.test(e.message)) {
         payload.busyAt = Date.now();
         const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
@@ -1765,7 +1765,7 @@
       if (e.offline) {
         const q = attQueue.get(); q.push({ action: 'submitMarks', payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('No internet — marks saved on this phone. They will be sent automatically.');
-        $('mkListWrap').style.display = 'none';
+        $('mkListWrap').style.display = 'none'; scheduleRetry();
       } else if (/^BUSY/.test(e.message)) {
         const q = attQueue.get(); q.push({ action: 'submitMarks', payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('Server busy — marks saved on this phone and will be sent automatically in a minute.');
