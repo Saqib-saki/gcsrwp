@@ -269,6 +269,9 @@
   .tt-menu-sub { font-size: 0.74rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
   .name-row.sub { padding-left: 28px; font-size: 0.9rem; }
   /* private staff profile sheet */
+  .gate-card { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 12px; border-left: 4px solid var(--green); }
+  .gate-card.closed { border-left-color: var(--red); }
+  .gate-card .btn-go { padding: 10px 16px; }
   .fac-tools { display: flex; gap: 8px; align-items: stretch; }
   .fac-tools .search { flex: 1; margin-bottom: 12px; }
   .fac-tools .btn-go { margin-bottom: 12px; white-space: nowrap; }
@@ -744,6 +747,7 @@
     </div>
     <div id="facMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="facWho"></b> <span class="lock-chip">Admin</span></span><button class="link-btn" id="facLogout">Sign out</button></div>
+      <div class="card pad gate-card" id="facGate" style="display:none"><div><b>Teacher sign-in</b><div class="tt-menu-sub" id="facGateSub"></div></div><button class="btn-go" id="facGateBtn"></button></div>
       <div class="fac-tools">
         <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
         <button class="btn-go" id="facAdd">＋ Add</button>
@@ -1153,8 +1157,21 @@
     if (!isAdminUser()) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
     $('facMain').style.display = 'block'; $('facWho').textContent = attAuth.name;
     if (facList) paintFacultyList(); else loadFacultyList();
+    loadGate();
     return true;
   }
+  let gateOpen = null;
+  function paintGate() {
+    if (gateOpen === null) { $('facGate').style.display = 'none'; return; }
+    $('facGate').style.display = 'flex'; $('facGate').classList.toggle('closed', !gateOpen);
+    $('facGateSub').textContent = gateOpen ? '✅ Open — teachers can use Mark Attendance, Enter Marks, Records and their profile.' : '⛔ Paused — only admins can sign in. Teachers’ PINs are kept.';
+    $('facGateBtn').textContent = gateOpen ? 'Pause' : 'Open now';
+  }
+  async function loadGate(set) {
+    try { const j = await attApi('teacherAccess', set === undefined ? {} : { open: set }); gateOpen = !!j.teachersOpen; paintGate(); if (set !== undefined) toast(gateOpen ? 'Teacher sign-in is open ✓' : 'Teacher sign-in paused ✓ (admins only)'); }
+    catch (e) { if (!/Unknown action/.test(e.message) && set !== undefined) toast(e.message); }
+  }
+  $('facGateBtn').addEventListener('click', () => { if (gateOpen !== null) loadGate(!gateOpen); });
   async function loadFacultyList() {
     $('facErr').textContent = '';
     try { const j = await attApi('staffList'); facList = j.staff || []; paintFacultyList(); }
