@@ -1239,7 +1239,12 @@
     } catch (err) { const e = new Error('offline'); e.offline = true; throw e; }
     let j;
     try { j = await res.json(); } catch (err) { throw new Error('BUSY: The server did not answer in time. Your sheet is kept on this phone and will be sent automatically.'); }
-    if (!j.ok) throw new Error(j.error || 'Something went wrong.');
+    if (!j.ok) {
+      const m = String(j.error || 'Something went wrong.');
+      // Google's own short hiccups (sheet service failed / timed out / too many calls) — retry like "busy"
+      if (/^BUSY|Service (Spreadsheets|error)|timed out|too many|simultaneous|Lock timeout|try again later|temporarily unavailable/i.test(m) && !/^BUSY/.test(m)) throw new Error('BUSY: Google Sheets had a short hiccup. Your sheet is kept on this phone and will be sent automatically.');
+      throw new Error(m);
+    }
     return j;
   }
 
