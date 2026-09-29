@@ -670,6 +670,7 @@
             <button class="btn-secondary" id="recReload">↻ Refresh</button>
             <button class="btn-secondary" id="recRebuild">Recalculate totals</button>
           </div>
+          <button class="btn-secondary" id="recArchive" style="margin-top:8px;width:100%">📦 Archive old attendance</button>
           <div class="tt-error" id="recAllErr"></div>
         </div>
         <div id="recAllOut" style="margin-top:6px"></div>
@@ -1424,7 +1425,7 @@
     const parts = [];
     if (na) parts.push(na + ' attendance sheet' + (na > 1 ? 's' : ''));
     if (nm) parts.push(nm + ' marks sheet' + (nm > 1 ? 's' : ''));
-    $('attPendingText').textContent = $('mkPendingText').textContent = parts.join(' + ') + ' saved on this phone, waiting for internet.';
+    $('attPendingText').textContent = $('mkPendingText').textContent = parts.join(' + ') + ' saved on this phone, waiting to be sent.';
   }
 
   async function flushQueue(silent) {
@@ -1437,6 +1438,9 @@
     if (!silent) toast(left.length ? left.length + ' could not be sent yet' : 'Saved sheets sent ✓');
   }
   window.addEventListener('online', () => flushQueue(true));
+  let retryTimer = null;
+  function scheduleRetry() { if (retryTimer) return; retryTimer = setTimeout(async () => { retryTimer = null; await flushQueue(true); if (attQueue.get().length && navigator.onLine) scheduleRetry(); }, 45000 + Math.floor(Math.random() * 30000)); }
+  if (attQueue.get().length) scheduleRetry();
   $('attSendNow').addEventListener('click', () => flushQueue(false));
 
   function renderAttendance() {
@@ -1554,6 +1558,11 @@
         const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('No internet — saved on this phone. It will be sent automatically.');
         $('attListWrap').style.display = 'none';
+      } else if (/^BUSY/.test(e.message)) {
+        payload.busyAt = Date.now();
+        const q = attQueue.get(); q.push({ payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
+        toast('Server busy — your attendance is saved on this phone and will be sent automatically in a minute.');
+        $('attListWrap').style.display = 'none'; scheduleRetry();
       } else { toast(e.message); }
     }
     attBusy = false; $('attSubmit').disabled = false; paintList();
@@ -1751,6 +1760,10 @@
         const q = attQueue.get(); q.push({ action: 'submitMarks', payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
         toast('No internet — marks saved on this phone. They will be sent automatically.');
         $('mkListWrap').style.display = 'none';
+      } else if (/^BUSY/.test(e.message)) {
+        const q = attQueue.get(); q.push({ action: 'submitMarks', payload, auth: attAuth, at: Date.now() }); attQueue.set(q); renderPending();
+        toast('Server busy — marks saved on this phone and will be sent automatically in a minute.');
+        $('mkListWrap').style.display = 'none'; scheduleRetry();
       } else { toast(e.message); }
     }
     mkBusy = false; $('mkSubmit').disabled = false; paintMkCounts();
@@ -2145,6 +2158,18 @@
     try { await attApi('rebuild'); toast('Totals recalculated from the Log ✓'); await loadAll(true); }
     catch (e) { if (!recAuthFail(e)) $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; }
     $('recRebuild').disabled = false; $('recRebuild').textContent = 'Recalculate totals';
+  });
+
+  let archArmed = 0;
+  $('recArchive').addEventListener('click', async () => {
+    const b = $('recArchive');
+    if (Date.now() - archArmed > 6000) { archArmed = Date.now(); b.textContent = 'Tap again to move attendance older than last month to an archive file'; return; }
+    archArmed = 0; b.disabled = true; b.textContent = 'Archiving… (this can take a minute)';
+    try {
+      const j = await attApi('archive');
+      toast(j.moved ? 'Archived ' + j.moved + ' rows (before ' + fmtDate(j.keepFrom) + ') ✓ Totals unchanged.' : 'Nothing to archive yet — the Log only has recent days.');
+    } catch (e) { if (!recAuthFail(e)) $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; }
+    b.disabled = false; b.textContent = '📦 Archive old attendance';
   });
 
   /* ---------- about ---------- */
