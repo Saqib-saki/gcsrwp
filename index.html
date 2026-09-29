@@ -145,6 +145,8 @@
   .bd-row .bd-main { flex: 1; min-width: 0; }
   .bd-row .bd-t { font-weight: 700; font-size: 0.86rem; }
   .bd-row .bd-s { font-size: 0.74rem; color: var(--muted); }
+  .bd-row .bd-p { display: inline-block; margin: 2px 10px 0 0; white-space: nowrap; }
+  .bd-row .bd-g { font-weight: 600; color: var(--muted); font-size: 0.78rem; }
   .bd-b { font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 20px; white-space: nowrap; }
   .b-ok { background: #dff3e6; color: #17603a; } .b-late { background: #fdeedb; color: #8a4b00; } .b-miss { background: #fde4e1; color: #9b1c1c; }
   .b-now { background: #e3ecfb; color: #1d4f9c; } .b-up { background: var(--chip-bg); color: var(--muted); } .b-off { background: #efe6fb; color: #5b2a9c; } .b-adm { background: #e6f0f0; color: #245b5b; }
@@ -2257,6 +2259,35 @@
     up: () => '<span class="bd-b b-up">Upcoming</span>',
     cti: () => '<span class="bd-b b-up">CTI · no login</span>'
   };
+  /** merge a period's group rows into one row per teacher (a combined class = one lecture) */
+  const ST_RANK = { miss: 0, now: 1, up: 2, late: 3, off: 4, adm: 5, ok: 6, cti: 7 };
+  function byTeacher(items) {
+    const out = [], idx = {};
+    items.forEach((x) => {
+      const t = String(x.teacher || '').trim();
+      const k = x.period + '|' + (noLogin(t) ? '§' + x.group + x.section : t.toLowerCase()) + '|' + normSubj(x.subject).toLowerCase();
+      let L = idx[k];
+      if (!L) { L = idx[k] = { period: x.period, teacher: t, subject: x.subject, parts: [] }; out.push(L); }
+      L.parts.push(x);
+    });
+    out.forEach((L) => {
+      const sts = L.parts.map((p) => p.st);
+      L.st = sts.reduce((a, b) => (ST_RANK[b] < ST_RANK[a] ? b : a));
+      L.nDone = sts.filter((v) => v !== 'miss' && v !== 'now' && v !== 'up' && v !== 'cti').length;
+      const hits = L.parts.map((p) => p.hit).filter(Boolean);
+      L.hit = hits.length ? hits.slice().sort((a, b) => String(a.first).localeCompare(String(b.first)))[0] : null;
+      if (L.st === 'late' || L.st === 'off') L.hit = hits.find((h) => h.status === (L.st === 'late' ? 'Late' : 'Offline')) || L.hit;
+    });
+    return out;
+  }
+  function lecBadge(L) {
+    const n = L.parts.length;
+    if (n > 1 && L.nDone && L.nDone < n && (L.st === 'miss' || L.st === 'now' || L.st === 'up'))
+      return '<span class="bd-b ' + (L.st === 'miss' ? 'b-miss' : 'b-now') + '">' + (L.st === 'miss' ? '❌ ' : '⏳ ') + L.nDone + ' of ' + n + ' marked</span>';
+    return BADGE[L.st](L.hit || {});
+  }
+  const partLabel = (x) => esc(x.group) + (x.section !== 'All' ? ' ' + esc(x.section) : '');
+  const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·' };
   let bdTab = 'day', bdData = null;
   function renderBoard() {
     const signed = !!attAuth;
@@ -2313,13 +2344,14 @@
     if (!bdData) return;
     const { date, j } = bdData;
     if (new Date(date + 'T12:00:00Z').getUTCDay() === 0) { $('bdStats').innerHTML = ''; $('bdList').innerHTML = '<div class="card pad empty">Sunday — no classes.</div>'; $('bdNote').textContent = ''; return; }
-    const { items, extra } = boardDay(date, j.rows, j);
+    const { items: groupItems, extra } = boardDay(date, j.rows, j);
+    const items = byTeacher(groupItems);
     const cnt = (f) => items.filter(f).length;
     const done = cnt((x) => x.st === 'ok' || x.st === 'adm'), late = cnt((x) => x.st === 'late' || x.st === 'off'), miss = cnt((x) => x.st === 'miss'), wait = cnt((x) => x.st === 'now' || x.st === 'up');
     $('bdStats').innerHTML = '<div class="stat"><b>' + done + '</b><span>✅ On time</span></div><div class="stat"><b>' + late + '</b><span>⏰ Late</span></div>' +
       '<div class="stat"><b style="color:var(--red)">' + miss + '</b><span>❌ Not marked</span></div><div class="stat"><b>' + wait + '</b><span>⏳ Still to come</span></div>';
     const f = $('bdFilter').value;
-    const show = (x) => f === 'all' || (f === 'miss' ? x.st === 'miss' : (x.st === 'late' || x.st === 'off'));
+    const show = (L) => f === 'all' || L.parts.some((x) => (f === 'miss' ? x.st === 'miss' : (x.st === 'late' || x.st === 'off')));
     const periods = [];
     items.forEach((x) => { if (periods.indexOf(x.period) < 0) periods.push(x.period); });
     let h = '';
@@ -2328,12 +2360,20 @@
       const w = periodWin(p, date);
       const live = w && date === j.today ? (j.nowMin >= w[1] ? 'done' : j.nowMin >= w[0] ? 'on now' : '') : '';
       h += '<div class="bd-per"><span>Period ' + esc(p) + (w ? ' · ' + fmtHM(w[0]) + '–' + fmtHM(w[1]) : '') + '</span><span>' + live + '</span></div><div class="card">' +
-        list.map((x) => {
-          const hit = x.hit;
-          const sub = hit ? esc(hit.teacher) + ' · P ' + hit.present + ' · A ' + hit.absent + (hit.leave ? ' · L ' + hit.leave : '') + (hit.last !== hit.first ? ' · corrected ' + esc(hit.last) : '') +
-            (!sameSubj(hit.subject, x.subject) ? ' · marked as ' + esc(hit.subject) : '') + (hit.section !== x.section ? ' · marked for ' + esc(hit.section) : '') + (hit.note ? '<br>' + esc(hit.note) : '')
-            : esc(x.teacher || '—');
-          return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + esc(x.group) + (x.section !== 'All' ? ' · ' + esc(x.section) : '') + ' — ' + esc(x.subject) + '</div><div class="bd-s">' + sub + '</div></div>' + BADGE[x.st](hit || {}) + '</div>';
+        list.map((L) => {
+          const one = L.parts.length === 1, x0 = L.parts[0];
+          const title = noLogin(L.teacher) ? partLabel(x0) + ' — ' + esc(L.subject) : esc(L.teacher) + ' — ' + esc(L.subject);
+          const partTxt = (x) => {
+            const h = x.hit;
+            return (one && !noLogin(L.teacher) ? '' : (one ? '' : PART_ICON[x.st] + ' ') + partLabel(x)) +
+              (h ? (one && !noLogin(L.teacher) ? '' : ' ') + 'P ' + h.present + ' · A ' + h.absent + (h.leave ? ' · L ' + h.leave : '') +
+                (h.last !== h.first ? ' · corrected ' + esc(h.last) : '') + (!sameSubj(h.subject, x.subject) ? ' · marked as ' + esc(h.subject) : '') +
+                (h.section !== x.section ? ' · marked for ' + esc(h.section) : '') + (nameKey(h.teacher) !== nameKey(L.teacher) && !noLogin(L.teacher) ? ' · by ' + esc(h.teacher) : '') : '');
+          };
+          const lines = L.parts.map(partTxt).filter((t) => t.trim());
+          const notes = [...new Set(L.parts.map((x) => x.hit && x.hit.note).filter(Boolean))];
+          const sub = (one && noLogin(L.teacher) ? esc(L.teacher || '—') + (lines.length ? ' · ' : '') : '') + lines.map((t) => '<span class="bd-p">' + t + '</span>').join('') + (notes.length ? '<br>' + notes.map(esc).join('<br>') : '');
+          return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + title + (one ? (noLogin(L.teacher) ? '' : ' · <span class="bd-g">' + partLabel(x0) + '</span>') : ' · <span class="bd-g">' + L.parts.length + ' groups</span>') + '</div><div class="bd-s">' + (sub || '—') + '</div></div>' + lecBadge(L) + '</div>';
         }).join('') + '</div>';
     });
     if (f === 'all' && extra.length) {
@@ -2343,7 +2383,7 @@
       }).join('') + '</div>';
     }
     $('bdList').innerHTML = h || '<div class="card pad empty">Nothing to show for this filter.</div>';
-    $('bdNote').textContent = 'Based on the fixed timetable (Periods I–V). ✅ saved during the period · ⏰ saved after it ended · 📵 saved on a phone without internet and sent later (phone time shown). Updated ' + fmtHM(j.nowMin) + '.';
+    $('bdNote').textContent = 'Based on the fixed timetable (Periods I–V), one row per teacher — a class taught to several groups together is one lecture. ✅ saved during the period · ⏰ saved after it ended · 📵 saved on a phone without internet and sent later (phone time shown). Updated ' + fmtHM(j.nowMin) + '.';
   }
 
   $('bdWeekGo').addEventListener('click', async () => {
@@ -2368,12 +2408,12 @@
     const T = {};
     const add = (name) => T[name] || (T[name] = { name, due: 0, ok: 0, late: 0, off: 0, miss: 0, missed: [] });
     days.forEach((iso) => {
-      boardDay(iso, j.rows, j).items.forEach((x) => {
+      byTeacher(boardDay(iso, j.rows, j).items).forEach((x) => {
         if (x.st === 'cti' || x.st === 'up' || x.st === 'now') return;
         String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
           const e = add(t); e.due++;
           if (x.st === 'ok' || x.st === 'adm') e.ok++; else if (x.st === 'late') e.late++; else if (x.st === 'off') e.off++;
-          else { e.miss++; e.missed.push(fmtDate(iso) + ' · ' + x.period + ' · ' + x.group + (x.section !== 'All' ? ' ' + x.section : '') + ' ' + x.subject); }
+          else { e.miss++; e.missed.push(fmtDate(iso) + ' · ' + x.period + ' · ' + x.subject + ' · ' + x.parts.filter((p) => p.st === 'miss').map((p) => p.group + (p.section !== 'All' ? ' ' + p.section : '')).join(', ') + (x.nDone ? ' (' + x.nDone + ' of ' + x.parts.length + ' groups marked)' : '')); }
         });
       });
     });
@@ -2388,7 +2428,7 @@
     const withMiss = list.filter((e) => e.missed.length);
     if (withMiss.length) h += '<div class="bd-per"><span>Lectures not marked</span></div><div class="card pad">' + withMiss.map((e) => '<details><summary><b>' + esc(e.name) + '</b> — ' + e.missed.length + '</summary><ul style="margin:6px 0 10px;padding-left:18px;font-size:0.8rem">' + e.missed.map((m) => '<li>' + esc(m) + '</li>').join('') + '</ul></details>').join('') + '</div>';
     h += '<button class="link-btn" id="bdWeekCsv" style="margin-top:10px">⬇ Download CSV</button>';
-    h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended; CTI lectures are not counted.</p>';
+    h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended, one per teacher per period (a class taught to several groups together counts once, and counts as ❌ if any of its groups was not marked); CTI lectures are not counted.</p>';
     $('bdWeekOut').innerHTML = h;
     $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + from + '_to_' + to + '.csv',
       [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
