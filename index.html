@@ -268,6 +268,57 @@
   .name-row:last-child { border-bottom: none; }
   .tt-menu-sub { font-size: 0.74rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
   .name-row.sub { padding-left: 28px; font-size: 0.9rem; }
+  /* private staff profile sheet */
+  .fac-tools { display: flex; gap: 8px; align-items: stretch; }
+  .fac-tools .search { flex: 1; margin-bottom: 12px; }
+  .fac-tools .btn-go { margin-bottom: 12px; white-space: nowrap; }
+  .btn-go.alt { background: var(--chip-bg); color: var(--chip-text); }
+  .link-btn.danger { color: var(--red); }
+  .pf-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pf-2 .field { min-width: 0; }
+  #pfForm .card { margin-bottom: 12px; }
+  #pfForm textarea { width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); color: var(--text); resize: vertical; }
+  .pf-h { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); margin-bottom: 10px; }
+  .pf-hero { display: flex; gap: 16px; align-items: center; padding: 20px 18px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, var(--navy) 0%, #1d5a93 70%, #2a6fb0 100%); position: relative; overflow: hidden; margin-bottom: 12px; }
+  .pf-hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(242,193,78,0.18); }
+  .pf-av { width: 72px; height: 72px; border-radius: 50%; background: var(--gold); color: var(--navy-dark); font-weight: 900; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; border: 3px solid rgba(255,255,255,0.7); position: relative; z-index: 1; }
+  .pf-id { min-width: 0; position: relative; z-index: 1; }
+  .pf-id h2 { margin: 2px 0 2px; font-size: 1.25rem; line-height: 1.25; }
+  .pf-conf { font-size: 0.64rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+  .pf-post { font-size: 0.86rem; opacity: .92; }
+  .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pf-chips span { font-size: 0.68rem; font-weight: 800; padding: 3px 9px; border-radius: 20px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); }
+  .pf-stats .stat span { font-size: 0.6rem; }
+  .pf-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 4px; }
+  @media (min-width: 640px) { .pf-grid { grid-template-columns: 1fr 1fr; } .pf-wide { grid-column: 1 / -1; } }
+  .pf-card { margin: 0; }
+  .pf-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 0.85rem; }
+  .pf-row:last-child { border-bottom: none; }
+  .pf-row span { color: var(--muted); flex: 0 0 auto; max-width: 45%; }
+  .pf-row b { text-align: right; font-weight: 700; word-break: break-word; }
+  .pf-row b small { color: var(--muted); font-weight: 600; }
+  .pf-row a { color: var(--accent); }
+  .pf-steps { position: relative; margin: 4px 0 8px; padding-left: 18px; }
+  .pf-steps::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+  .pf-step { position: relative; display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 0.85rem; }
+  .pf-step i { position: absolute; left: -18px; top: 10px; width: 12px; height: 12px; border-radius: 50%; background: var(--gold); border: 2px solid var(--navy); }
+  .pf-step:last-child i { background: var(--navy); }
+  .pf-step b small { color: var(--muted); font-weight: 600; }
+  .pf-step span { color: var(--muted); white-space: nowrap; }
+  .pf-wl-title { font-weight: 900; font-size: 1rem; margin: 18px 2px 0; color: var(--accent); }
+  .pf-duties { margin: 0; padding-left: 18px; font-size: 0.86rem; line-height: 1.6; }
+  .pf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pf-actions .btn-go { flex: 1; padding: 11px 12px; min-width: 110px; }
+  .pf-pinbox { margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: var(--chip-bg); color: var(--chip-text); font-size: 0.86rem; }
+  .pf-pin { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.2rem; font-weight: 900; letter-spacing: .12em; background: var(--card-bg); padding: 2px 8px; border-radius: 6px; }
+  @media print {
+    .app-header, .appfoot, .toast, .no-print, #installBanner, .banner { display: none !important; }
+    body { background: #fff !important; color: #000 !important; }
+    .view:not(.active) { display: none !important; }
+    .pf-hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .pf-grid { grid-template-columns: 1fr 1fr; } .pf-wide { grid-column: 1 / -1; }
+    .card, .stat { break-inside: avoid; box-shadow: none !important; }
+  }
   .prof-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #10345c, #1d5a93); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex: 0 0 auto; }
   .prof-av.sm { width: 34px; height: 34px; font-size: 0.78rem; margin-right: 4px; }
   .prof-card { display: flex; gap: 14px; align-items: center; }
@@ -428,7 +479,7 @@
       </button>
       <button class="tile" data-go="/faculty">
         <div class="emoji">🎓</div>
-        <div class="tlabel">Faculty Workload</div>
+        <div class="tlabel">Faculty Profiles</div>
         <div class="tsub" id="facultyTileSub">Statistics Dept.</div>
       </button>
     </div>
@@ -681,20 +732,69 @@
     <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Other records in Google Sheets (2nd Year, BS)</button>
   </section>
 
-  <!-- FACULTY LIST -->
+  <!-- FACULTY (private: own profile, or all for admins) -->
   <section class="view" id="view-faculty">
-    <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
-    <div id="nameList"></div>
+    <div class="card pad" id="facLogin">
+      <p class="screen-title" style="margin-top:0">🔒 Staff profiles are private. Sign in with your name and PIN (the same as Mark Attendance) to see <b>your own</b> profile and workload.</p>
+      <div class="field"><label for="facName">Your name</label><input id="facName" autocomplete="username" placeholder="e.g. Prof. Saqib Munawar"></div>
+      <div class="field"><label for="facPin">PIN</label><input id="facPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
+      <button class="btn-primary" id="facLoginBtn">Sign in</button>
+      <div class="tt-error" id="facLoginErr"></div>
+      <p class="note">Only you and the college admin can open your profile. No PIN yet? Ask the admin.</p>
+    </div>
+    <div id="facMain" style="display:none">
+      <div class="signed-in">👤 <span>Signed in as <b id="facWho"></b> <span class="lock-chip">Admin</span></span><button class="link-btn" id="facLogout">Sign out</button></div>
+      <div class="fac-tools">
+        <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
+        <button class="btn-go" id="facAdd">＋ Add</button>
+      </div>
+      <div class="tt-error" id="facErr"></div>
+      <div id="nameList"><div class="card pad empty">Loading staff…</div></div>
+    </div>
   </section>
 
-  <!-- FACULTY WORKLOAD -->
+  <!-- ONE PROFILE -->
   <section class="view" id="view-faculty-one">
-    <div class="card pad prof-card" id="workCard">
-      <div class="prof-av" id="profAv"></div>
-      <div><h2 id="profName" style="margin:0"></h2><div class="prof-sub" id="profSub"></div></div>
-    </div>
-    <div id="profStats" class="stat-grid" style="margin-top:12px"></div>
-    <div id="wlOut"></div>
+    <div id="profOut"><div class="card pad empty">Loading profile…</div></div>
+  </section>
+
+  <!-- ADD / EDIT PROFILE (admin) -->
+  <section class="view" id="view-faculty-edit">
+    <form id="pfForm" autocomplete="off" onsubmit="return false">
+      <div class="card pad">
+        <div class="pf-h">👤 Name &amp; post</div>
+        <div class="field"><label>Name (as it should appear)</label><input name="name" required placeholder="e.g. Prof. Farhan Mahmood"></div>
+        <div class="field"><label>Father / husband name</label><input name="parentage"></div>
+        <div class="pf-2"><div class="field"><label>Designation</label><input name="designation" list="pfDesig"></div><div class="field"><label>BS (grade)</label><input name="bs" list="pfBs"></div></div>
+        <div class="field"><label>Subject</label><input name="subject"></div>
+      </div>
+      <div class="card pad">
+        <div class="pf-h">🪪 Personal</div>
+        <div class="pf-2"><div class="field"><label>CNIC</label><input name="cnic" inputmode="numeric" placeholder="00000-0000000-0"></div><div class="field"><label>Date of birth</label><input name="dob" placeholder="dd-mm-yyyy"></div></div>
+        <div class="field"><label>Home district</label><input name="district"></div>
+      </div>
+      <div class="card pad">
+        <div class="pf-h">📞 Contact</div>
+        <div class="pf-2"><div class="field"><label>Mobile</label><input name="mobile" inputmode="tel" placeholder="03xx-xxxxxxx"></div><div class="field"><label>E-mail</label><input name="email" inputmode="email"></div></div>
+        <div class="field"><label>Home address</label><textarea name="address" rows="2"></textarea></div>
+      </div>
+      <div class="card pad">
+        <div class="pf-h">🏛️ Service record</div>
+        <div class="pf-2"><div class="field"><label>Joined as Lecturer (BS-17)</label><input name="j17" placeholder="dd-mm-yyyy"></div><div class="field"><label>Asst. Professor (BS-18)</label><input name="j18" placeholder="dd-mm-yyyy"></div></div>
+        <div class="pf-2"><div class="field"><label>Assoc. Professor (BS-19)</label><input name="j19" placeholder="dd-mm-yyyy"></div><div class="field"><label>Professor (BS-20)</label><input name="j20" placeholder="dd-mm-yyyy"></div></div>
+        <div class="pf-2"><div class="field"><label>Seniority No.</label><input name="seniority"></div><div class="field"><label>Present posting</label><input name="posting"></div></div>
+      </div>
+      <div class="card pad">
+        <div class="pf-h">📚 Extra duties / workload</div>
+        <div class="field"><label>One per line (e.g. Hostel warden, BS 3rd sem — Econometrics)</label><textarea name="duties" rows="4"></textarea></div>
+        <div class="field"><label>Other names used to sign in (optional, separated by ;)</label><input name="logins" placeholder="e.g. Prof. Farhan; Mr. Farhan"></div>
+      </div>
+      <datalist id="pfDesig"><option>Principal</option><option>Professor</option><option>Associate Professor</option><option>Assistant Professor</option><option>Lecturer</option><option>Librarian</option></datalist>
+      <datalist id="pfBs"><option>BS-17</option><option>BS-18</option><option>BS-19</option><option>BS-20</option></datalist>
+      <button class="btn-primary" id="pfSave" type="button">Save profile</button>
+      <div class="tt-error" id="pfErr"></div>
+      <button class="link-btn danger" id="pfDelete" type="button" style="margin:18px auto 0;display:none">🗑 Delete this profile</button>
+    </form>
   </section>
 
   <!-- TIMETABLE MENU -->
@@ -811,7 +911,6 @@
 
 <script src="timetable-engine.js"></script>
 <script src="timetable-engine-2.js"></script>
-<script src="staff.js"></script>
 <script>
 (function () {
   'use strict';
@@ -859,8 +958,9 @@
   /* ---------- routing (hash based, works with the phone's back button) ---------- */
   const ROUTES = {
     home:          { view: 'view-home',          title: () => DATA.appName || 'GCS Rawalpindi Portal', parent: null },
-    faculty:       { view: 'view-faculty',       title: () => 'Faculty Workload',   parent: '/' },
-    'faculty-one': { view: 'view-faculty-one',   title: () => 'Faculty Workload',   parent: '/faculty' },
+    faculty:       { view: 'view-faculty',       title: () => 'Faculty Profiles',   parent: '/' },
+    'faculty-one': { view: 'view-faculty-one',   title: () => 'Staff Profile',      parent: () => (isAdminUser() ? '/faculty' : '/') },
+    'faculty-edit':{ view: 'view-faculty-edit',  title: () => (facEditId ? 'Edit Profile' : 'Add Staff Member'), parent: () => (facEditId ? '/faculty/' + facEditId : '/faculty') },
     'tt-menu':     { view: 'view-tt-menu',       title: () => 'Time Table',         parent: '/' },
     'tt-bs':       { view: 'view-tt-bs',         title: () => 'BS Time Table',      parent: '/timetable' },
     timetable:     { view: 'view-timetable',     title: () => yearLabel(ttYear) + ' Time Table', parent: '/timetable' },
@@ -881,7 +981,12 @@
     const [a, ...rest] = raw.split('/');
     const arg = rest.length ? decodeURIComponent(rest.join('/')) : null;
     if (!a) return { key: 'home' };
-    if (a === 'faculty') return arg ? { key: 'faculty-one', arg } : { key: 'faculty' };
+    if (a === 'faculty') {
+      if (!arg) return { key: 'faculty' };
+      if (arg === 'new') return { key: 'faculty-edit', arg: '' };
+      const ed = /^(S\d+)\/edit$/.exec(arg); if (ed) return { key: 'faculty-edit', arg: ed[1] };
+      return { key: 'faculty-one', arg };
+    }
     if (a === 'timetable') {
       if (!arg) return { key: 'tt-menu' };
       const bs = /^bs\/(\d)$/.exec(arg); if (bs) return { key: 'tt-bs', arg: bs[1] };
@@ -916,8 +1021,9 @@
     let ok = true;
 
     if (r.key === 'home') renderHome();
-    if (r.key === 'faculty') renderFacultyList();
-    if (r.key === 'faculty-one') ok = renderWorkload(r.arg);
+    if (r.key === 'faculty') ok = renderFaculty();
+    if (r.key === 'faculty-one') ok = renderProfile(r.arg);
+    if (r.key === 'faculty-edit') ok = renderProfileEdit(r.arg);
     if (r.key === 'timetable') renderRollInput();
     if (r.key === 'tt-bs') $('ttBsTitle').textContent = 'BS · ' + ({ 1: '1st', 3: '3rd', 5: '5th', 7: '7th' }[r.arg] || r.arg) + ' Semester';
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
@@ -958,7 +1064,7 @@
   function renderHome() {
     if ($('boardBtn')) $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    $('facultyTileSub').textContent = (typeof STAFF !== 'undefined' ? STAFF.length : 0) + ' faculty · profiles';
+    $('facultyTileSub').textContent = '🔒 Your profile & workload';
     const nn = (DATA.notices || []).length;
     $('noticeTileSub').textContent = nn ? nn + ' notice' + (nn > 1 ? 's' : '') : 'No notices yet';
     const unseen = unseenCount();
@@ -978,7 +1084,6 @@
   /* ---------- faculty ---------- */
   /* ---------- faculty: full staff list + profile with workload (from the timetables) ---------- */
   const DESIG_ORDER = ['Principal', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Librarian'];
-  const staffList = () => (typeof STAFF !== 'undefined' ? STAFF : []);
   const PERIOD_TIMES = { I: '8:30–9:15', II: '9:15–10:00', III: '10:00–10:45', IV: '10:45–11:30', V: '11:30–12:15', VI: '12:15–1:00', VII: '1:00–1:45' };
   let wlIndex = null;
   /** {teacherName: [{year, period, klass, subject, room, rotating}]} built from the 1st and 2nd Year timetables */
@@ -1031,55 +1136,211 @@
     return Object.keys(set);
   }
 
-  function renderFacultyList() {
+  function initials(n) { return String(n).replace(/^(Prof|Dr|Mr|Ms)\.\s+/, '').replace(/^(Muhammad|M\.|Syed|Hafiz|Malik)\s+/i, '').split(/[\s-]+/).filter(Boolean).slice(0, 2).map((w) => (w[0] || '').toUpperCase()).join(''); }
+  function periodIndex(p) { const i = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].indexOf(String(p).trim()); return i < 0 ? 99 : i; }
+
+  /* ---------- faculty profiles: private (own profile, or everyone for admins) ---------- */
+  // Personal details are fetched live from the private Google Sheet and kept in memory only (never saved on the phone).
+  let facList = null, facCache = {}, facMe = null, facEditId = '', facDelArmed = 0;
+  function facSignedIn() { return !!(attAuth && DATA.attendanceApi); }
+  function facAuthFail(e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); facReset(); go('/faculty'); return true; } return false; }
+  function facReset() { facList = null; facCache = {}; facMe = null; }
+  function renderFaculty() {
+    const signed = facSignedIn();
+    $('facLogin').style.display = signed ? 'none' : 'block';
+    $('facMain').style.display = 'none';
+    if (!signed) { $('facName').value = store.get('attLastName') || ''; return true; }
+    if (!isAdminUser()) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
+    $('facMain').style.display = 'block'; $('facWho').textContent = attAuth.name;
+    if (facList) paintFacultyList(); else loadFacultyList();
+    return true;
+  }
+  async function loadFacultyList() {
+    $('facErr').textContent = '';
+    try { const j = await attApi('staffList'); facList = j.staff || []; paintFacultyList(); }
+    catch (e) { if (!facAuthFail(e)) { $('nameList').innerHTML = ''; $('facErr').textContent = e.offline ? 'You need internet to open staff profiles.' : /Unknown action/.test(e.message) ? 'The attendance service needs the v8 update (Apps Script → Manage deployments → New version).' : e.message; } }
+  }
+  function paintFacultyList() {
     const term = $('facultySearch').value.trim().toLowerCase();
     const wl = workloadIndex();
-    const all = staffList().map((s) => Object.assign({}, s, { n: (wl[s.name] || []).filter((e) => !e.rotating).length + bsRows(s.name).length, subj: s.subject || subjectsOf(s.name).join(', ') }));
-    const matches = all.filter((s) => !term || [s.name, s.designation, s.subj].join(' ').toLowerCase().includes(term));
+    const list = (facList || []).map((s) => Object.assign({}, s, { n: wlFor(s.name, wl).filter((e) => !e.rotating).length }));
+    const matches = list.filter((s) => !term || [s.name, s.designation, s.subject].join(' ').toLowerCase().includes(term));
+    if (!list.length) { $('nameList').innerHTML = '<div class="card pad empty">No staff profiles yet. Tap ＋ Add to create one.</div>'; return; }
     if (!matches.length) { $('nameList').innerHTML = '<div class="card"><div class="empty">No match for “' + esc(term) + '”.</div></div>'; return; }
-    let h = '';
+    const noLogin = list.filter((s) => s.login !== 'yes').length;
+    let h = '<p class="note" style="margin:0 2px 8px">' + list.length + ' staff · ' + (list.length - noLogin) + ' can sign in' + (noLogin ? ' · ' + noLogin + ' without a PIN (open a profile → 🔑 to create one)' : '') + '</p>';
     DESIG_ORDER.concat(['Other']).forEach((d) => {
-      const list = matches.filter((s) => (DESIG_ORDER.indexOf(s.designation) < 0 ? 'Other' : s.designation) === d);
-      if (!list.length) return;
-      h += '<div class="section-title">' + esc(d === 'Professor' ? 'Professors' : d === 'Principal' ? 'Principal' : d + 's') + ' <span class="rotate-tag" style="background:var(--chip-bg);color:var(--chip-text)">' + list.length + '</span></div><div class="card">' +
-        list.map((s) => '<button class="name-row" data-go="/faculty/' + encodeURIComponent(s.name) + '"><span class="prof-av sm">' + esc(initials(s.name)) + '</span>' +
-          '<span><b>' + esc(s.name) + '</b><div class="tt-menu-sub">' + esc(s.subj || s.designation) + '</div></span>' +
+      const grp = matches.filter((s) => (DESIG_ORDER.indexOf(s.designation) < 0 ? 'Other' : s.designation) === d);
+      if (!grp.length) return;
+      h += '<div class="section-title">' + esc(d === 'Professor' ? 'Professors' : d === 'Principal' ? 'Principal' : d === 'Other' ? 'Other staff' : d + 's') + ' <span class="rotate-tag" style="background:var(--chip-bg);color:var(--chip-text)">' + grp.length + '</span></div><div class="card">' +
+        grp.map((s) => '<button class="name-row" data-go="/faculty/' + encodeURIComponent(s.id) + '"><span class="prof-av sm">' + esc(initials(s.name)) + '</span>' +
+          '<span><b>' + esc(s.name) + '</b><div class="tt-menu-sub">' + esc([s.subject, s.bs].filter(Boolean).join(' · ') || s.designation) + (s.login === 'yes' ? '' : ' · <span style="color:var(--red)">' + (s.login === 'off' ? 'login off' : 'no PIN') + '</span>') + '</div></span>' +
           '<span class="count">' + (s.n ? s.n + ' class' + (s.n === 1 ? '' : 'es') : '') + '</span><span class="chev">&rsaquo;</span></button>').join('') + '</div>';
     });
     $('nameList').innerHTML = h;
   }
-  $('facultySearch').addEventListener('input', renderFacultyList);
-  function initials(n) { return String(n).replace(/^(Prof|Dr|Mr|Ms)\.\s+/, '').replace(/^(Muhammad|M\.|Syed|Hafiz|Malik)\s+/i, '').split(/[\s-]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join(''); }
+  $('facultySearch').addEventListener('input', () => { if (facList) paintFacultyList(); });
+  $('facAdd').addEventListener('click', () => go('/faculty/new'));
+  $('facLoginBtn').addEventListener('click', async () => {
+    const name = $('facName').value.trim(), pin = $('facPin').value.trim();
+    $('facLoginErr').textContent = '';
+    if (!name || !pin) { $('facLoginErr').textContent = 'Enter your name and PIN.'; return; }
+    if (!DATA.attendanceApi) { $('facLoginErr').textContent = 'The staff service is not set up yet.'; return; }
+    $('facLoginBtn').disabled = true;
+    try {
+      const j = await attApi('login', {}, { name, pin });
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
+      if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
+    } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
+    $('facLoginBtn').disabled = false;
+  });
+  $('facPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('facLoginBtn').click(); });
+  $('facLogout').addEventListener('click', () => { recSignOut(); facReset(); renderFaculty(); });
 
-  function periodIndex(p) { const i = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].indexOf(String(p).trim()); return i < 0 ? 99 : i; }
+  /** timetable workload for a profile name (exact name, else same name ignoring titles) */
+  function wlFor(name, wl) {
+    wl = wl || workloadIndex();
+    if (wl[name]) return wl[name];
+    const k = nameKey(name); const hit = Object.keys(wl).find((n) => nameKey(n) === k);
+    return hit ? wl[hit] : [];
+  }
+  const bsFor = (name) => { const f = DATA.faculty || {}; const k = nameKey(name); const key = f[name] ? name : Object.keys(f).find((n) => nameKey(n) === k); return key ? bsRows(key) : []; };
 
-  function renderWorkload(name) {
-    const st = staffList().find((x) => x.name === name);
-    if (!st) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
-    const all = (workloadIndex()[name] || []).slice().sort((a, b) => a.year - b.year || periodIndex(a.period) - periodIndex(b.period));
-    const fixed = all.filter((e) => !e.rotating), rot = all.filter((e) => e.rotating), bs = bsRows(name);
-    const subj = st.subject || subjectsOf(name).join(', ');
-    $('profAv').textContent = initials(name);
-    $('profName').textContent = name;
-    $('profSub').innerHTML = esc(st.designation) + (subj ? ' · ' + esc(subj) : '');
-    const periods = new Set(fixed.map((e) => e.year + e.period));
-    $('profStats').innerHTML = '<div class="stat"><b>' + fixed.length + '</b><span>Intermediate classes</span></div>' +
-      '<div class="stat"><b>' + bs.length + '</b><span>BS classes</span></div><div class="stat"><b>' + rot.length + '</b><span>VI–VII / practicals</span></div>';
-    const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
-      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : esc(e.klass)) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
-    let h = '';
-    [1, 2].forEach((y) => {
-      const rows = fixed.filter((e) => e.year === y);
-      if (rows.length) h += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false);
-    });
-    if (bs.length) h += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
-      bs.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
-    if (rot.length) h += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
-    if (!h) h = '<div class="card"><div class="empty">No classes are assigned to ' + esc(name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
-    h += '<p class="note">From the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) timetables' + (bs.length ? ' and the Statistics Department BS workload' : '') + '. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.</p>';
-    $('wlOut').innerHTML = h;
+  function renderProfile(arg) {
+    if (!facSignedIn()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    const admin = isAdminUser();
+    if (arg !== 'me' && !admin) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
+    const cached = arg === 'me' ? facMe : facCache[arg];
+    if (cached) paintProfile(cached.profile, cached.login, arg === 'me');
+    else { $('profOut').innerHTML = '<div class="card pad empty">Loading profile…</div>'; loadProfile(arg); }
     return true;
   }
+  async function loadProfile(arg) {
+    try {
+      if (arg === 'me') {
+        const j = await attApi('myProfile'); facMe = { profile: j.profile, login: null };
+        if (parseHash().arg === 'me') paintProfile(j.profile, null, true);
+      } else {
+        const j = await attApi('staffGet', { id: arg }); facCache[arg] = { profile: j.profile, login: j.login };
+        if (parseHash().arg === arg) paintProfile(j.profile, j.login, false);
+      }
+    } catch (e) {
+      if (facAuthFail(e)) return;
+      $('profOut').innerHTML = '<div class="card pad"><div class="tt-error">' + esc(e.offline ? 'You need internet to open your profile.' : /Unknown action/.test(e.message) ? 'The attendance service needs the v8 update.' : e.message) + '</div></div>';
+    }
+  }
+  const dmy = (v) => { const m = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(String(v || '').trim()); if (!m) return null; const d = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])); return d.getUTCDate() === +m[1] && d.getUTCMonth() === +m[2] - 1 ? d : null; };
+  const niceDate = (v) => { const d = dmy(v); return d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : String(v || ''); };
+  const yearsSince = (v) => { const d = dmy(v); if (!d) return null; const n = new Date(); let y = n.getUTCFullYear() - d.getUTCFullYear(); if (n.getUTCMonth() < d.getUTCMonth() || (n.getUTCMonth() === d.getUTCMonth() && n.getUTCDate() < d.getUTCDate())) y--; return y; };
+  function paintProfile(p, login, isMe) {
+    const admin = isAdminUser();
+    if (!p) {
+      $('profOut').innerHTML = '<div class="card pad empty">🔍 No staff profile is linked to <b>' + esc(attAuth.name) + '</b> yet.<br><br>Please ask the admin to add your details, or to add the name you sign in with under “Other names used to sign in”.</div>' +
+        '<button class="link-btn" style="margin:14px auto 0;display:block" id="pfOut2">Sign out</button>';
+      $('pfOut2').onclick = () => { recSignOut(); facReset(); go('/faculty'); };
+      return;
+    }
+    const all = wlFor(p.name).slice().sort((a, b) => a.year - b.year || periodIndex(a.period) - periodIndex(b.period));
+    const fixed = all.filter((e) => !e.rotating), rot = all.filter((e) => e.rotating), bs = bsFor(p.name);
+    const duties = String(p.duties || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
+    const firstJoin = [p.j17, p.j18, p.j19, p.j20].find((x) => dmy(x));
+    const svc = yearsSince(firstJoin), age = yearsSince(p.dob);
+    const row = (label, val, html) => (val ? '<div class="pf-row"><span>' + esc(label) + '</span><b>' + (html || esc(val)) + '</b></div>' : '');
+    const steps = [['Lecturer', 'BS-17', p.j17], ['Assistant Professor', 'BS-18', p.j18], ['Associate Professor', 'BS-19', p.j19], ['Professor', 'BS-20', p.j20]].filter((x) => x[2]);
+    let h = '<div class="pf-sheet">';
+    h += '<div class="pf-hero"><div class="pf-av">' + esc(initials(p.name)) + '</div><div class="pf-id"><div class="pf-conf">🔒 Staff profile · confidential</div><h2>' + esc(p.name) + '</h2>' +
+      '<div class="pf-post">' + esc([p.designation, p.subject].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="pf-chips">' + (p.bs ? '<span>' + esc(p.bs) + '</span>' : '') + (p.seniority ? '<span>Seniority ' + esc(p.seniority) + '</span>' : '') + '<span>' + esc(p.id) + '</span></div></div></div>';
+    h += '<div class="stat-grid g4 pf-stats"><div class="stat"><b>' + fixed.length + '</b><span>Daily classes</span></div><div class="stat"><b>' + bs.length + '</b><span>BS classes</span></div>' +
+      '<div class="stat"><b>' + (svc != null ? svc : '—') + '</b><span>Years of service</span></div><div class="stat"><b>' + (duties.length || rot.length) + '</b><span>' + (duties.length ? 'Extra duties' : 'VI–VII / practicals') + '</span></div></div>';
+    h += '<div class="pf-grid">';
+    h += '<div class="card pad pf-card"><div class="pf-h">🪪 Personal</div>' + row('Father / husband name', p.parentage) + row('CNIC', p.cnic) +
+      row('Date of birth', p.dob, esc(niceDate(p.dob)) + (age != null ? ' <small>(' + age + ' yrs)</small>' : '')) + row('Home district', p.district) + (!(p.parentage || p.cnic || p.dob || p.district) ? '<div class="empty" style="padding:6px 0">Not entered yet.</div>' : '') + '</div>';
+    h += '<div class="card pad pf-card"><div class="pf-h">📞 Contact</div>' + row('Mobile', p.mobile, '<a href="tel:' + esc(String(p.mobile).replace(/[^\d+]/g, '')) + '">' + esc(p.mobile) + '</a>') +
+      row('E-mail', p.email, '<a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>') + row('Home address', p.address) + (!(p.mobile || p.email || p.address) ? '<div class="empty" style="padding:6px 0">Not entered yet.</div>' : '') + '</div>';
+    h += '<div class="card pad pf-card pf-wide"><div class="pf-h">🏛️ Service record</div>' +
+      (steps.length ? '<div class="pf-steps">' + steps.map((x) => '<div class="pf-step"><i></i><b>' + esc(x[0]) + ' <small>' + esc(x[1]) + '</small></b><span>' + esc(niceDate(x[2])) + '</span></div>').join('') + '</div>' : '') +
+      row('Present place of posting', p.posting) + row('Seniority No.', p.seniority) + '</div>';
+    h += '</div>';
+    // workload
+    const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
+      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : esc(e.klass)) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    h += '<div class="pf-wl-title">📚 Workload</div>';
+    let w = '';
+    [1, 2].forEach((y) => { const rows = fixed.filter((e) => e.year === y); if (rows.length) w += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false); });
+    if (bs.length) w += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
+      bs.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    if (rot.length) w += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
+    if (duties.length) w += '<div class="section-title">Extra duties / workload</div><div class="card pad"><ul class="pf-duties">' + duties.map((d) => '<li>' + esc(d) + '</li>').join('') + '</ul></div>';
+    if (!w) w = '<div class="card"><div class="empty">No classes are assigned to ' + esc(p.name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
+    h += w + '<p class="note">Workload from the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) timetables' + (bs.length ? ' and the BS workload' : '') + '. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.' +
+      (p.updated ? ' Profile last updated ' + esc(p.updated) + '.' : '') + (isMe ? ' Something wrong? Ask the admin to correct it.' : '') + '</p>';
+    h += '</div>';
+    // actions
+    h += '<div class="pf-actions no-print"><button class="btn-go" id="pfPrint">🖨 Print / PDF</button>' +
+      (admin && !isMe ? '<button class="btn-go" id="pfEdit">✏️ Edit</button><button class="btn-go alt" id="pfPin">🔑 ' + (login ? (login.active ? 'Show PIN' : 'Turn login on') : 'Create PIN') + '</button>' : '') +
+      (isMe ? '<button class="btn-go alt" id="pfOut">Sign out</button>' : '') + '</div>';
+    if (admin && !isMe) h += '<p class="note no-print" id="pfLoginNote">' + (login ? (login.active ? '✅ Can sign in as “' + esc(login.name) + '”.' : '⛔ Sign-in is switched off for this person.') : '⚠️ No sign-in PIN yet — this person cannot open their profile until you create one.') + '</p><div class="pf-pinbox no-print" id="pfPinBox" style="display:none"></div>';
+    if (admin && isMe && p.id) h += '<p class="note no-print">You are an admin — <a href="#/faculty">see all staff</a> or <a href="#/faculty/' + esc(p.id) + '/edit">edit your profile</a>.</p>';
+    $('profOut').innerHTML = h;
+    $('pfPrint').onclick = () => window.print();
+    if ($('pfOut')) $('pfOut').onclick = () => { recSignOut(); facReset(); go('/faculty'); };
+    if ($('pfEdit')) $('pfEdit').onclick = () => go('/faculty/' + p.id + '/edit');
+    if ($('pfPin')) $('pfPin').onclick = async () => {
+      const b = $('pfPin'); b.disabled = true;
+      try {
+        const j = await attApi('staffPin', { id: p.id });
+        $('pfPinBox').style.display = 'block';
+        $('pfPinBox').innerHTML = '<b>' + esc(j.name) + '</b> — PIN <span class="pf-pin">' + esc(j.pin) + '</span><br><small>' + (j.created ? 'New login created. Give this PIN to the professor privately.' : j.reactivated ? 'Sign-in switched back on.' : 'Existing PIN.') + ' They sign in with their name and this PIN.</small>';
+        if (j.created || j.reactivated) { facCache[p.id] = null; if (facList) { const s = facList.find((x) => x.id === p.id); if (s) s.login = 'yes'; } $('pfLoginNote').textContent = '✅ Can sign in as “' + j.name + '”.'; b.textContent = '🔑 Show PIN'; }
+      } catch (e) { if (!facAuthFail(e)) toast(e.message); }
+      b.disabled = false;
+    };
+  }
+
+  /* admin: add / edit */
+  const PF_FIELDS = ['name', 'parentage', 'designation', 'bs', 'subject', 'cnic', 'dob', 'district', 'mobile', 'email', 'address', 'j17', 'j18', 'j19', 'j20', 'seniority', 'posting', 'duties', 'logins'];
+  function renderProfileEdit(id) {
+    if (!facSignedIn() || !isAdminUser()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    facEditId = id || ''; facDelArmed = 0;
+    const f = $('pfForm'); f.reset(); $('pfErr').textContent = '';
+    $('pfDelete').style.display = id ? 'block' : 'none'; $('pfDelete').textContent = '🗑 Delete this profile';
+    $('pfSave').textContent = id ? 'Save changes' : 'Add staff member';
+    const fill = (p) => PF_FIELDS.forEach((k) => { if (f.elements[k]) f.elements[k].value = p[k] || ''; });
+    if (!id) { f.elements.posting.value = DATA.collegeName || 'Govt. Graduate College, Satellite Town, Rawalpindi'; return true; }
+    if (facCache[id]) fill(facCache[id].profile);
+    else { $('pfErr').textContent = 'Loading…'; attApi('staffGet', { id }).then((j) => { facCache[id] = { profile: j.profile, login: j.login }; $('pfErr').textContent = ''; fill(j.profile); }).catch((e) => { if (!facAuthFail(e)) $('pfErr').textContent = e.message; }); }
+    return true;
+  }
+  $('pfSave').addEventListener('click', async () => {
+    const f = $('pfForm'), p = { id: facEditId || '' };
+    PF_FIELDS.forEach((k) => { p[k] = f.elements[k].value; });
+    $('pfErr').textContent = '';
+    if (!p.name.trim()) { $('pfErr').textContent = 'Please enter the name.'; return; }
+    for (const k of ['dob', 'j17', 'j18', 'j19', 'j20']) if (p[k].trim() && !dmy(p[k].trim().replace(/[./]/g, '-'))) { $('pfErr').textContent = 'Dates should look like 25-12-1980 (day-month-year).'; f.elements[k].focus(); return; }
+    ['dob', 'j17', 'j18', 'j19', 'j20'].forEach((k) => { const d = dmy(p[k].trim().replace(/[./]/g, '-')); if (d) p[k] = String(d.getUTCDate()).padStart(2, '0') + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + d.getUTCFullYear(); });
+    const b = $('pfSave'); b.disabled = true; b.textContent = 'Saving…';
+    try {
+      const j = await attApi('staffSave', { profile: p });
+      facList = null; facCache[j.id] = null; facMe = null;
+      toast(j.created ? 'Added ✓ ' + p.name : 'Saved ✓');
+      history.replaceState(history.state, '', '#/faculty/' + j.id); render();
+    } catch (e) { if (!facAuthFail(e)) $('pfErr').textContent = e.offline ? 'You need internet to save.' : e.message; }
+    b.disabled = false; b.textContent = facEditId ? 'Save changes' : 'Add staff member';
+  });
+  $('pfDelete').addEventListener('click', async () => {
+    const b = $('pfDelete');
+    if (Date.now() - facDelArmed > 6000) { facDelArmed = Date.now(); b.textContent = 'Tap again to delete permanently (their sign-in is switched off too)'; return; }
+    b.disabled = true;
+    try {
+      const j = await attApi('staffDelete', { id: facEditId, alsoLogin: true });
+      facList = null; facCache = {}; facMe = null;
+      toast('Deleted ' + j.deleted + (j.loginOff ? ' · sign-in switched off' : ''));
+      history.replaceState({ depth: 0 }, '', '#/faculty'); render();
+    } catch (e) { if (!facAuthFail(e)) $('pfErr').textContent = e.message; }
+    b.disabled = false;
+  });
 
   /* ---------- timetable ---------- */
   const GROUP_NAMES = {
