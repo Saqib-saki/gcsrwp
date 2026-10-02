@@ -287,6 +287,11 @@
   .pf-hero { display: flex; gap: 16px; align-items: center; padding: 20px 18px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, var(--navy) 0%, #1d5a93 70%, #2a6fb0 100%); position: relative; overflow: hidden; margin-bottom: 12px; }
   .pf-hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(242,193,78,0.18); }
   .pf-av { width: 72px; height: 72px; border-radius: 50%; background: var(--gold); color: var(--navy-dark); font-weight: 900; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; border: 3px solid rgba(255,255,255,0.7); position: relative; z-index: 1; }
+  .pf-av { position: relative; }
+  .pf-av.has-photo { background: #fff; overflow: visible; }
+  .pf-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+  .pf-cam { position: absolute; right: -4px; bottom: -4px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: var(--gold); color: var(--navy-dark); font-size: 0.8rem; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .pf-photo-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); margin: -4px 2px 10px; }
   .pf-id { min-width: 0; position: relative; z-index: 1; }
   .pf-id h2 { margin: 2px 0 2px; font-size: 1.25rem; line-height: 1.25; }
   .pf-conf { font-size: 0.64rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
@@ -774,25 +779,14 @@
       <div class="card pad">
         <div class="pf-h">👤 Name &amp; post</div>
         <div class="field"><label>Name (as it should appear)</label><input name="name" required placeholder="e.g. Prof. Farhan Mahmood"></div>
-        <div class="field"><label>Father / husband name</label><input name="parentage"></div>
         <div class="pf-2"><div class="field"><label>Designation</label><input name="designation" list="pfDesig"></div><div class="field"><label>BS (grade)</label><input name="bs" list="pfBs"></div></div>
         <div class="field"><label>Subject</label><input name="subject"></div>
       </div>
       <div class="card pad">
-        <div class="pf-h">🪪 Personal</div>
-        <div class="pf-2"><div class="field"><label>CNIC</label><input name="cnic" inputmode="numeric" placeholder="00000-0000000-0"></div><div class="field"><label>Date of birth</label><input name="dob" placeholder="dd-mm-yyyy"></div></div>
-        <div class="field"><label>Home district</label><input name="district"></div>
-      </div>
-      <div class="card pad">
-        <div class="pf-h">📞 Contact</div>
-        <div class="pf-2"><div class="field"><label>Mobile</label><input name="mobile" inputmode="tel" placeholder="03xx-xxxxxxx"></div><div class="field"><label>E-mail</label><input name="email" inputmode="email"></div></div>
-        <div class="field"><label>Home address</label><textarea name="address" rows="2"></textarea></div>
-      </div>
-      <div class="card pad">
-        <div class="pf-h">🏛️ Service record</div>
+        <div class="pf-h">🎓 Teaching experience</div>
+        <p class="note" style="margin:0 0 8px">Dates of joining (dd-mm-yyyy). Only the years of experience are shown on the profile.</p>
         <div class="pf-2"><div class="field"><label>Joined as Lecturer (BS-17)</label><input name="j17" placeholder="dd-mm-yyyy"></div><div class="field"><label>Asst. Professor (BS-18)</label><input name="j18" placeholder="dd-mm-yyyy"></div></div>
         <div class="pf-2"><div class="field"><label>Assoc. Professor (BS-19)</label><input name="j19" placeholder="dd-mm-yyyy"></div><div class="field"><label>Professor (BS-20)</label><input name="j20" placeholder="dd-mm-yyyy"></div></div>
-        <div class="pf-2"><div class="field"><label>Seniority No.</label><input name="seniority"></div><div class="field"><label>Present posting</label><input name="posting"></div></div>
       </div>
       <div class="card pad">
         <div class="pf-h">📚 Extra duties / workload</div>
@@ -1267,25 +1261,18 @@
     const all = wlFor(p.name).slice().sort((a, b) => a.year - b.year || periodIndex(a.period) - periodIndex(b.period));
     const fixed = all.filter((e) => !e.rotating), rot = all.filter((e) => e.rotating), bs = bsFor(p.name);
     const duties = String(p.duties || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
-    const firstJoin = [p.j17, p.j18, p.j19, p.j20].find((x) => dmy(x));
-    const svc = yearsSince(firstJoin), age = yearsSince(p.dob);
-    const row = (label, val, html) => (val ? '<div class="pf-row"><span>' + esc(label) + '</span><b>' + (html || esc(val)) + '</b></div>' : '');
-    const steps = [['Lecturer', 'BS-17', p.j17], ['Assistant Professor', 'BS-18', p.j18], ['Associate Professor', 'BS-19', p.j19], ['Professor', 'BS-20', p.j20]].filter((x) => x[2]);
+    const exp = p.experience !== undefined && p.experience !== '' ? Number(p.experience) : null;
+    const canPhoto = admin || isMe;
     let h = '<div class="pf-sheet">';
-    h += '<div class="pf-hero"><div class="pf-av">' + esc(initials(p.name)) + '</div><div class="pf-id"><div class="pf-conf">🔒 Staff profile · confidential</div><h2>' + esc(p.name) + '</h2>' +
+    h += '<div class="pf-hero"><div class="pf-av' + (p.photo ? ' has-photo' : '') + '" id="pfAv">' + (p.photo ? '<img src="' + esc(p.photo) + '" alt="">' : esc(initials(p.name))) +
+      (canPhoto ? '<button class="pf-cam no-print" id="pfCam" aria-label="Change photo">📷</button>' : '') + '</div>' +
+      '<div class="pf-id"><div class="pf-conf">🔒 Staff profile</div><h2>' + esc(p.name) + '</h2>' +
       '<div class="pf-post">' + esc([p.designation, p.subject].filter(Boolean).join(' · ')) + '</div>' +
-      '<div class="pf-chips">' + (p.bs ? '<span>' + esc(p.bs) + '</span>' : '') + (p.seniority ? '<span>Seniority ' + esc(p.seniority) + '</span>' : '') + '<span>' + esc(p.id) + '</span></div></div></div>';
+      '<div class="pf-chips">' + (p.bs ? '<span>' + esc(p.bs) + '</span>' : '') + (exp != null ? '<span>' + exp + ' yr' + (exp === 1 ? '' : 's') + ' teaching' + (p.since ? ' · since ' + esc(p.since) : '') + '</span>' : '') + '</div></div>' +
+      (canPhoto ? '<input type="file" id="pfPhotoIn" accept="image/*" hidden>' : '') + '</div>';
+    if (canPhoto) h += '<div class="pf-photo-bar no-print" id="pfPhotoBar"><span id="pfPhotoMsg">' + (p.photo ? 'Tap 📷 to change the photo.' : 'Tap 📷 to add a photo.') + '</span>' + (p.photo ? '<button class="link-btn danger" id="pfPhotoDel">Remove photo</button>' : '') + '</div>';
     h += '<div class="stat-grid g4 pf-stats"><div class="stat"><b>' + fixed.length + '</b><span>Daily classes</span></div><div class="stat"><b>' + bs.length + '</b><span>BS classes</span></div>' +
-      '<div class="stat"><b>' + (svc != null ? svc : '—') + '</b><span>Years of service</span></div><div class="stat"><b>' + (duties.length || rot.length) + '</b><span>' + (duties.length ? 'Extra duties' : 'VI–VII / practicals') + '</span></div></div>';
-    h += '<div class="pf-grid">';
-    h += '<div class="card pad pf-card"><div class="pf-h">🪪 Personal</div>' + row('Father / husband name', p.parentage) + row('CNIC', p.cnic) +
-      row('Date of birth', p.dob, esc(niceDate(p.dob)) + (age != null ? ' <small>(' + age + ' yrs)</small>' : '')) + row('Home district', p.district) + (!(p.parentage || p.cnic || p.dob || p.district) ? '<div class="empty" style="padding:6px 0">Not entered yet.</div>' : '') + '</div>';
-    h += '<div class="card pad pf-card"><div class="pf-h">📞 Contact</div>' + row('Mobile', p.mobile, '<a href="tel:' + esc(String(p.mobile).replace(/[^\d+]/g, '')) + '">' + esc(p.mobile) + '</a>') +
-      row('E-mail', p.email, '<a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>') + row('Home address', p.address) + (!(p.mobile || p.email || p.address) ? '<div class="empty" style="padding:6px 0">Not entered yet.</div>' : '') + '</div>';
-    h += '<div class="card pad pf-card pf-wide"><div class="pf-h">🏛️ Service record</div>' +
-      (steps.length ? '<div class="pf-steps">' + steps.map((x) => '<div class="pf-step"><i></i><b>' + esc(x[0]) + ' <small>' + esc(x[1]) + '</small></b><span>' + esc(niceDate(x[2])) + '</span></div>').join('') + '</div>' : '') +
-      row('Present place of posting', p.posting) + row('Seniority No.', p.seniority) + '</div>';
-    h += '</div>';
+      '<div class="stat"><b>' + (exp != null ? exp : '—') + '</b><span>Years teaching</span></div><div class="stat"><b>' + (duties.length || rot.length) + '</b><span>' + (duties.length ? 'Extra duties' : 'VI–VII / practicals') + '</span></div></div>';
     // workload
     const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
       rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : esc(e.klass)) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
@@ -1308,6 +1295,25 @@
     if (admin && isMe && p.id) h += '<p class="note no-print">You are an admin — <a href="#/faculty">see all staff</a> or <a href="#/faculty/' + esc(p.id) + '/edit">edit your profile</a>.</p>';
     $('profOut').innerHTML = h;
     $('pfPrint').onclick = () => window.print();
+    if ($('pfCam')) {
+      $('pfCam').onclick = () => $('pfPhotoIn').click();
+      $('pfPhotoIn').onchange = async (e) => {
+        const file = e.target.files && e.target.files[0]; e.target.value = '';
+        if (!file) return;
+        $('pfPhotoMsg').textContent = 'Preparing photo…';
+        try {
+          const data = await shrinkPhoto(file);
+          $('pfPhotoMsg').textContent = 'Saving photo…';
+          await attApi('staffPhoto', { id: p.id, photo: data });
+          p.photo = data; facCache[p.id] = null; if (isMe) facMe = null;
+          toast('Photo saved ✓'); paintProfile(p, login, isMe);
+        } catch (err) { if (!facAuthFail(err)) { $('pfPhotoMsg').textContent = err.offline ? 'You need internet to save the photo.' : err.message; } }
+      };
+    }
+    if ($('pfPhotoDel')) $('pfPhotoDel').onclick = async () => {
+      try { await attApi('staffPhoto', { id: p.id, photo: '' }); p.photo = ''; facCache[p.id] = null; if (isMe) facMe = null; toast('Photo removed'); paintProfile(p, login, isMe); }
+      catch (err) { if (!facAuthFail(err)) toast(err.offline ? 'You need internet.' : err.message); }
+    };
     if ($('pfOut')) $('pfOut').onclick = () => { recSignOut(); facReset(); go('/faculty'); };
     if ($('pfEdit')) $('pfEdit').onclick = () => go('/faculty/' + p.id + '/edit');
     if ($('pfPin')) $('pfPin').onclick = async () => {
@@ -1322,8 +1328,27 @@
     };
   }
 
+  /** photo from the phone → 240×240 JPEG data URL (small enough to keep in the sheet) */
+  function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!/^image\//.test(file.type || '')) { reject(new Error('Please choose a picture.')); return; }
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const S = 240, c = document.createElement('canvas'); c.width = S; c.height = S;
+        const side = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - side) / 2, sy = Math.max(0, (img.naturalHeight - side) / 3);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, S, S); g.drawImage(img, sx, sy, side, side, 0, 0, S, S);
+        URL.revokeObjectURL(url);
+        let q = 0.82, out = c.toDataURL('image/jpeg', q);
+        while (out.length > 45000 && q > 0.3) { q -= 0.12; out = c.toDataURL('image/jpeg', q); }
+        if (out.length > 45000) reject(new Error('This picture could not be made small enough. Try another one.')); else resolve(out);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('This picture could not be opened.')); };
+      img.src = url;
+    });
+  }
+
   /* admin: add / edit */
-  const PF_FIELDS = ['name', 'parentage', 'designation', 'bs', 'subject', 'cnic', 'dob', 'district', 'mobile', 'email', 'address', 'j17', 'j18', 'j19', 'j20', 'seniority', 'posting', 'duties', 'logins'];
+  const PF_FIELDS = ['name', 'designation', 'bs', 'subject', 'j17', 'j18', 'j19', 'j20', 'duties', 'logins'];
   function renderProfileEdit(id) {
     if (!facSignedIn() || !isAdminUser()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
     facEditId = id || ''; facDelArmed = 0;
@@ -1331,7 +1356,7 @@
     $('pfDelete').style.display = id ? 'block' : 'none'; $('pfDelete').textContent = '🗑 Delete this profile';
     $('pfSave').textContent = id ? 'Save changes' : 'Add staff member';
     const fill = (p) => PF_FIELDS.forEach((k) => { if (f.elements[k]) f.elements[k].value = p[k] || ''; });
-    if (!id) { f.elements.posting.value = DATA.collegeName || 'Govt. Graduate College, Satellite Town, Rawalpindi'; return true; }
+    if (!id) return true;
     if (facCache[id]) fill(facCache[id].profile);
     else { $('pfErr').textContent = 'Loading…'; attApi('staffGet', { id }).then((j) => { facCache[id] = { profile: j.profile, login: j.login }; $('pfErr').textContent = ''; fill(j.profile); }).catch((e) => { if (!facAuthFail(e)) $('pfErr').textContent = e.message; }); }
     return true;
@@ -1341,8 +1366,8 @@
     PF_FIELDS.forEach((k) => { p[k] = f.elements[k].value; });
     $('pfErr').textContent = '';
     if (!p.name.trim()) { $('pfErr').textContent = 'Please enter the name.'; return; }
-    for (const k of ['dob', 'j17', 'j18', 'j19', 'j20']) if (p[k].trim() && !dmy(p[k].trim().replace(/[./]/g, '-'))) { $('pfErr').textContent = 'Dates should look like 25-12-1980 (day-month-year).'; f.elements[k].focus(); return; }
-    ['dob', 'j17', 'j18', 'j19', 'j20'].forEach((k) => { const d = dmy(p[k].trim().replace(/[./]/g, '-')); if (d) p[k] = String(d.getUTCDate()).padStart(2, '0') + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + d.getUTCFullYear(); });
+    for (const k of ['j17', 'j18', 'j19', 'j20']) if (p[k].trim() && !dmy(p[k].trim().replace(/[./]/g, '-'))) { $('pfErr').textContent = 'Dates should look like 25-12-1980 (day-month-year).'; f.elements[k].focus(); return; }
+    ['j17', 'j18', 'j19', 'j20'].forEach((k) => { const d = dmy(p[k].trim().replace(/[./]/g, '-')); if (d) p[k] = String(d.getUTCDate()).padStart(2, '0') + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + d.getUTCFullYear(); });
     const b = $('pfSave'); b.disabled = true; b.textContent = 'Saving…';
     try {
       const j = await attApi('staffSave', { profile: p });
