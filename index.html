@@ -146,6 +146,7 @@
   .bd-row .bd-main { flex: 1; min-width: 0; }
   .bd-row .bd-t { font-weight: 700; font-size: 0.86rem; }
   .bd-row .bd-s { font-size: 0.74rem; color: var(--muted); }
+  .bd-row .bd-cls { color: var(--text); font-weight: 700; }
   .bd-row .bd-p { display: inline-block; margin: 2px 10px 0 0; white-space: nowrap; }
   .bd-row .bd-g { font-weight: 600; color: var(--muted); font-size: 0.78rem; }
   .bd-b { font-size: 0.72rem; font-weight: 800; padding: 4px 8px; border-radius: 20px; white-space: nowrap; }
@@ -2589,7 +2590,7 @@
         (res.rows || []).forEach((x) => {
           if (!x.period || !x.subject) return;
           const k = x.period + '|' + x.subject + '|' + (x.teacher || '');
-          const e = map[k] || (map[k] = { period: x.period, subject: x.subject, teacher: x.teacher || '', rolls: [] });
+          const e = map[k] || (map[k] = { period: x.period, subject: x.subject, teacher: x.teacher || '', rolls: [], room: x.room || '' });
           if (e.rolls.indexOf(r) < 0) e.rolls.push(r);
         });
       });
@@ -2598,7 +2599,7 @@
         sectionsOf(e.rolls, rolls).forEach((sec) => {
           const key = g + '|' + sec + '|' + e.period + '|' + e.subject;
           if (seen[key]) return; seen[key] = 1;
-          out.push({ group: g, section: sec, period: e.period, subject: e.subject, teacher: e.teacher });
+          out.push({ group: g, section: sec, period: e.period, subject: e.subject, teacher: e.teacher, room: e.room });
         });
       });
     });
@@ -2667,6 +2668,23 @@
     return BADGE[L.st](L.hit || {});
   }
   const partLabel = (x) => esc(x.group) + (x.section !== 'All' ? ' ' + esc(x.section) : '');
+  /** "A1 A2 … A7 F1 … F5 (Even)" → "A + F (Even)": a letter stands for every group of that family */
+  function compactGroups(parts, y) {
+    const all = yrCfg(y).groups, fam = (g) => String(g).replace(/\d+$/, '');
+    const gs = [...new Set(parts.map((p) => p.group))].sort((a, b) => all.indexOf(a) - all.indexOf(b));
+    const out = [], done = {};
+    gs.forEach((g) => {
+      const f = fam(g); if (done[f]) return;
+      const members = all.filter((x) => fam(x) === f), have = gs.filter((x) => fam(x) === f);
+      if (members.length > 1 && have.length === members.length) { out.push(f); done[f] = 1; }
+      else out.push(g);
+    });
+    const secs = [...new Set(parts.map((p) => p.section))];
+    const sec = secs.length === 1 && secs[0] !== 'All' ? ' (' + secs[0].replace('Urdu ', '') + ')' : '';
+    const key = (g) => (fam(g) === 'M' ? '0' : fam(g)) + String(g).replace(/^\D+/, '').padStart(2, '0');
+    return out.sort((a, b) => key(a).localeCompare(key(b))).join(' + ') + sec;
+  }
+  const roomLabel = (r) => { r = String(r || '').trim(); return !r || r === '—' ? '' : /^(room|lab|lt\d)/i.test(r) ? r : 'Room ' + r; };
   const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·' };
   let bdTab = 'day', bdData = null;
   function renderBoard() {
@@ -2750,19 +2768,26 @@
       const live = w && date === j.today ? (j.nowMin >= w[1] ? 'done' : j.nowMin >= w[0] ? 'on now' : '') : '';
       h += '<div class="bd-per"><span>Period ' + esc(p) + (w ? ' · ' + fmtHM(w[0]) + '–' + fmtHM(w[1]) : '') + '</span><span>' + live + '</span></div><div class="card">' +
         list.map((L) => {
-          const one = L.parts.length === 1, x0 = L.parts[0];
-          const title = noLogin(L.teacher) ? partLabel(x0) + ' — ' + esc(L.subject) : esc(L.teacher) + ' — ' + esc(L.subject);
-          const partTxt = (x) => {
-            const h = x.hit;
-            return (one && !noLogin(L.teacher) ? '' : (one ? '' : PART_ICON[x.st] + ' ') + partLabel(x)) +
-              (h ? (one && !noLogin(L.teacher) ? '' : ' ') + 'P ' + h.present + ' · A ' + h.absent + (h.leave ? ' · L ' + h.leave : '') +
-                (h.last !== h.first ? ' · corrected ' + esc(h.last) : '') + (!sameSubj(h.subject, x.subject) ? ' · marked as ' + esc(h.subject) : '') +
-                (h.section !== x.section ? ' · marked for ' + esc(h.section) : '') + (nameKey(h.teacher) !== nameKey(L.teacher) && !noLogin(L.teacher) ? ' · by ' + esc(h.teacher) : '') : '');
-          };
-          const lines = L.parts.map(partTxt).filter((t) => t.trim());
+          const yr = bdData.year, cto = noLogin(L.teacher);
+          const cls = compactGroups(L.parts, yr);
+          const rooms = [...new Set(L.parts.map((x) => roomLabel(x.room)).filter(Boolean))];
+          const title = cto ? esc(cls) + ' — ' + esc(L.subject) : esc(L.teacher) + ' — ' + esc(L.subject);
+          const hits = L.parts.map((x) => x.hit).filter(Boolean);
+          const sum = hits.reduce((a, h) => [a[0] + (h.present || 0), a[1] + (h.absent || 0), a[2] + (h.leave || 0)], [0, 0, 0]);
+          const missing = L.parts.length > 1 && hits.length && hits.length < L.parts.length ? L.parts.filter((x) => !x.hit && x.st !== 'cti') : [];
+          const extraInfo = [];
+          L.parts.forEach((x) => {
+            const h = x.hit; if (!h) return;
+            if (h.last !== h.first) extraInfo.push(partLabel(x) + ' corrected ' + esc(h.last));
+            if (!sameSubj(h.subject, x.subject)) extraInfo.push(partLabel(x) + ' marked as ' + esc(h.subject));
+            if (!cto && nameKey(h.teacher) !== nameKey(L.teacher)) extraInfo.push(partLabel(x) + ' marked by ' + esc(h.teacher));
+          });
           const notes = [...new Set(L.parts.map((x) => x.hit && x.hit.note).filter(Boolean))];
-          const sub = (one && noLogin(L.teacher) ? esc(L.teacher || '—') + (lines.length ? ' · ' : '') : '') + lines.map((t) => '<span class="bd-p">' + t + '</span>').join('') + (notes.length ? '<br>' + notes.map(esc).join('<br>') : '');
-          return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + title + (one ? (noLogin(L.teacher) ? '' : ' · <span class="bd-g">' + partLabel(x0) + '</span>') : ' · <span class="bd-g">' + L.parts.length + ' groups</span>') + '</div><div class="bd-s">' + (sub || '—') + '</div></div>' + lecBadge(L) + '</div>';
+          const line1 = (cto ? esc(L.teacher || 'CTI') : '<b class="bd-cls">' + esc(cls) + '</b>') + (rooms.length ? ' · 📍 ' + esc(rooms.join(', ')) : '') +
+            (hits.length ? ' · P ' + sum[0] + ' · A ' + sum[1] + (sum[2] ? ' · L ' + sum[2] : '') : '');
+          const sub = line1 + (missing.length ? '<br>❌ Not marked: ' + esc(compactGroups(missing, yr)) : '') +
+            (extraInfo.length ? '<br>' + extraInfo.join(' · ') : '') + (notes.length ? '<br>' + notes.map(esc).join('<br>') : '');
+          return '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + title + '</div><div class="bd-s">' + sub + '</div></div>' + lecBadge(L) + '</div>';
         }).join('') + '</div>';
     });
     if (f === 'all' && extra.length) {
@@ -2803,7 +2828,7 @@
         String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
           const e = add(t); e.due++;
           if (x.st === 'ok' || x.st === 'adm') e.ok++; else if (x.st === 'late') e.late++; else if (x.st === 'off') e.off++;
-          else { e.miss++; e.missed.push(fmtDate(iso) + ' · ' + x.period + ' · ' + x.subject + ' · ' + x.parts.filter((p) => p.st === 'miss').map((p) => p.group + (p.section !== 'All' ? ' ' + p.section : '')).join(', ') + (x.nDone ? ' (' + x.nDone + ' of ' + x.parts.length + ' groups marked)' : '')); }
+          else { e.miss++; e.missed.push(fmtDate(iso) + ' · ' + x.period + ' · ' + x.subject + ' · ' + compactGroups(x.parts.filter((p) => p.st === 'miss'), j.year) + (x.nDone ? ' (' + x.nDone + ' of ' + x.parts.length + ' groups marked)' : '')); }
         });
       });
     });
