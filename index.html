@@ -136,6 +136,7 @@
   .mark-btn-2 { background: #1a5d4a; }
   .mark-btn-3 { background: #6b2d5c; }
   .soon-card { text-align: center; padding: 18px 12px; margin: 4px 0 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--chip-bg); color: var(--chip-text); font-size: 0.86rem; }
+  .yr-seg { margin-bottom: 8px; }
   .soon-card b { display: block; font-size: 1rem; margin: 4px 0; color: var(--text); }
   .tnote { font-size: 0.78rem; margin: 2px 0 10px; padding: 7px 10px; border-radius: 10px; background: var(--chip-bg); color: var(--chip-text); }
   .tnote.late { background: #fdeedb; color: #8a4b00; } .tnote.wait { background: #fde4e1; color: #9b1c1c; } .tnote.ok { background: #dff3e6; color: #17603a; }
@@ -617,6 +618,7 @@
   <section class="view" id="view-my">
     <div class="card pad" id="myForm">
       <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
+      <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option></select></div>
       <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
       <div class="field"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
       <button class="btn-primary" id="myGo">Show my record</button>
@@ -642,6 +644,7 @@
       <div class="signed-in">👤 <span>Signed in as <b id="bdWho"></b></span><button class="link-btn" id="bdLogout">Sign out</button></div>
       <div id="bdNotAdmin" class="card pad" style="display:none"><p style="margin:0">Only the Principal and admins can see this board.</p></div>
       <div id="bdAdmin">
+        <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button></div>
         <div class="seg" id="bdTabs">
           <button data-tab="day" class="on">📋 Day board</button>
           <button data-tab="week">📅 Weekly report</button>
@@ -685,6 +688,7 @@
 
     <div id="recMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="recWho"></b> <span class="lock-chip" id="recRole"></span></span><button class="link-btn" id="recLogout">Sign out</button></div>
+      <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button></div>
       <div class="seg" id="recTabs">
         <button data-tab="find" class="on">🔎 Find student</button>
         <button data-tab="classes" id="recTabClasses">👥 My classes</button>
@@ -807,7 +811,7 @@
     <p class="screen-title">Choose your class.</p>
     <div class="card">
       <button class="name-row" data-go="/timetable/y1"><span class="idx">1</span><span><b>1st Year</b><div class="tt-menu-sub">F.Sc · I.C.S · F.A · by roll number</div></span><span class="chev">&rsaquo;</span></button>
-      <button class="name-row" data-go="/timetable/y2"><span class="idx">2</span><span><b>2nd Year</b><div class="tt-menu-sub">F.Sc · I.C.S · by roll number</div></span><span class="chev">&rsaquo;</span></button>
+      <button class="name-row" data-go="/timetable/y2"><span class="idx">2</span><span><b>2nd Year</b><div class="tt-menu-sub">F.Sc · I.C.S · F.A · by roll number</div></span><span class="chev">&rsaquo;</span></button>
       <button class="name-row" id="ttBsToggle"><span class="idx">BS</span><span><b>BS</b><div class="tt-menu-sub">1st · 3rd · 5th · 7th semester</div></span><span class="chev" id="ttBsChev">&rsaquo;</span></button>
       <div id="ttBsList" style="display:none">
         <button class="name-row sub" data-go="/timetable/bs/1"><span class="idx"></span><span>1st Semester</span><span class="chev">&rsaquo;</span></button>
@@ -1207,7 +1211,7 @@
     $('facLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
       if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
     } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -1382,7 +1386,7 @@
     const saved = store.get('roll');
     $('rollInput').value = saved || '';
     $('ttCoverage').textContent = ttYear === 2
-      ? 'Covers 2nd Year F.Sc (M, E) and I.C.S (C1, C2, C3, H). B.Star, G2 and Arts groups will be added soon.'
+      ? 'Covers all 2nd Year groups: F.Sc (M, E), I.C.S (C1, C2, C3, H), General Science (G) and Arts (A1–A3, B1–B3, D1–D3), roll 1–1300.'
       : 'Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.';
     setTimeout(() => { if (!('ontouchstart' in window)) $('rollInput').focus(); }, 150);
   }
@@ -1503,6 +1507,16 @@
 
   /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
   const ATT_GROUPS = ['M', 'E', 'C1', 'C2', 'C3', 'G', 'H', 'F1', 'F2', 'F3', 'F4', 'F5', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'D'];
+  /** 1st / 2nd Year: groups, roll ranges, timetable builder and group names */
+  function yrCfg(y) {
+    if (Number(y) === 2) {
+      const R = typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : [];
+      return { year: 2, groups: R.map((g) => g[0]), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
+    }
+    return { year: 1, groups: ATT_GROUPS, ranges: typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], build: typeof buildSchedule === 'function' ? buildSchedule : null, names: GROUP_NAMES };
+  }
+  const yearOf = (v) => (v === '2nd Year' || Number(v) === 2 ? 2 : 1);
+  const attYear = () => yearOf($('attClass').value), mkYear = () => yearOf($('mkClass').value);
   let attAuth = null, attMarks = {}, attStudents = [], attCtx = null, attBusy = false;
   try { attAuth = JSON.parse(store.get('attAuth') || 'null'); } catch (e) { attAuth = null; }
   const attQueue = {
@@ -1566,10 +1580,11 @@
     el.style.display = t.text ? 'block' : 'none'; el.className = 'tnote ' + t.state; el.textContent = t.text;
   }
   setInterval(() => { if (parseHash().key === 'attendance') paintTimeNote(); }, 30000);
-  function groupRange(code) { return (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).find((g) => g[0] === code); }
+  function groupRange(code, y) { return yrCfg(y).ranges.find((g) => g[0] === code); }
 
-  function lecturesFor(group, section) {
-    const g = groupRange(group); if (!g || typeof buildSchedule !== 'function') return [];
+  function lecturesFor(group, section, y) {
+    const cfg = yrCfg(y), buildSchedule = cfg.build;
+    const g = groupRange(group, y); if (!g || !buildSchedule) return [];
     const lo = g[1], odd = lo % 2 ? lo : lo + 1, even = lo % 2 ? lo + 1 : lo;
     const rolls = section === 'Odd' ? [odd] : section === 'Even' ? [even] : [odd, even];
     if (/^Urdu Batch/.test(section)) return [{ period: 'I', subject: 'Urdu', teacher: 'Batch ' + section.slice(-1) }];
@@ -1596,16 +1611,16 @@
     }
     return e + (a.length - i) + (b.length - j) <= 1;
   }
-  function subjOk(group, subj) {
-    const t = (attAuth && attAuth.teaches) || [];
+  function subjOk(group, subj, y) {
+    const t = (attAuth && (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches)) || [];
     const mine = t.filter((x) => x.group === group);
     if (!t.length) return true;
     return mine.some((x) => normSubj(x.subject).toLowerCase() === normSubj(subj).toLowerCase());
   }
-  function isMe(teacherField, subj, group) {
+  function isMe(teacherField, subj, group, y) {
     const me = nameKey(attAuth && attAuth.name);
     if (!me) return false;
-    return String(teacherField || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && subjOk(group, subj);
+    return String(teacherField || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && subjOk(group, subj, y);
   }
   function sectionsOf(mine, all) {
     const eq = (a, b) => a.length === b.length && a.every((x) => b.indexOf(x) >= 0);
@@ -1616,25 +1631,27 @@
     [1, 2, 3].forEach((k) => { const b = all.filter((r) => (r % 3 === 0 ? 3 : r % 3) === k); if (b.length && b.every((r) => mine.indexOf(r) >= 0)) out.push('Urdu Batch ' + k); });
     return out.length ? out : ['All'];
   }
-  let myClassesCache = null;
+  let myClassesCache = {};
   /** [{group, section, lectures:[{period, subject, teacher, rotating}]}] for the signed-in teacher; [] if not found in the timetable */
-  function myClasses() {
+  function myClasses(y) {
     if (!attAuth) return [];
-    const key = attAuth.name + '|' + JSON.stringify(attAuth.teaches || []);
-    if (myClassesCache && myClassesCache.key === key) return myClassesCache.list;
+    y = Number(y) === 2 ? 2 : 1;
+    const cfg = yrCfg(y);
+    const key = y + '|' + attAuth.name + '|' + JSON.stringify((y === 2 ? attAuth.teaches2 : attAuth.teaches) || []);
+    if (myClassesCache[y] && myClassesCache[y].key === key) return myClassesCache[y].list;
     const out = {};
-    (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).forEach(([g, lo, hi]) => {
+    cfg.ranges.forEach(([g, lo, hi]) => {
       const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
       const map = {};
       rolls.forEach((r) => {
-        const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res) return;
+        const res = cfg.build ? cfg.build(r) : null; if (!res || (y === 2 && !res.code)) return;
         (res.rows || []).map((x) => ({ period: x.period, subject: x.subject, teacher: x.teacher }))
           .concat((res.rotating || []).map((x) => ({ period: 'VI', subject: x.subject, teacher: x.teacher, rotating: true })))
           .forEach((x) => {
             const k = x.period + '|' + x.subject;
             const e = map[k] || (map[k] = { period: x.period, subject: x.subject, rotating: !!x.rotating, teacher: x.teacher, mine: [], all: [] });
             if (e.all.indexOf(r) < 0) e.all.push(r);
-            if (isMe(x.teacher, x.subject, g) && e.mine.indexOf(r) < 0) { e.mine.push(r); e.teacher = x.teacher; }
+            if (isMe(x.teacher, x.subject, g, y) && e.mine.indexOf(r) < 0) { e.mine.push(r); e.teacher = x.teacher; }
           });
       });
       Object.keys(map).forEach((k) => {
@@ -1647,40 +1664,45 @@
       });
     });
     const list = Object.keys(out).map((k) => out[k]);
-    myClassesCache = { key, list };
+    myClassesCache[y] = { key, list };
     return list;
   }
-  const limitToMine = () => attAuth && attAuth.role !== 'Admin' && myClasses().length > 0;
-  function groupOpts(groups) {
-    return groups.map((g) => '<option value="' + g + '">' + g + ' — ' + esc((GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</option>').join('');
+  const limitToMine = (y) => attAuth && attAuth.role !== 'Admin' && myClasses(y).length > 0;
+  function groupOpts(groups, y) {
+    const names = yrCfg(y).names;
+    return groups.map((g) => '<option value="' + g + '">' + g + ' — ' + esc((names[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</option>').join('');
   }
   function fillAttGroups() {
-    const mine = limitToMine();
-    const groups = mine ? ATT_GROUPS.filter((g) => myClasses().some((c) => c.group === g)) : ATT_GROUPS;
-    const prev = $('attGroup').value || store.get('attLastGroup');
-    $('attGroup').innerHTML = groupOpts(groups);
+    const y = attYear(), all = yrCfg(y).groups;
+    const mine = limitToMine(y);
+    const groups = mine ? all.filter((g) => myClasses(y).some((c) => c.group === g)) : all;
+    const prev = ($('attGroup').dataset.y === String(y) && $('attGroup').value) || store.get('attLastGroup' + (y === 2 ? '2' : ''));
+    $('attGroup').innerHTML = groupOpts(groups, y);
+    $('attGroup').dataset.y = String(y);
     if (prev && groups.indexOf(prev) >= 0) $('attGroup').value = prev;
     $('attGroup').dataset.who = attAuth ? attAuth.name : '';
     $('attScopeNote').textContent = !attAuth || attAuth.role === 'Admin' ? '' : mine
-      ? 'Showing only your classes from the timetable. Use "Other subject / period…" for a substitute lecture.'
-      : 'Your name was not found in the timetable, so all groups are shown. Ask the admin to check your name/subjects in the Teachers sheet.';
+      ? 'Showing only your ' + yearLabel(y) + ' classes from the timetable. Use "Other subject / period…" for a substitute lecture.'
+      : (myClasses(y === 2 ? 1 : 2).length ? 'You have no ' + yearLabel(y) + ' classes in the timetable — switch Class to ' + yearLabel(y === 2 ? 1 : 2) + ', or pick any group for a substitute lecture.'
+        : 'Your name was not found in the timetable, so all groups are shown. Ask the admin to check your name/subjects in the Teachers sheet.');
     fillAttSections();
   }
   function fillAttSections() {
-    const g = $('attGroup').value;
-    const secs = limitToMine() ? SECTIONS_ALL.filter((s) => myClasses().some((c) => c.group === g && c.section === s)) : SECTIONS_ALL;
+    const g = $('attGroup').value, y = attYear();
+    const base = y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base;
     const prev = $('attSection').value;
-    $('attSection').innerHTML = (secs.length ? secs : SECTIONS_ALL).map((s) => '<option>' + s + '</option>').join('');
+    $('attSection').innerHTML = (secs.length ? secs : base).map((s) => '<option>' + s + '</option>').join('');
     if (prev && secs.indexOf(prev) >= 0) $('attSection').value = prev;
     fillSubjects();
   }
 
   function fillSubjects() {
-    const g = $('attGroup').value, sec = $('attSection').value;
-    const list = limitToMine()
-      ? myClasses().filter((c) => c.group === g && c.section === sec).reduce((a, c) => a.concat(c.lectures), [])
+    const g = $('attGroup').value, sec = $('attSection').value, y = attYear();
+    const list = limitToMine(y)
+      ? myClasses(y).filter((c) => c.group === g && c.section === sec).reduce((a, c) => a.concat(c.lectures), [])
         .sort((a, b) => periodIndex(a.period) - periodIndex(b.period))
-      : lecturesFor(g, sec);
+      : lecturesFor(g, sec, y);
     $('attSubject').innerHTML = list.map((l, i) =>
       '<option value="' + i + '">' + (l.rotating ? 'VI/VII' : l.period) + ' · ' + esc(l.subject) + (l.teacher ? ' (' + esc(l.teacher) + ')' : '') + '</option>'
     ).join('') + '<option value="other">Other subject / period…</option>';
@@ -1737,17 +1759,19 @@
     try { const o = JSON.parse(store.get('rosters') || 'null'); if (o && o.who === who && o.map) return o; } catch (e) {}
     return { who, map: {} };
   }
-  function rcGet(g, sec) { const e = rcAll().map[g + '|' + sec]; return e ? { at: e.at, students: e.st.map((x) => ({ roll: x[0], name: x[1] })) } : null; }
-  function rcPut(g, sec, students) { if (!attAuth) return; const o = rcAll(); o.map[g + '|' + sec] = { at: Date.now(), st: (students || []).map((x) => [x.roll, x.name]) }; store.set('rosters', JSON.stringify(o)); }
+  const rcKey = (g, sec, y) => (Number(y) === 2 ? '2|' : '') + g + '|' + sec;
+  function rcGet(g, sec, y) { const e = rcAll().map[rcKey(g, sec, y)]; return e ? { at: e.at, students: e.st.map((x) => ({ roll: x[0], name: x[1] })) } : null; }
+  function rcPut(g, sec, students, y) { if (!attAuth || !(students || []).length) return; const o = rcAll(); o.map[rcKey(g, sec, y)] = { at: Date.now(), st: (students || []).map((x) => [x.roll, x.name]) }; store.set('rosters', JSON.stringify(o)); }
   let rcBusy = false;
   /** keep a copy of each of the teacher's own classes, refreshed at most twice a day */
   async function rcPrefetch() {
-    if (rcBusy || !navigator.onLine || !attAuth || !DATA.attendanceApi || !limitToMine()) { paintOffNote(); return; }
-    const due = myClasses().filter((c) => { const e = rcGet(c.group, c.section); return !e || Date.now() - e.at > RC_FRESH; });
+    if (rcBusy || !navigator.onLine || !attAuth || !DATA.attendanceApi || attAuth.role === 'Admin') { paintOffNote(); return; }
+    const fresh = (c) => { const e = rcGet(c.group, c.section, c.year); return e && Date.now() - e.at <= RC_FRESH; };
+    const due = [1, 2].reduce((a, y) => a.concat(myClasses(y).map((c) => ({ group: c.group, section: c.section, year: y }))), []).filter((c) => !fresh(c));
     if (!due.length) { paintOffNote(); return; }
     rcBusy = true;
     for (const c of due) {
-      try { const r = await attApi('roster', { group: c.group, section: c.section }); rcPut(c.group, c.section, r.students); }
+      try { const r = await attApi('roster', { group: c.group, section: c.section, year: c.year }); rcPut(c.group, c.section, r.students, c.year); }
       catch (e) { if (e.offline || /PIN|sign in|not open/i.test(e.message)) break; }
     }
     rcBusy = false; paintOffNote();
@@ -1758,7 +1782,7 @@
   }
   /** marks of an unsent sheet for the same lecture (so re-opening it offline shows what was marked) */
   function queuedMarks(ctx) {
-    const it = attQueue.get().filter((x) => (x.action || 'submit') === 'submit').reverse().find((x) => { const p = x.payload || {}; return p.date === ctx.date && p.period === ctx.period && p.subject === ctx.subject && p.group === ctx.group && p.section === ctx.section; });
+    const it = attQueue.get().filter((x) => (x.action || 'submit') === 'submit').reverse().find((x) => { const p = x.payload || {}; return p.date === ctx.date && p.period === ctx.period && p.subject === ctx.subject && p.group === ctx.group && p.section === ctx.section && Number(p.year || 1) === Number(ctx.year || 1); });
     const full = { P: 'Present', A: 'Absent', L: 'Leave' }, out = {};
     if (it) (it.payload.marks || []).forEach((m) => { out[m.roll] = full[m.status] || 'Present'; });
     return out;
@@ -1772,9 +1796,10 @@
     if (!signed) { $('attName').value = store.get('attLastName') || ''; return; }
     $('attWho').textContent = attAuth.name;
     if (!$('attDate').value) $('attDate').value = todayISO();
-    if (!attAuth.teaches && navigator.onLine) {
-      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; store.set('attAuth', JSON.stringify(attAuth)); fillAttGroups(); }).catch(() => {});
+    if ((!attAuth.teaches || !attAuth.teaches2) && navigator.onLine) {
+      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
     }
+    pickClassYear('att');
     if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
     if (!BELL || BELL.today !== todayISO()) refreshBell();
     paintTimeNote();
@@ -1789,7 +1814,7 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -1809,15 +1834,25 @@
   $('attPeriod').addEventListener('change', paintTimeNote);
   /* Class chooser: only 1st Year is set up; 2nd Year and BS show a "coming soon" card */
   function classSoon(pre) {
-    const v = $(pre + 'Class').value, ready = v === '1st Year';
+    const v = $(pre + 'Class').value, ready = v === '1st Year' || v === '2nd Year';
     $(pre + 'Body').style.display = ready ? '' : 'none';
     const c = $(pre + 'Soon');
     c.style.display = ready ? 'none' : 'block';
     if (!ready) c.innerHTML = (v.indexOf('BS') === 0 ? '🎓' : '📘') + '<b>' + esc(v) + '</b>' +
       (pre === 'att' ? 'Attendance for this class will open here' : 'Marks entry for this class will open here') +
       ' once its student list and timetable are added to the portal.';
-    if (pre === 'att') { $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; }
-    else $('mkListWrap').style.display = 'none';
+    if (pre === 'att') { $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; if (ready && attAuth) fillAttGroups(); }
+    else { $('mkListWrap').style.display = 'none'; if (ready && attAuth) fillMkGroups(); }
+  }
+  /** a teacher who only teaches the 2nd Year starts on 2nd Year */
+  function pickClassYear(pre) {
+    const sel = $(pre + 'Class'), who = attAuth ? attAuth.name : '';
+    if (!attAuth || sel.dataset.who === who) return;
+    sel.dataset.who = who;
+    const has1 = pre === 'att' ? myClasses(1).length : (attAuth.teaches || []).length;
+    const has2 = pre === 'att' ? myClasses(2).length : (attAuth.teaches2 || []).length;
+    const want = attAuth.role !== 'Admin' && !has1 && has2 ? '2nd Year' : '1st Year';
+    if (sel.value !== want) { sel.value = want; classSoon(pre); }
   }
   $('attClass').addEventListener('change', () => classSoon('att'));
   $('mkClass').addEventListener('change', () => classSoon('mk'));
@@ -1837,17 +1872,17 @@
     if (!date) { $('attErr').textContent = 'Choose a date.'; return; }
     if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
     if (!isAdminUser()) { const t = timeState(lec.period); if (t.state === 'wait') { $('attErr').textContent = 'Not yet — you can load the list when the period starts.'; return; } }
-    attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value };
-    store.set('attLastGroup', attCtx.group);
+    attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value, year: attYear() };
+    store.set('attLastGroup' + (attCtx.year === 2 ? '2' : ''), attCtx.group);
     $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
     try {
       let r, s, fromPhone = null;
       try {
         [r, s] = await Promise.all([attApi('roster', attCtx), attApi('getSession', attCtx)]);
-        rcPut(attCtx.group, attCtx.section, r.students); paintOffNote();
+        rcPut(attCtx.group, attCtx.section, r.students, attCtx.year); paintOffNote();
       } catch (err) {
         if (!err.offline) throw err;
-        fromPhone = rcGet(attCtx.group, attCtx.section);
+        fromPhone = rcGet(attCtx.group, attCtx.section, attCtx.year);
         if (!fromPhone) { const e2 = new Error('offline-first'); e2.offline = true; e2.first = true; throw e2; }
         r = { students: fromPhone.students }; s = { marks: queuedMarks(attCtx) };
       }
@@ -1859,7 +1894,7 @@
       $('attList').innerHTML = attStudents.length ? attStudents.map((st) =>
         '<div class="att-row"><span class="roll">' + st.roll + '</span><span class="nm">' + esc(st.name) + '</span>' +
         '<button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>'
-      ).join('') : '<div class="empty">No students found for this group/section.</div>';
+      ).join('') : '<div class="empty">' + (attCtx.year === 2 ? 'No 2nd Year students are listed for this group yet. The admin adds them in “Student Records – 2nd Year”.' : 'No students found for this group/section.') + '</div>';
       $('attListWrap').style.display = 'block'; paintList();
       if (fromPhone) toast('📵 No internet — using the class list saved on this phone (' + fmtDate(new Date(fromPhone.at).toISOString().slice(0, 10)) + '). Mark and save as normal; it will be sent automatically.');
       else if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
@@ -1905,7 +1940,7 @@
     const group = $('attGroup').value, section = $('attSection').value;
     $('attSummaryBtn').textContent = 'Loading summary…';
     try {
-      const j = await attApi('summary', { group, section });
+      const j = await attApi('summary', { group, section, year: attYear() });
       $('attSumTitle').textContent = 'Attendance summary · ' + group + (section !== 'All' ? ' (' + section + ')' : '');
       $('attSumBody').innerHTML = j.rows.map((r) => {
         const pct = r.total ? Math.round(100 * r.present / r.total) : null;
@@ -1921,10 +1956,10 @@
   const TESTS_DEF = ['October Test', 'November Test', 'December Test', 'January Test', 'February Test', 'Pre-Board Test'];
   let mkStudents = [], mkVals = {}, mkCtx = null, mkBusy = false;
   const normSubj = (s) => String(s || '').replace(/\s*Practical$/i, '').trim();
-  function groupSubjects(group) {
+  function groupSubjects(group, y) {
     const set = {};
-    ['All', 'Odd', 'Even'].forEach((sec) => lecturesFor(group, sec).forEach((l) => { set[normSubj(l.subject)] = 1; }));
-    ['Urdu Batch 1'].forEach((sec) => lecturesFor(group, sec).forEach((l) => { set[normSubj(l.subject)] = 1; }));
+    ['All', 'Odd', 'Even'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { if (!l.rotating) set[normSubj(l.subject)] = 1; }));
+    if (Number(y) !== 2) ['Urdu Batch 1'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { set[normSubj(l.subject)] = 1; }));
     return Object.keys(set).filter(Boolean).sort();
   }
   function defaultTest() {
@@ -1932,31 +1967,33 @@
     return m === 9 ? 0 : m === 10 ? 1 : m === 11 ? 2 : m === 0 ? 3 : m === 1 ? 4 : m >= 2 && m <= 5 ? 5 : 0;
   }
   const isAdmin = () => attAuth && attAuth.role === 'Admin';
-  function myTeaches() { return (attAuth && attAuth.teaches) || []; }
+  function myTeaches(y) { return (attAuth && (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches)) || []; }
 
   function fillMkGroups() {
-    const admin = isAdmin();
-    const groups = admin ? ATT_GROUPS : ATT_GROUPS.filter((g) => myTeaches().some((t) => t.group === g));
-    $('mkGroup').innerHTML = groups.map((g) => '<option value="' + g + '">' + esc(groupLabel(g)) + '</option>').join('');
-    const last = store.get('mkLastGroup'); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
+    const admin = isAdmin(), y = mkYear(), all = yrCfg(y).groups;
+    const groups = admin ? all : all.filter((g) => myTeaches(y).some((t) => t.group === g));
+    $('mkGroup').innerHTML = groups.map((g) => '<option value="' + g + '">' + esc(groupLabel(g, y)) + '</option>').join('');
+    const last = store.get('mkLastGroup' + (y === 2 ? '2' : '')); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
     $('mkNote').textContent = admin ? 'As admin you can enter marks for any group and subject.'
-      : groups.length ? 'You can enter marks for: ' + myTeaches().map((t) => t.group + ' · ' + t.subject).join(', ') + '.'
-      : 'No subjects are listed against your name yet. Ask the admin to add them in the Teachers sheet (column "Teaches").';
+      : groups.length ? 'You can enter ' + yearLabel(y) + ' marks for: ' + myTeaches(y).map((t) => t.group + ' · ' + t.subject).join(', ') + '.'
+      : 'No ' + yearLabel(y) + ' subjects are listed against your name. Ask the admin to add them in the Teachers sheet (column "' + (y === 2 ? 'Teaches 2nd Year' : 'Teaches') + '").';
     $('mkLoad').disabled = !groups.length;
     fillMkSubjects();
   }
   function fillMkSubjects() {
     const g = $('mkGroup').value;
-    const list = isAdmin() ? groupSubjects(g) : myTeaches().filter((t) => t.group === g).map((t) => t.subject);
+    const y = mkYear();
+    const list = isAdmin() ? groupSubjects(g, y) : myTeaches(y).filter((t) => t.group === g).map((t) => t.subject);
     $('mkSubject').innerHTML = list.map((s) => '<option>' + esc(s) + '</option>').join('') + (isAdmin() ? '<option value="__other">Other subject…</option>' : '');
     const last = store.get('mkLastSubject'); if (last && list.indexOf(last) >= 0) $('mkSubject').value = last;
     $('mkOtherWrap').style.display = $('mkSubject').value === '__other' ? 'block' : 'none';
     fillMkSections();
   }
   function fillMkSections() {
-    const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase();
-    const secs = limitToMine() ? SECTIONS_ALL.filter((s) => myClasses().some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
-    const use = secs.length ? secs : SECTIONS_ALL;
+    const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
+    const base = y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
+    const use = secs.length ? secs : base;
     const prev = $('mkSection').value;
     $('mkSection').innerHTML = use.map((s) => '<option>' + s + '</option>').join('');
     if (prev && use.indexOf(prev) >= 0) $('mkSection').value = prev;
@@ -1974,10 +2011,11 @@
       $('mkTest').innerHTML = TESTS_DEF.map((t, i) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
       $('mkTest').selectedIndex = defaultTest();
     }
-    if (!attAuth.teaches && navigator.onLine) {
-      try { const j = await attApi('scope'); attAuth.role = j.role; attAuth.teaches = j.teaches || []; store.set('attAuth', JSON.stringify(attAuth)); }
+    if ((!attAuth.teaches || !attAuth.teaches2) && navigator.onLine) {
+      try { const j = await attApi('scope'); attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
       catch (e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); return; } }
     }
+    pickClassYear('mk');
     fillMkGroups();
     flushQueue(true);
   }
@@ -1989,7 +2027,7 @@
     $('mkLoginBtn').disabled = true; $('mkLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       $('mkPin').value = ''; recScope = null; recAllRows = null; renderMarks();
     } catch (e) { $('mkLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('mkLoginBtn').disabled = false; $('mkLoginBtn').textContent = 'Sign in';
@@ -2025,15 +2063,15 @@
     $('mkErr').textContent = '';
     const subject = mkSubjectVal();
     if (!subject) { $('mkErr').textContent = 'Choose or type the subject.'; return; }
-    mkCtx = { test: $('mkTest').value, subject, group: $('mkGroup').value, section: $('mkSection').value, klass: $('mkClass').value };
-    store.set('mkLastGroup', mkCtx.group); store.set('mkLastSubject', $('mkSubject').value);
+    mkCtx = { test: $('mkTest').value, subject, group: $('mkGroup').value, section: $('mkSection').value, klass: $('mkClass').value, year: mkYear() };
+    store.set('mkLastGroup' + (mkCtx.year === 2 ? '2' : ''), mkCtx.group); store.set('mkLastSubject', $('mkSubject').value);
     $('mkLoad').disabled = true; $('mkLoad').textContent = 'Loading…';
     try {
       let j, fromPhone = null;
-      try { j = await attApi('marksSheet', mkCtx); rcPut(mkCtx.group, mkCtx.section, j.students); }
+      try { j = await attApi('marksSheet', mkCtx); rcPut(mkCtx.group, mkCtx.section, j.students, mkCtx.year); }
       catch (err) {
         if (!err.offline) throw err;
-        fromPhone = rcGet(mkCtx.group, mkCtx.section);
+        fromPhone = rcGet(mkCtx.group, mkCtx.section, mkCtx.year);
         if (!fromPhone) throw err;
         j = { students: fromPhone.students, marks: {}, total: null };
       }
@@ -2046,7 +2084,7 @@
         return '<div class="mk-row"><span class="roll">' + s.roll + '</span><span class="nm">' + esc(s.name) + '</span>' +
           '<input type="number" inputmode="decimal" step="0.5" min="0" data-roll="' + s.roll + '" value="' + esc(v.obt) + '"' + (v.absent ? ' disabled' : '') + ' aria-label="Marks for roll ' + s.roll + '">' +
           '<button class="abs-btn' + (v.absent ? ' on' : '') + '" data-roll="' + s.roll + '">Abs</button></div>';
-      }).join('') : '<div class="empty">No students found for this group/section.</div>';
+      }).join('') : '<div class="empty">' + (mkCtx.year === 2 ? 'No 2nd Year students are listed for this group yet. The admin adds them in “Student Records – 2nd Year”.' : 'No students found for this group/section.') + '</div>';
       $('mkListWrap').style.display = 'block'; paintMkCounts();
       if (fromPhone) toast('📵 No internet — using the class list saved on this phone. Enter marks and save; they will be sent automatically.');
       else if (Object.keys(j.marks).length) toast('Loaded marks already saved — you can correct them');
@@ -2110,10 +2148,18 @@
   });
 
   /* ---------- attendance records: student-wise, class-wise, all students ---------- */
-  let recScope = null, recTab = 'find', recAllRows = null, recClassData = null, recHistAll = false, recLastStudent = null;
+  let recScope = null, recTab = 'find', recAllRows = null, recClassData = null, recHistAll = false, recLastStudent = null, recYear = 1;
+  $('recYearSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b || Number(b.dataset.y) === recYear) return;
+    recYear = Number(b.dataset.y);
+    document.querySelectorAll('#recYearSeg button').forEach((x) => x.classList.toggle('on', x === b));
+    recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = ''; $('recRollErr').textContent = '';
+    renderRecords();
+  });
   const pctOf = (p, t) => (t ? Math.round(100 * p / t) : null);
   const pctCell = (p, t) => { const v = pctOf(p, t); return '<td class="num' + (v !== null && v < 75 ? ' low' : '') + '">' + (v === null ? '—' : v + '%') + '</td>'; };
-  const groupLabel = (g) => g + ' — ' + String(GROUP_NAMES[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '');
+  const groupLabel = (g, y) => g + ' — ' + String(yrCfg(y === undefined ? recYear : y).names[g] || g).replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '');
   const secOf = (roll, section) => {
     if (section === 'Odd') return roll % 2 === 1;
     if (section === 'Even') return roll % 2 === 0;
@@ -2121,7 +2167,7 @@
     return true;
   };
   function recSignOut() {
-    attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); myClassesCache = {}; recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = '';
   }
   function recAuthFail(e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderRecords(); return true; } return false; }
@@ -2143,7 +2189,7 @@
     applyRole();
     if (!recScope) {
       try {
-        recScope = await attApi('scope');
+        recScope = await attApi('scope', { year: recYear });
         attAuth.role = recScope.role; attAuth.teaches = recScope.teaches || attAuth.teaches; store.set('attAuth', JSON.stringify(attAuth));
         $('recRole').textContent = recScope.role; applyRole();
       } catch (e) {
@@ -2162,7 +2208,7 @@
     if (admin && recTab === 'classes') recTab = 'all';
     if (!admin && recTab === 'all') recTab = 'classes';
     $('recFindNote').textContent = admin
-      ? 'As admin you can open any 1st Year student.'
+      ? 'As admin you can open any ' + yearLabel(recYear) + ' student.'
       : 'You can open students from the classes (group & section) you have marked attendance for.';
   }
 
@@ -2184,7 +2230,7 @@
     $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
     } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
@@ -2200,7 +2246,7 @@
     $('recRoll').value = roll;
     $('recRollGo').disabled = true; $('recRollGo').textContent = '…';
     try {
-      const j = await attApi('student', { roll });
+      const j = await attApi('student', { roll, year: recYear });
       recLastStudent = j; recHistAll = false; paintStudent();
     } catch (e) {
       if (!recAuthFail(e)) { $('recRollErr').textContent = e.offline ? 'You need internet to see attendance records.' : e.message; $('recStudent').style.display = 'none'; }
@@ -2308,7 +2354,7 @@
     const ring = p === null ? 'var(--muted)' : p < 75 ? 'var(--red)' : 'var(--green)';
     const TAG = { Present: 'c-P', Absent: 'c-A', Leave: 'c-L' };
     let h = '<div class="card pad"><div class="stu-head"><div class="pct-ring" style="--p:' + (p || 0) + ';--ring:' + ring + '"><span>' + (p === null ? '—' : p + '%') + '</span></div>' +
-      '<div><div class="stu-name">' + esc(s.name) + '</div><div class="stu-sub">Roll ' + s.roll + ' · ' + esc(groupLabel(s.group)) + '</div>' +
+      '<div><div class="stu-name">' + esc(s.name) + '</div><div class="stu-sub">' + (s.year === 2 ? '2nd Year · ' : '') + 'Roll ' + s.roll + ' · ' + esc(groupLabel(s.group, s.year || 1)) + '</div>' +
       '<div class="stu-sub">' + esc(s.subjectGroup || '') + '</div></div></div>' +
       '<div class="att-counts" style="margin:12px 0 0"><span class="c-P">Present ' + t.present + '</span><span class="c-A">Absent ' + t.absent + '</span><span class="c-L">Leave ' + t.leave + '</span><span style="color:var(--muted)">Lectures ' + t.total + '</span></div>' +
       (p !== null && p < 75 ? '<p class="note" style="color:var(--red);font-weight:700">Below 75% attendance.</p>' : '') + '</div>';
@@ -2352,7 +2398,7 @@
     if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
     $('myGo').disabled = true; $('myGo').textContent = 'Checking…';
     try {
-      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, dob }) });
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, dob, year: Number($('myYear').value) || 1 }) });
       const j = await res.json();
       if (!j.ok) throw new Error(/PIN|sign in/i.test(j.error || '') ? 'This service is being updated — please try again a little later.' : (j.error || 'Something went wrong.'));
       store.set('roll', String(roll));
@@ -2415,7 +2461,7 @@
     const group = b.dataset.g, section = b.dataset.s;
     $('recClassWrap').style.display = 'block'; $('recClassWrap').innerHTML = '<div class="empty">Loading…</div>';
     try {
-      const j = await attApi('classStats', { group, section });
+      const j = await attApi('classStats', { group, section, year: recYear });
       recClassData = j;
       paintClass();
       $('recClassWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2443,7 +2489,7 @@
     }
     if (recAllRows && !force) { paintAll(); return; }
     $('recAllOut').innerHTML = '<div class="empty">Loading all students…</div>';
-    try { recAllRows = (await attApi('allStats')).rows; paintAll(); }
+    try { recAllRows = (await attApi('allStats', { year: recYear })).rows; paintAll(); }
     catch (e) { if (!recAuthFail(e)) { $('recAllOut').innerHTML = ''; $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; } }
   }
   function paintAll() {
@@ -2495,7 +2541,7 @@
   $('recReload').addEventListener('click', () => loadAll(true));
   $('recRebuild').addEventListener('click', async () => {
     $('recRebuild').disabled = true; $('recRebuild').textContent = 'Recalculating…';
-    try { await attApi('rebuild'); toast('Totals recalculated from the Log ✓'); await loadAll(true); }
+    try { await attApi('rebuild', { year: recYear }); toast('Totals recalculated from the Log ✓'); await loadAll(true); }
     catch (e) { if (!recAuthFail(e)) $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; }
     $('recRebuild').disabled = false; $('recRebuild').textContent = 'Recalculate totals';
   });
@@ -2506,7 +2552,7 @@
     if (Date.now() - archArmed > 6000) { archArmed = Date.now(); b.textContent = 'Tap again to move attendance older than last month to an archive file'; return; }
     archArmed = 0; b.disabled = true; b.textContent = 'Archiving… (this can take a minute)';
     try {
-      const j = await attApi('archive');
+      const j = await attApi('archive', { year: recYear });
       toast(j.moved ? 'Archived ' + j.moved + ' rows (before ' + fmtDate(j.keepFrom) + ') ✓ Totals unchanged.' : 'Nothing to archive yet — the Log only has recent days.');
     } catch (e) { if (!recAuthFail(e)) $('recAllErr').textContent = e.offline ? 'You need internet.' : e.message; }
     b.disabled = false; b.textContent = '📦 Archive old attendance';
@@ -2528,16 +2574,18 @@
   /* ---------- chrome / network ---------- */
 
   /* ---------- Principal's board: who marked attendance, on time or late ---------- */
-  let allLecCache = null;
+  let allLecCache = {}, bdYear = 1;
   /** every fixed lecture in the timetable: [{group, section, period, subject, teacher}] (rotating VI/VII not included) */
-  function allLectures() {
-    if (allLecCache) return allLecCache;
+  function allLectures(y) {
+    y = Number(y) === 2 ? 2 : 1;
+    if (allLecCache[y]) return allLecCache[y];
+    const cfg = yrCfg(y), buildSchedule = cfg.build;
     const out = [], seen = {};
-    (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : []).forEach(([g, lo, hi]) => {
+    cfg.ranges.forEach(([g, lo, hi]) => {
       const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
       const map = {};
       rolls.forEach((r) => {
-        const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res) return;
+        const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res || (y === 2 && !res.code)) return;
         (res.rows || []).forEach((x) => {
           if (!x.period || !x.subject) return;
           const k = x.period + '|' + x.subject + '|' + (x.teacher || '');
@@ -2555,17 +2603,17 @@
       });
     });
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group, undefined, { numeric: true }) || a.section.localeCompare(b.section));
-    allLecCache = out;
+    allLecCache[y] = out;
     return out;
   }
   const noLogin = (t) => /^\s*(cti|tba|—|-)?\s*$/i.test(String(t || ''));
   const secCompat = (a, b) => a === b || a === 'All' || b === 'All';
   const sameSubj = (a, b) => normSubj(a).toLowerCase() === normSubj(b).toLowerCase();
   /** match the lectures saved on one date to the timetable; returns {items, extra} */
-  function boardDay(date, rows, info) {
+  function boardDay(date, rows, info, y) {
     const day = rows.filter((r) => r.date === date), used = new Set();
     const wd = new Date(date + 'T12:00:00Z').getUTCDay();
-    const items = wd === 0 ? [] : allLectures().map((e) => {
+    const items = wd === 0 ? [] : allLectures(y).map((e) => {
       const slot = day.filter((r) => r.period === e.period && r.group === e.group && secCompat(r.section, e.section));
       const hit = slot.find((r) => sameSubj(r.subject, e.subject)) || slot[0] || null;
       if (hit) used.add(hit);
@@ -2642,6 +2690,13 @@
     $('bdWeek').style.display = tab === 'week' ? 'block' : 'none';
     if (tab === 'day') loadBoardDay();
   }
+  $('bdYearSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b || Number(b.dataset.y) === bdYear) return;
+    bdYear = Number(b.dataset.y);
+    document.querySelectorAll('#bdYearSeg button').forEach((x) => x.classList.toggle('on', x === b));
+    bdData = null; $('bdList').innerHTML = ''; $('bdStats').innerHTML = ''; $('bdWeekOut').innerHTML = '';
+    if (bdTab === 'day') loadBoardDay();
+  });
   $('bdTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showBdTab(b.dataset.tab); });
   $('bdLoginBtn').addEventListener('click', async () => {
     const name = $('bdName').value.trim(), pin = $('bdPin').value.trim();
@@ -2650,7 +2705,7 @@
     $('bdLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
     } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('bdLoginBtn').disabled = false;
@@ -2665,9 +2720,11 @@
     const date = $('bdDate').value || todayISO();
     $('bdErr').textContent = ''; $('bdReload').disabled = true; $('bdReload').textContent = 'Loading…';
     try {
-      const j = await attApi('lectures', { from: date, to: date });
+      const year = bdYear;
+      const j = await attApi('lectures', { from: date, to: date, year });
+      if (year !== bdYear) return;
       setBell({ rule: j.rule, periods: j.periods, today: j.today, nowMin: j.nowMin, weekday: j.weekday });
-      bdData = { date, j };
+      bdData = { date, j, year };
       paintBoardDay();
     } catch (e) { if (!recAuthFail(e)) $('bdErr').textContent = e.offline ? 'You need internet to see the board.' : /Unknown action/.test(e.message) ? 'The attendance service needs the v4 update (Apps Script → Manage deployments → New version).' : e.message; if (/PIN|sign in/i.test(e.message)) renderBoard(); }
     $('bdReload').disabled = false; $('bdReload').textContent = '↻ Refresh';
@@ -2676,7 +2733,7 @@
     if (!bdData) return;
     const { date, j } = bdData;
     if (new Date(date + 'T12:00:00Z').getUTCDay() === 0) { $('bdStats').innerHTML = ''; $('bdList').innerHTML = '<div class="card pad empty">Sunday — no classes.</div>'; $('bdNote').textContent = ''; return; }
-    const { items: groupItems, extra } = boardDay(date, j.rows, j);
+    const { items: groupItems, extra } = boardDay(date, j.rows, j, bdData.year);
     const items = byTeacher(groupItems);
     const cnt = (f) => items.filter(f).length;
     const done = cnt((x) => x.st === 'ok' || x.st === 'adm'), late = cnt((x) => x.st === 'late' || x.st === 'off'), miss = cnt((x) => x.st === 'miss'), wait = cnt((x) => x.st === 'now' || x.st === 'up');
@@ -2724,7 +2781,8 @@
     if (!from || !to || from > to) { $('bdWeekErr').textContent = 'Choose a valid date range.'; return; }
     $('bdWeekGo').disabled = true; $('bdWeekGo').textContent = 'Loading…';
     try {
-      const j = await attApi('lectures', { from, to });
+      const j = await attApi('lectures', { from, to, year: bdYear });
+      j.year = bdYear;
       paintWeek(from, to, j);
     } catch (e) { if (!recAuthFail(e)) $('bdWeekErr').textContent = e.offline ? 'You need internet.' : e.message; }
     $('bdWeekGo').disabled = false; $('bdWeekGo').textContent = 'Show report';
@@ -2740,7 +2798,7 @@
     const T = {};
     const add = (name) => T[name] || (T[name] = { name, due: 0, ok: 0, late: 0, off: 0, miss: 0, missed: [] });
     days.forEach((iso) => {
-      byTeacher(boardDay(iso, j.rows, j).items).forEach((x) => {
+      byTeacher(boardDay(iso, j.rows, j, j.year).items).forEach((x) => {
         if (x.st === 'cti' || x.st === 'up' || x.st === 'now') return;
         String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
           const e = add(t); e.due++;
@@ -2762,7 +2820,7 @@
     h += '<button class="link-btn" id="bdWeekCsv" style="margin-top:10px">⬇ Download CSV</button>';
     h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended, one per teacher per period (a class taught to several groups together counts once, and counts as ❌ if any of its groups was not marked); CTI lectures are not counted.</p>';
     $('bdWeekOut').innerHTML = h;
-    $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + from + '_to_' + to + '.csv',
+    $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + (j.year === 2 ? '2nd_Year_' : '1st_Year_') + from + '_to_' + to + '.csv',
       [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
   }
 
