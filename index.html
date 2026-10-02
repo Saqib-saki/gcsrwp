@@ -137,6 +137,10 @@
   .mark-btn-3 { background: #6b2d5c; }
   .soon-card { text-align: center; padding: 18px 12px; margin: 4px 0 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--chip-bg); color: var(--chip-text); font-size: 0.86rem; }
   .yr-seg { margin-bottom: 8px; }
+  .bs-progs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bs-prog { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 20px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+  .bs-prog.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .bs-tt tr.bs-free td { color: var(--muted); }
   .soon-card b { display: block; font-size: 1rem; margin: 4px 0; color: var(--text); }
   .tnote { font-size: 0.78rem; margin: 2px 0 10px; padding: 7px 10px; border-radius: 10px; background: var(--chip-bg); color: var(--chip-text); }
   .tnote.late { background: #fdeedb; color: #8a4b00; } .tnote.wait { background: #fde4e1; color: #9b1c1c; } .tnote.ok { background: #dff3e6; color: #17603a; }
@@ -817,13 +821,14 @@
     </div>
   </section>
 
-  <!-- BS (coming soon) -->
+  <!-- BS timetables -->
   <section class="view" id="view-tt-bs">
-    <div class="card pad" style="text-align:center">
-      <div style="font-size:2.2rem">🗓️</div>
-      <p class="tt-summary-name" id="ttBsTitle" style="margin:8px 0 4px"></p>
-      <p class="note" style="margin:0">This timetable will be added soon. Please check the department noticeboard for now.</p>
+    <div class="card pad bs-head">
+      <p class="tt-summary-name" id="ttBsTitle" style="margin:0 0 2px"></p>
+      <p class="note" style="margin:0 0 10px">Choose your programme.</p>
+      <div class="bs-progs" id="bsProgs"></div>
     </div>
+    <div id="bsOut"></div>
   </section>
 
   <!-- TIMETABLE INPUT -->
@@ -915,6 +920,7 @@
 
 <script src="timetable-engine.js"></script>
 <script src="timetable-engine-2.js"></script>
+<script src="timetable-bs.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1029,7 +1035,7 @@
     if (r.key === 'faculty-one') ok = renderProfile(r.arg);
     if (r.key === 'faculty-edit') ok = renderProfileEdit(r.arg);
     if (r.key === 'timetable') renderRollInput();
-    if (r.key === 'tt-bs') $('ttBsTitle').textContent = 'BS · ' + ({ 1: '1st', 3: '3rd', 5: '5th', 7: '7th' }[r.arg] || r.arg) + ' Semester';
+    if (r.key === 'tt-bs') renderBsTimetable(Number(r.arg));
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
     if (r.key === 'notices') renderNotices();
     if (r.key === 'resources') renderResources();
@@ -1180,7 +1186,7 @@
   function paintFacultyList() {
     const term = $('facultySearch').value.trim().toLowerCase();
     const wl = workloadIndex();
-    const list = (facList || []).map((s) => Object.assign({}, s, { n: wlFor(s.name, wl).filter((e) => !e.rotating).length }));
+    const list = (facList || []).map((s) => Object.assign({}, s, { n: wlFor(s.name, wl).filter((e) => !e.rotating).length + bsFor(s.name).length }));
     const matches = list.filter((s) => !term || [s.name, s.designation, s.subject].join(' ').toLowerCase().includes(term));
     if (!list.length) { $('nameList').innerHTML = '<div class="card pad empty">No staff profiles yet. Tap ＋ Add to create one.</div>'; return; }
     if (!matches.length) { $('nameList').innerHTML = '<div class="card"><div class="empty">No match for “' + esc(term) + '”.</div></div>'; return; }
@@ -1222,7 +1228,21 @@
     const k = nameKey(name); const hit = Object.keys(wl).find((n) => nameKey(n) === k);
     return hit ? wl[hit] : [];
   }
-  const bsFor = (name) => { const f = DATA.faculty || {}; const k = nameKey(name); const key = f[name] ? name : Object.keys(f).find((n) => nameKey(n) === k); return key ? bsRows(key) : []; };
+  const SEM_LABEL = { 0: 'BS', 1: '1st Sem', 3: '3rd Sem', 5: '5th Sem', 7: '7th Sem' };
+  /** a teacher's BS classes from the BS timetables (timetable-bs.js); falls back to data.json */
+  const bsFor = (name) => {
+    const k = nameKey(name);
+    if (typeof BS_TT !== 'undefined') {
+      const seen = {};
+      return BS_TT.filter((r) => r.teacher && nameKey(r.teacher) === k).reduce((a, r) => {
+        const key = r.sem + '|' + r.period + '|' + (r.code || r.course);
+        if (seen[key]) { seen[key].level += ', ' + r.program; if (r.room && seen[key].room.split(' / ').indexOf(r.room) < 0) seen[key].room = (seen[key].room === '—' ? '' : seen[key].room + ' / ') + r.room; return a; }
+        const e = { level: SEM_LABEL[r.sem] + ' · ' + r.program, period: r.period, course: r.course, code: r.code || '—', room: r.room || '—', sem: r.sem };
+        seen[key] = e; a.push(e); return a;
+      }, []).sort((a, b) => a.sem - b.sem || periodIndex(a.period) - periodIndex(b.period));
+    }
+    const f = DATA.faculty || {}; const key = f[name] ? name : Object.keys(f).find((n) => nameKey(n) === k); return key ? bsRows(key) : [];
+  };
 
   function renderProfile(arg) {
     if (!facSignedIn()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
@@ -1280,7 +1300,7 @@
     let w = '';
     [1, 2].forEach((y) => { const rows = fixed.filter((e) => e.year === y); if (rows.length) w += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false); });
     if (bs.length) w += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
-      bs.slice().sort((a, b) => periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+      bs.slice().sort((a, b) => (a.sem || 0) - (b.sem || 0) || periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
     if (rot.length) w += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
     if (duties.length) w += '<div class="section-title">Extra duties / workload</div><div class="card pad"><ul class="pf-duties">' + duties.map((d) => '<li>' + esc(d) + '</li>').join('') + '</ul></div>';
     if (!w) w = '<div class="card"><div class="empty">No classes are assigned to ' + esc(p.name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
@@ -1403,6 +1423,36 @@
     A5: 'F.A Humanities — History, Islamic Studies, Health & P.E.', A6: 'F.A Humanities — Civics, History, Geography',
     A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT'
   };
+
+  /* ---------- BS timetables (by semester and programme) ---------- */
+  const SEM_FULL = { 1: '1st', 3: '3rd', 5: '5th', 7: '7th' };
+  function renderBsTimetable(sem) {
+    $('ttBsTitle').textContent = 'BS · ' + (SEM_FULL[sem] || sem) + ' Semester';
+    const all = typeof BS_TT !== 'undefined' ? BS_TT.filter((r) => r.sem === sem) : [];
+    const progs = (typeof BS_PROGRAMS !== 'undefined' ? BS_PROGRAMS : []).filter((p) => all.some((r) => r.program === p));
+    if (!progs.length) { $('bsProgs').innerHTML = ''; $('bsOut').innerHTML = '<div class="card pad empty">This timetable will be added soon. Please check the department noticeboard for now.</div>'; return; }
+    let cur = store.get('bsProg' + sem); if (progs.indexOf(cur) < 0) cur = progs[0];
+    $('bsProgs').innerHTML = progs.map((p) => '<button class="bs-prog' + (p === cur ? ' on' : '') + '" data-p="' + esc(p) + '">' + esc(p.replace(' (General Education)', '')) + '</button>').join('');
+    $('bsProgs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; store.set('bsProg' + sem, b.dataset.p); renderBsTimetable(sem); };
+    const rows = all.filter((r) => r.program === cur).sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
+    const P = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+    const shared = cur.indexOf('Shared') === 0;
+    const full = !shared && P.slice(0, 5).every((p) => rows.some((r) => r.period === p));
+    let h = '<div class="card"><div class="overflow-x"><table class="wl bs-tt"><thead><tr><th>Period</th><th>Course</th><th>Teacher</th><th>Room</th></tr></thead><tbody>';
+    P.forEach((p) => {
+      const rs = rows.filter((r) => r.period === p);
+      if (!rs.length) { if (!shared) h += '<tr class="bs-free"><td class="period">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td><td colspan="3">—</td></tr>'; return; }
+      rs.forEach((r, i) => {
+        h += '<tr>' + (i ? '<td></td>' : '<td class="period" rowspan="1">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td>') +
+          '<td><b>' + esc(r.course) + '</b>' + (r.code ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
+          '<td>' + esc(r.teacher || '—') + '</td><td>' + esc(r.room || '—') + '</td></tr>';
+      });
+    });
+    h += '</tbody></table></div></div>';
+    h += '<p class="note">' + (shared ? 'Courses shared by students of several programmes.' : full ? 'From the official timetable. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.' :
+      'Only the courses sent by the department are shown (“—” = not listed yet). Please confirm the rest with your department.') + '</p>';
+    $('bsOut').innerHTML = h;
+  }
 
   let ttYear = 1;
   const yearLabel = (y) => (y === 2 ? '2nd Year' : '1st Year');
@@ -1866,7 +1916,7 @@
     c.style.display = ready ? 'none' : 'block';
     if (!ready) c.innerHTML = (v.indexOf('BS') === 0 ? '🎓' : '📘') + '<b>' + esc(v) + '</b>' +
       (pre === 'att' ? 'Attendance for this class will open here' : 'Marks entry for this class will open here') +
-      ' once its student list and timetable are added to the portal.';
+      (v.indexOf('BS') === 0 ? ' once the BS student lists are added. (The BS timetables are already in the app.)' : ' once its student list and timetable are added to the portal.');
     if (pre === 'att') { $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; if (ready && attAuth) fillAttGroups(); }
     else { $('mkListWrap').style.display = 'none'; if (ready && attAuth) fillMkGroups(); }
   }
