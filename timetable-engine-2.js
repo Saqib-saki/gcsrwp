@@ -43,8 +43,10 @@ const GROUP_NAMES_2 = {
 // Sections used for attendance: Science & I.C.S split Odd/Even by roll number; Arts groups sit together.
 const GROUP_SECTIONS_2 = { M: ["Odd", "Even"], E: ["Odd", "Even"], C1: ["Odd", "Even"], C2: ["Odd", "Even"], C3: ["Odd", "Even"], G: ["Odd", "Even"], H: ["Odd", "Even"] };
 
+// Rolls admitted after the printed series (1301–1310, 1351–1352 in the 2026-27 list) sit with the nearest group, D3.
+const GROUP_EXTRA_2 = [["D3", 1301, 1400]];
 function codeForRoll2(roll) {
-  for (const [code, lo, hi] of GROUP_RANGES_2) if (roll >= lo && roll <= hi) return code;
+  for (const [code, lo, hi] of GROUP_RANGES_2.concat(GROUP_EXTRA_2)) if (roll >= lo && roll <= hi) return code;
   return null;
 }
 
@@ -57,7 +59,7 @@ function buildSchedule2(roll) {
   const R = (n) => (/^\d+[A-Z]?$/.test(String(n)) ? "Room " + n : n);
   if (!code) {
     return { code: null, group: "", sheet: "", rows: [], rotating: [],
-      note: "Roll number " + roll + " is not in the 2nd Year roll-number series (1–1150, 1201–1300). Please check with the college office." };
+      note: "Roll number " + roll + " is not in the 2nd Year roll-number series (1–1150, 1201–1400). Please check with the college office." };
   }
   const rows = [], rotating = [];
   const add = (period, subject, room, teacher, note) => rows.push({ period, subject, room: R(room), teacher, note: note || "" });
