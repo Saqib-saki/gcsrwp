@@ -542,6 +542,7 @@
         <button class="btn-primary" id="attLoad">Load students</button>
         <div class="tt-error" id="attErr"></div>
         <p class="note" id="attScopeNote" style="margin-top:6px"></p>
+        <p class="note" id="attOffNote" style="margin-top:2px"></p>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
         </div>
         <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open student records (attendance &amp; results)</button>
@@ -1729,6 +1730,40 @@
   if (attQueue.get().length) scheduleRetry();
   $('attSendNow').addEventListener('click', () => flushQueue(false));
 
+  /* ---------- offline class lists: roll numbers + names only, kept on this phone, removed on sign-out ---------- */
+  const RC_FRESH = 12 * 3600 * 1000;
+  function rcAll() {
+    const who = attAuth ? attAuth.name : '';
+    try { const o = JSON.parse(store.get('rosters') || 'null'); if (o && o.who === who && o.map) return o; } catch (e) {}
+    return { who, map: {} };
+  }
+  function rcGet(g, sec) { const e = rcAll().map[g + '|' + sec]; return e ? { at: e.at, students: e.st.map((x) => ({ roll: x[0], name: x[1] })) } : null; }
+  function rcPut(g, sec, students) { if (!attAuth) return; const o = rcAll(); o.map[g + '|' + sec] = { at: Date.now(), st: (students || []).map((x) => [x.roll, x.name]) }; store.set('rosters', JSON.stringify(o)); }
+  let rcBusy = false;
+  /** keep a copy of each of the teacher's own classes, refreshed at most twice a day */
+  async function rcPrefetch() {
+    if (rcBusy || !navigator.onLine || !attAuth || !DATA.attendanceApi || !limitToMine()) { paintOffNote(); return; }
+    const due = myClasses().filter((c) => { const e = rcGet(c.group, c.section); return !e || Date.now() - e.at > RC_FRESH; });
+    if (!due.length) { paintOffNote(); return; }
+    rcBusy = true;
+    for (const c of due) {
+      try { const r = await attApi('roster', { group: c.group, section: c.section }); rcPut(c.group, c.section, r.students); }
+      catch (e) { if (e.offline || /PIN|sign in|not open/i.test(e.message)) break; }
+    }
+    rcBusy = false; paintOffNote();
+  }
+  function paintOffNote() {
+    const n = Object.keys(rcAll().map).length;
+    if ($('attOffNote')) $('attOffNote').textContent = n ? '📥 ' + n + ' class list' + (n > 1 ? 's are' : ' is') + ' saved on this phone — you can mark attendance even without internet.' : '';
+  }
+  /** marks of an unsent sheet for the same lecture (so re-opening it offline shows what was marked) */
+  function queuedMarks(ctx) {
+    const it = attQueue.get().filter((x) => (x.action || 'submit') === 'submit').reverse().find((x) => { const p = x.payload || {}; return p.date === ctx.date && p.period === ctx.period && p.subject === ctx.subject && p.group === ctx.group && p.section === ctx.section; });
+    const full = { P: 'Present', A: 'Absent', L: 'Leave' }, out = {};
+    if (it) (it.payload.marks || []).forEach((m) => { out[m.roll] = full[m.status] || 'Present'; });
+    return out;
+  }
+
   function renderAttendance() {
     renderPending();
     const signed = !!attAuth;
@@ -1744,6 +1779,7 @@
     if (!BELL || BELL.today !== todayISO()) refreshBell();
     paintTimeNote();
     flushQueue(true);
+    paintOffNote(); setTimeout(rcPrefetch, 2500);
   }
 
   $('attLoginBtn').addEventListener('click', async () => {
@@ -1805,7 +1841,16 @@
     store.set('attLastGroup', attCtx.group);
     $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
     try {
-      const [r, s] = await Promise.all([attApi('roster', attCtx), attApi('getSession', attCtx)]);
+      let r, s, fromPhone = null;
+      try {
+        [r, s] = await Promise.all([attApi('roster', attCtx), attApi('getSession', attCtx)]);
+        rcPut(attCtx.group, attCtx.section, r.students); paintOffNote();
+      } catch (err) {
+        if (!err.offline) throw err;
+        fromPhone = rcGet(attCtx.group, attCtx.section);
+        if (!fromPhone) { const e2 = new Error('offline-first'); e2.offline = true; e2.first = true; throw e2; }
+        r = { students: fromPhone.students }; s = { marks: queuedMarks(attCtx) };
+      }
       attStudents = r.students; attMarks = {};
       const back = { Present: 'P', Absent: 'A', Leave: 'L' };
       attStudents.forEach((st) => { attMarks[st.roll] = back[s.marks[st.roll]] || 'P'; });
@@ -1816,9 +1861,10 @@
         '<button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>'
       ).join('') : '<div class="empty">No students found for this group/section.</div>';
       $('attListWrap').style.display = 'block'; paintList();
-      if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
+      if (fromPhone) toast('📵 No internet — using the class list saved on this phone (' + fmtDate(new Date(fromPhone.at).toISOString().slice(0, 10)) + '). Mark and save as normal; it will be sent automatically.');
+      else if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
       $('attListWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to load the student list.' : e.message; if (/PIN|sign in/i.test(e.message)) { attAuth = null; store.set('attAuth', ''); renderAttendance(); } }
+    } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to open this class the first time. After that the list is kept on this phone and works without internet.' : e.message; if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderAttendance(); } }
     $('attLoad').disabled = false; $('attLoad').textContent = 'Load students';
   });
 
@@ -1983,7 +2029,14 @@
     store.set('mkLastGroup', mkCtx.group); store.set('mkLastSubject', $('mkSubject').value);
     $('mkLoad').disabled = true; $('mkLoad').textContent = 'Loading…';
     try {
-      const j = await attApi('marksSheet', mkCtx);
+      let j, fromPhone = null;
+      try { j = await attApi('marksSheet', mkCtx); rcPut(mkCtx.group, mkCtx.section, j.students); }
+      catch (err) {
+        if (!err.offline) throw err;
+        fromPhone = rcGet(mkCtx.group, mkCtx.section);
+        if (!fromPhone) throw err;
+        j = { students: fromPhone.students, marks: {}, total: null };
+      }
       mkStudents = j.students; mkVals = {};
       if (j.total && !$('mkTotal').value) $('mkTotal').value = j.total;
       mkStudents.forEach((s) => { const m = j.marks[s.roll]; mkVals[s.roll] = m ? { obt: m.status === 'Absent' ? '' : m.obt, absent: m.status === 'Absent' } : { obt: '', absent: false }; });
@@ -1995,9 +2048,10 @@
           '<button class="abs-btn' + (v.absent ? ' on' : '') + '" data-roll="' + s.roll + '">Abs</button></div>';
       }).join('') : '<div class="empty">No students found for this group/section.</div>';
       $('mkListWrap').style.display = 'block'; paintMkCounts();
-      if (Object.keys(j.marks).length) toast('Loaded marks already saved — you can correct them');
+      if (fromPhone) toast('📵 No internet — using the class list saved on this phone. Enter marks and save; they will be sent automatically.');
+      else if (Object.keys(j.marks).length) toast('Loaded marks already saved — you can correct them');
       $('mkListWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (e) { $('mkErr').textContent = e.offline ? 'You need internet to load the student list.' : e.message; if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); } }
+    } catch (e) { $('mkErr').textContent = e.offline ? 'You need internet to open this class the first time. After that the list is kept on this phone and works without internet.' : e.message; if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); } }
     $('mkLoad').disabled = false; $('mkLoad').textContent = 'Load students';
   });
 
@@ -2067,7 +2121,7 @@
     return true;
   };
   function recSignOut() {
-    attAuth = null; store.set('attAuth', ''); recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = '';
   }
   function recAuthFail(e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderRecords(); return true; } return false; }
