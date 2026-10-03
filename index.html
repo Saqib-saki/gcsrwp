@@ -94,12 +94,19 @@
     box-shadow: 0 4px 14px rgba(10,36,64,0.18); border: 1px solid rgba(242,193,78,0.35);
   }
   .patron::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--gold); }
-  .patron .pt-top { display: flex; align-items: center; gap: 14px; }
-  .patron .pt-logo { width: 74px; height: auto; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
-  .patron .pt-college { font-size: 0.66rem; letter-spacing: .06em; text-transform: uppercase; color: #cfd8e3; line-height: 1.3; }
-  .patron .pt-label { font-size: 0.7rem; color: var(--gold); font-weight: 700; margin-top: 6px; letter-spacing: .03em; }
-  .patron .pt-name { font-size: 1.28rem; font-weight: 800; line-height: 1.15; color: #fff; margin-top: 1px; }
-  .patron .pt-role { font-size: 0.8rem; color: #e6ecf3; font-weight: 600; }
+  .patron .pt-logos { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .patron .pt-badge {
+    width: 66px; height: 66px; border-radius: 50%; background: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    box-shadow: 0 0 0 2px var(--gold), 0 3px 8px rgba(0,0,0,0.3);
+  }
+  .patron .pt-badge img { width: 100%; height: 100%; object-fit: contain; }
+  .patron .pt-badge.shield img { width: 80%; height: 80%; }
+  .patron .pt-college { flex: 1; text-align: center; font-size: 0.74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #fff; line-height: 1.35; }
+  .patron .pt-mid { text-align: center; margin-top: 12px; }
+  .patron .pt-label { font-size: 0.72rem; color: var(--gold); font-weight: 700; letter-spacing: .04em; }
+  .patron .pt-name { font-size: 1.32rem; font-weight: 800; line-height: 1.15; color: #fff; margin-top: 2px; }
+  .patron .pt-role { font-size: 0.82rem; color: #e6ecf3; font-weight: 600; }
   .patron .pt-dev { border-top: 1px solid rgba(255,255,255,0.16); margin-top: 11px; padding-top: 9px; text-align: center; }
   .patron .pt-dlabel { font-size: 0.62rem; text-transform: uppercase; letter-spacing: .08em; color: #cfd8e3; margin-bottom: 6px; }
   .patron .pt-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
@@ -451,14 +458,15 @@
   <!-- HOME -->
   <section class="view" id="view-home">
     <div class="patron" id="patron">
-      <div class="pt-top">
-        <img class="pt-logo" src="icons/college-logo.png" alt="College logo" onerror="this.style.display='none'">
-        <div>
-          <div class="pt-college" id="ptCollege">Govt. Graduate College Satellite Town, Rawalpindi</div>
-          <div class="pt-label">Under the patronage of</div>
-          <div class="pt-name" id="ptName"></div>
-          <div class="pt-role" id="ptRole"></div>
-        </div>
+      <div class="pt-logos">
+        <span class="pt-badge"><img src="icons/hed-logo.png" alt="Higher Education Department, Punjab" onerror="this.parentNode.style.visibility='hidden'"></span>
+        <div class="pt-college" id="ptCollege">Govt. Graduate College Satellite Town, Rawalpindi</div>
+        <span class="pt-badge shield"><img src="icons/college-logo.png" alt="College logo" onerror="this.parentNode.style.visibility='hidden'"></span>
+      </div>
+      <div class="pt-mid">
+        <div class="pt-label">Under the patronage of</div>
+        <div class="pt-name" id="ptName"></div>
+        <div class="pt-role" id="ptRole"></div>
       </div>
       <div class="pt-dev">
         <div class="pt-dlabel">App developed by</div>
