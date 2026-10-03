@@ -391,6 +391,23 @@
   .reg-low { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.82rem; }
   .reg-low em { color: var(--red); font-style: normal; font-weight: 800; }
   .print-only { display: none; }
+  a.wl-cls, .wl-cls.demo { display: inline-block; background: #1d5fbf; color: #fff !important; font-weight: 800; font-size: 0.8rem; padding: 3px 9px; border-radius: 8px; margin: 1px 3px 3px 0; text-decoration: none; box-shadow: 0 1px 3px rgba(29,95,191,.35); }
+  a.wl-cls:active { transform: scale(.96); }
+  .wl-cls.demo { font-size: 0.72rem; padding: 1px 7px; }
+  .wl-hint { margin: 0 2px 8px; }
+  .reg-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .reg-mon { text-align: left; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font: inherit; color: inherit; cursor: pointer; }
+  .reg-mon.test { cursor: default; border-left: 4px solid #1d5fbf; }
+  .reg-mon b { display: block; color: var(--accent); font-size: 0.86rem; }
+  .reg-mon small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 4px; }
+  .reg-mon small b { display: inline; font-size: 0.78rem; }
+  .reg-mon small b.low { color: var(--red); }
+  .reg-mon .bar { display: block; height: 6px; background: var(--chip-bg); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .reg-mon .bar i { display: block; height: 100%; background: #1a7f4e; border-radius: 4px; }
+  .reg-mon .bar i.lowbar { background: #c62828; }
+  table.reg-tbl.sess .rc { min-width: 40px; font-weight: 700; }
+  table.reg-tbl.sess .tcol { background: rgba(29,95,191,.06); }
+  table.reg-tbl .grade { display: inline-block; min-width: 26px; padding: 1px 5px; border-radius: 6px; background: var(--chip-bg); font-weight: 800; }
   .reg-foot { text-align: right; }
   @media print {
     .app-header, .appfoot, .toast, .no-print, #installBanner, .banner { display: none !important; }
@@ -420,6 +437,8 @@
     .reg-sign { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 34px; font-size: 9pt; text-align: center; }
     .reg-sign div { border-top: 1px solid #000; padding-top: 4px; }
     .section-title { break-after: avoid; }
+    .reg-months { grid-template-columns: repeat(6, 1fr) !important; } .reg-mon { padding: 4px 8px; } .reg-mon .bar, .reg-mon .bar i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .wl-cls { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
   .prof-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #10345c, #1d5a93); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex: 0 0 auto; }
   .prof-av.sm { width: 34px; height: 34px; font-size: 0.78rem; margin-right: 4px; }
@@ -1132,6 +1151,7 @@
     else { history.replaceState({ depth: 0 }, '', '#' + parent); render(); }
   }
 
+  let lastRouteKey = '';
   function render() {
     const r = parseHash();
     const route = ROUTES[r.key];
@@ -1141,7 +1161,8 @@
     if (r.key === 'faculty') ok = renderFaculty();
     if (r.key === 'faculty-one') ok = renderProfile(r.arg);
     if (r.key === 'faculty-edit') ok = renderProfileEdit(r.arg);
-    if (r.key === 'register') ok = renderRegister(r.parts || []);
+    if (r.key === 'register') { if (lastRouteKey !== 'register') regClassKey = ''; ok = renderRegister(r.parts || []); }
+    lastRouteKey = r.key;
     if (r.key === 'timetable') renderRollInput();
     if (r.key === 'tt-bs') renderBsTimetable(Number(r.arg));
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
@@ -1402,9 +1423,10 @@
     h += '<div class="stat-grid g4 pf-stats"><div class="stat"><b>' + fixed.length + '</b><span>Daily classes</span></div><div class="stat"><b>' + bs.length + '</b><span>BS classes</span></div>' +
       '<div class="stat"><b>' + (exp != null ? exp : '—') + '</b><span>Years teaching</span></div><div class="stat"><b>' + (duties.length || rot.length) + '</b><span>' + (duties.length ? 'Extra duties' : 'VI–VII / practicals') + '</span></div></div>';
     // workload
+    const canRec = (isMe || admin) && !!DATA.attendanceApi;
     const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
-      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : esc(e.klass)) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
-    h += '<div class="pf-wl-title">📚 Workload</div>';
+      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : (canRec && !e.rotating ? klassLinks(e, p.name) : esc(e.klass))) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    h += '<div class="pf-wl-title">📚 Workload</div>' + (canRec && fixed.length ? '<p class="note no-print wl-hint">👆 Tap a <span class="wl-cls demo">blue class</span> to open its attendance and test record — the whole session so far, and month by month.</p>' : '');
     let w = '';
     [1, 2].forEach((y) => { const rows = fixed.filter((e) => e.year === y); if (rows.length) w += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false); });
     if (bs.length) w += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
@@ -1415,7 +1437,6 @@
     h += w + '<p class="note">Workload from the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) timetables' + (bs.length ? ' and the BS workload' : '') + '. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.' +
       (p.updated ? ' Profile last updated ' + esc(p.updated) + '.' : '') + (isMe ? ' Something wrong? Ask the admin to correct it.' : '') + '</p>';
     h += '</div>';
-    if (isMe) h += myRecordList();
     // actions
     h += '<div class="pf-actions no-print"><button class="btn-go" id="pfPrint">🖨 Print / PDF</button>' +
       (admin && !isMe ? '<button class="btn-go" id="pfEdit">✏️ Edit</button><button class="btn-go alt" id="pfPin">🔑 ' + (login ? (login.active ? 'Show PIN' : 'Turn login on') : 'Create PIN') + '</button>' : '') +
@@ -1461,32 +1482,17 @@
   const REG_START = '2026-09';
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const monthLabel = (m) => MONTH_NAMES[Number(m.slice(5)) - 1] + ' ' + m.slice(0, 4);
-  let regMonth = '', regCache = {};
-  /** the signed-in teacher's own classes (from the timetables), one per group / section / subject */
-  function myRecordClasses() {
-    const out = [], seen = {};
-    [1, 2].forEach((y) => myClasses(y).forEach((c) => c.lectures.forEach((l) => {
-      if (l.rotating) return;
-      const k = y + '|' + c.group + '|' + c.section + '|' + l.subject.toLowerCase();
-      if (seen[k]) return; seen[k] = 1;
-      out.push({ year: y, group: c.group, section: c.section, subject: l.subject });
-    })));
-    return out;
+  let regMonth = '', regCache = {}, regClassKey = '';
+  /** workload "A1, A2 (Even)" → one blue link per group */
+  function klassLinks(e, teacher) {
+    const m = /^(.*?)(?: \(([^)]+)\))?$/.exec(String(e.klass || ''));
+    const sec = (m && m[2]) || 'All';
+    const groups = String((m && m[1]) || '').split(/\s*,\s*/).filter(Boolean);
+    if (!groups.length) return esc(e.klass);
+    return groups.map((g) => '<a class="wl-cls" href="#' + esc(regPath({ year: e.year, group: g, section: sec, subject: e.subject }) + '/' + encodeURIComponent(teacher || '')) + '">' + esc(g) + '</a>').join(' ') +
+      (sec !== 'All' ? '<span class="ttnote">' + esc(sec) + '</span>' : '');
   }
   const regPath = (c) => '/register/' + [c.year, c.group, c.section, c.subject].map(encodeURIComponent).join('/');
-  function myRecordList() {
-    const list = myRecordClasses();
-    let h = '<div class="pf-wl-title no-print">📊 My class records <span class="reg-tag">monthly</span></div>';
-    if (!list.length) return h + '<div class="card no-print"><div class="empty">Your 1st / 2nd Year classes will appear here once your name is matched in the timetable. Ask the admin to check it.</div></div>';
-    [1, 2].forEach((y) => {
-      const rows = list.filter((c) => c.year === y);
-      if (!rows.length) return;
-      h += '<div class="section-title no-print">' + yearLabel(y) + '</div><div class="card no-print">' + rows.sort((a, b) => a.subject.localeCompare(b.subject) || a.group.localeCompare(b.group, undefined, { numeric: true })).map((c) =>
-        '<button class="name-row" data-go="' + esc(regPath(c)) + '"><span class="reg-ic">📋</span><span><b>' + esc(c.group) + (c.section !== 'All' ? ' · ' + esc(c.section) : '') + '</b> — ' + esc(c.subject) +
-        '<div class="tt-menu-sub">' + esc(String(yrCfg(y).names[c.group] || '').replace(/^F\.A \(I\.T\) — |^F\.A Humanities — /, '')) + '</div></span><span class="chev">&rsaquo;</span></button>').join('') + '</div>';
-    });
-    return h + '<p class="note no-print">Tap a class to see its attendance register and monthly test result for any month, with totals and percentages, and to print it as a PDF. BS class records will be added once the BS student lists are in the app.</p>';
-  }
   function regMonths() {
     const now = todayISO().slice(0, 7), out = [];
     let y = Number(REG_START.slice(0, 4)), m = Number(REG_START.slice(5));
@@ -1497,12 +1503,14 @@
     if (!facSignedIn()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
     const [y0, group, section, subject] = parts;
     if (!group || !subject) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
-    const ctx = { year: Number(y0) === 2 ? 2 : 1, group, section: section || 'All', subject };
+    const ctx = { year: Number(y0) === 2 ? 2 : 1, group, section: section || 'All', subject, teacher: parts[4] || attAuth.name };
     const months = regMonths();
-    if (!regMonth || months.indexOf(regMonth) < 0) regMonth = months[0];
+    const ck = [ctx.year, group, ctx.section, subject.toLowerCase()].join('|');
+    if (ck !== regClassKey) { regClassKey = ck; regMonth = 'all'; }
+    if (!regMonth || (regMonth !== 'all' && months.indexOf(regMonth) < 0)) regMonth = 'all';
     const key = [ctx.year, group, ctx.section, subject.toLowerCase(), regMonth, attAuth.name].join('|');
     if (regCache[key]) paintRegister(ctx, regCache[key]);
-    else { paintRegisterShell(ctx, '<div class="card pad empty">Loading the ' + esc(monthLabel(regMonth)) + ' record…</div>'); loadRegister(ctx, key); }
+    else { paintRegisterShell(ctx, '<div class="card pad empty">Loading the ' + esc(regMonth === 'all' ? 'whole-session' : monthLabel(regMonth)) + ' record…</div>'); loadRegister(ctx, key); }
     return true;
   }
   async function loadRegister(ctx, key) {
@@ -1516,14 +1524,14 @@
     }
   }
   function regControls(ctx, ready) {
-    return '<div class="reg-bar no-print"><label>Month <select id="regMonthSel">' + regMonths().map((m) => '<option value="' + m + '"' + (m === regMonth ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('') + '</select></label>' +
+    return '<div class="reg-bar no-print"><label>Show <select id="regMonthSel"><option value="all"' + (regMonth === 'all' ? ' selected' : '') + '>Whole session (till now)</option>' + regMonths().map((m) => '<option value="' + m + '"' + (m === regMonth ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('') + '</select></label>' +
       (ready ? '<button class="btn-go" id="regPrint">🖨 Print / PDF</button><button class="btn-go alt" id="regCsv">⬇ CSV</button>' : '') + '<button class="btn-go alt" id="regRefresh" aria-label="Refresh">↻</button></div>';
   }
   function wireRegister(ctx, j) {
     $('regMonthSel').onchange = (e) => { regMonth = e.target.value; render(); };
     $('regRefresh').onclick = () => { Object.keys(regCache).forEach((k) => { if (k.indexOf([ctx.year, ctx.group, ctx.section, ctx.subject.toLowerCase(), regMonth].join('|')) === 0) delete regCache[k]; }); render(); };
     if ($('regPrint')) $('regPrint').onclick = () => printLandscape();
-    if ($('regCsv') && j) $('regCsv').onclick = () => regCsv(ctx, j);
+    if ($('regCsv') && j) $('regCsv').onclick = () => (j.month === 'all' ? sessionCsv(ctx, j) : regCsv(ctx, j));
   }
   function paintRegisterShell(ctx, body) {
     $('regOut').innerHTML = regControls(ctx, false) + regTitle(ctx) + body;
@@ -1566,6 +1574,7 @@
     };
   }
   function paintRegister(ctx, j) {
+    if (j.month === 'all') { paintSession(ctx, j); return; }
     const c = regCalc(j), mon = monthLabel(j.month), hasMarks = c.app.length + c.absent > 0;
     const pc = (v) => (v === null ? '—' : v + '%');
     const lowCls = (v, lim) => (v !== null && v < lim ? ' low' : '');
@@ -1575,7 +1584,7 @@
     h += '<div class="reg-print-head print-only"><img src="icons/college-logo.png" alt=""><div><div class="rph-college">' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</div>' +
       '<div class="rph-title">Monthly Class Record — ' + esc(mon) + '</div></div><img src="icons/hed-logo.png" alt=""></div>';
     h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(String(yrCfg(ctx.year).names[ctx.group] || '')) + '</small></div>' +
-      '<div><span>Subject</span><b>' + esc(j.subject) + '</b></div><div><span>Teacher</span><b>' + esc(attAuth.name) + '</b></div><div><span>Month</span><b>' + esc(mon) + '</b></div></div>';
+      '<div><span>Subject</span><b>' + esc(j.subject) + '</b></div><div><span>Teacher</span><b>' + esc(ctx.teacher) + '</b></div><div><span>Month</span><b>' + esc(mon) + '</b></div></div>';
     // summary
     h += '<div class="stat-grid reg-stats">' +
       '<div class="stat"><b>' + c.rows.length + '</b><span>Students</span></div>' +
@@ -1589,7 +1598,7 @@
     if (!c.n) h += '<div class="card"><div class="empty">No attendance has been marked for this class in ' + esc(mon) + ' yet.</div></div>';
     else {
       const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-      const heads = j.sessions.map((x) => { const d = new Date(x.date + 'T12:00:00Z'); return '<th class="rd" title="' + esc(fmtDate(x.date) + ' · Period ' + x.period + (x.teacher && nameKey(x.teacher) !== nameKey(attAuth.name) ? ' · marked by ' + x.teacher : '')) + '"><span>' + d.getUTCDate() + '</span><small>' + DAYS[d.getUTCDay()] + '</small><small>' + esc(x.period) + '</small></th>'; }).join('');
+      const heads = j.sessions.map((x) => { const d = new Date(x.date + 'T12:00:00Z'); return '<th class="rd" title="' + esc(fmtDate(x.date) + ' · Period ' + x.period + (x.teacher && nameKey(x.teacher) !== nameKey(ctx.teacher) ? ' · marked by ' + x.teacher : '')) + '"><span>' + d.getUTCDate() + '</span><small>' + DAYS[d.getUTCDay()] + '</small><small>' + esc(x.period) + '</small></th>'; }).join('');
       h += '<div class="card reg-card"><div class="overflow-x"><table class="reg-tbl"><thead><tr><th class="rs1">#</th><th class="rs2">Roll</th><th class="rs3">Name</th>' + heads +
         '<th class="rt">P</th><th class="rt">A</th><th class="rt">L</th><th class="rt">Month %</th><th class="rt">Session %</th></tr></thead><tbody>' +
         c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + esc(r.name) + '</td>' +
@@ -1627,6 +1636,79 @@
     h += '<p class="note reg-foot">Generated by GGCS RWP on ' + esc(fmtDate(todayISO())) + '.</p></div>';
     $('regOut').innerHTML = h;
     wireRegister(ctx, j);
+  }
+  const MON_SHORT = (m) => MONTH_NAMES[Number(m.slice(5)) - 1].slice(0, 3);
+  const TEST_SHORT = (t) => (/^Pre/.test(t) ? 'Pre-Bd' : t.slice(0, 3) + ' T');
+  /** whole-session numbers: month-wise attendance + every test */
+  function sessCalc(j) {
+    const months = j.months || [], tests = j.tests || [];
+    const rows = j.students.map((s) => {
+      let p = 0, a = 0, l = 0;
+      const mp = months.map((mo) => { const c = s.m[mo.month] || [0, 0, 0]; p += c[0]; a += c[1]; l += c[2]; return { c, pct: pct1(c[0], c[0] + c[1] + c[2]) }; });
+      const tp = tests.map((t) => { const x = s.marks[t]; if (!x) return { st: '' }; if (x.status === 'Absent' || x.obt === null) return { st: 'Ab' }; return { st: 'ok', pct: pct1(x.obt, x.total), x }; });
+      const got = tp.filter((x) => x.st === 'ok');
+      const avg = got.length ? Math.round(10 * got.reduce((v, x) => v + x.pct, 0) / got.length) / 10 : null;
+      return { roll: s.roll, name: s.name, p, a, l, marked: p + a + l, pct: pct1(p, p + a + l), mp, tp, avg };
+    });
+    const monthly = months.map((mo, i) => { let p = 0, t = 0; rows.forEach((r) => { const c = r.mp[i].c; p += c[0]; t += c[0] + c[1] + c[2]; }); return { month: mo.month, held: mo.held, pct: pct1(p, t) }; });
+    const testAvg = tests.map((t, i) => { const g = rows.map((r) => r.tp[i]).filter((x) => x.st === 'ok'); return { test: t, n: g.length, avg: g.length ? Math.round(10 * g.reduce((v, x) => v + x.pct, 0) / g.length) / 10 : null, pass: g.filter((x) => x.pct >= 33).length }; });
+    const counted = rows.filter((r) => r.pct !== null);
+    const tp = rows.reduce((v, r) => v + r.p, 0), tm = rows.reduce((v, r) => v + r.marked, 0);
+    const withAvg = rows.filter((r) => r.avg !== null);
+    return { rows, months, tests, monthly, testAvg, held: months.reduce((v, m) => v + m.held, 0), classPct: pct1(tp, tm), low: counted.filter((r) => r.pct < 75).sort((a, b) => a.pct - b.pct),
+      resAvg: withAvg.length ? Math.round(10 * withAvg.reduce((v, r) => v + r.avg, 0) / withAvg.length) / 10 : null };
+  }
+  function paintSession(ctx, j) {
+    const c = sessCalc(j), pc = (v) => (v === null || v === undefined ? '—' : v + '%'), lowCls = (v, lim) => (v !== null && v !== undefined && v < lim ? ' low' : '');
+    const upto = fmtDate(todayISO());
+    let h = regControls(ctx, true) + regTitle(ctx) + '<div class="reg-sheet">';
+    h += '<div class="reg-print-head print-only"><img src="icons/college-logo.png" alt=""><div><div class="rph-college">' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</div>' +
+      '<div class="rph-title">Class Record — Whole Session (up to ' + esc(upto) + ')</div></div><img src="icons/hed-logo.png" alt=""></div>';
+    h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(String(yrCfg(ctx.year).names[ctx.group] || '')) + '</small></div>' +
+      '<div><span>Subject</span><b>' + esc(j.subject) + '</b></div><div><span>Teacher</span><b>' + esc(ctx.teacher) + '</b></div><div><span>Period</span><b>Session till ' + esc(upto) + '</b></div></div>';
+    h += '<div class="stat-grid reg-stats">' +
+      '<div class="stat"><b>' + c.rows.length + '</b><span>Students</span></div>' +
+      '<div class="stat"><b>' + c.held + '</b><span>Lectures held</span></div>' +
+      '<div class="stat"><b class="' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</b><span>Class attendance</span></div>' +
+      '<div class="stat"><b class="' + (c.low.length ? 'low' : '') + '">' + c.low.length + '</b><span>Below 75%</span></div>' +
+      '<div class="stat"><b>' + c.tests.length + '</b><span>Tests held</span></div>' +
+      '<div class="stat"><b class="' + lowCls(c.resAvg, 33) + '">' + pc(c.resAvg) + '</b><span>Average result</span></div></div>';
+    // month-wise
+    h += '<div class="section-title">📅 Month by month</div>';
+    if (!c.months.length) h += '<div class="card"><div class="empty">No attendance has been marked for this class yet.</div></div>';
+    else h += '<div class="reg-months">' + c.monthly.map((m) => '<button class="reg-mon no-print-btn" data-mon="' + m.month + '"><b>' + esc(monthLabel(m.month)) + '</b><span class="bar"><i style="width:' + (m.pct || 0) + '%" class="' + (m.pct !== null && m.pct < 75 ? 'lowbar' : '') + '"></i></span><small>' + m.held + ' lecture' + (m.held === 1 ? '' : 's') + ' · <b class="' + lowCls(m.pct, 75) + '">' + pc(m.pct) + '</b></small></button>').join('') + '</div>' +
+      '<p class="note no-print">Tap a month for its day-by-day attendance register.</p>';
+    if (c.testAvg.length) h += '<div class="reg-months">' + c.testAvg.map((t) => '<div class="reg-mon test"><b>' + esc(t.test) + '</b><small>' + t.n + ' appeared · avg <b class="' + lowCls(t.avg, 33) + '">' + pc(t.avg) + '</b> · pass ' + t.pass + '/' + t.n + '</small></div>').join('') + '</div>';
+    // student table
+    if (c.months.length || c.tests.length) {
+      h += '<div class="section-title">👥 Student-wise record</div><div class="card reg-card"><div class="overflow-x"><table class="reg-tbl sess"><thead><tr><th class="rs1">#</th><th class="rs2">Roll</th><th class="rs3">Name</th>' +
+        c.months.map((m) => '<th class="rd"><span>' + MON_SHORT(m.month) + '</span><small>' + m.held + ' lect.</small></th>').join('') +
+        '<th class="rt">P</th><th class="rt">A</th><th class="rt">L</th><th class="rt">Total %</th>' +
+        c.tests.map((t) => '<th class="rd tcol"><span>' + esc(TEST_SHORT(t)) + '</span><small>test %</small></th>').join('') +
+        (c.tests.length ? '<th class="rt">Avg %</th><th class="rt">Grade</th>' : '') + '</tr></thead><tbody>' +
+        c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + esc(r.name) + '</td>' +
+          r.mp.map((x) => '<td class="rc mp' + lowCls(x.pct, 75) + '">' + (x.pct === null ? '<span class="rn">·</span>' : Math.round(x.pct) + '%') + '</td>').join('') +
+          '<td class="rt">' + r.p + '</td><td class="rt' + (r.a ? ' ra-t' : '') + '">' + r.a + '</td><td class="rt">' + r.l + '</td><td class="rt b' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td>' +
+          r.tp.map((x) => '<td class="rc tcol' + (x.st === 'ok' ? lowCls(x.pct, 33) : x.st === 'Ab' ? ' low' : '') + '" title="' + (x.st === 'ok' ? x.x.obt + ' / ' + x.x.total : '') + '">' + (x.st === 'ok' ? Math.round(x.pct) + '%' : x.st === 'Ab' ? 'Ab' : '<span class="rn">—</span>') + '</td>').join('') +
+          (c.tests.length ? '<td class="rt b' + lowCls(r.avg, 33) + '">' + pc(r.avg) + '</td><td class="rt">' + (r.avg === null ? '—' : '<span class="grade">' + gradeOf(r.avg) + '</span>') + '</td>' : '') + '</tr>').join('') +
+        '</tbody><tfoot><tr><td class="rs1"></td><td class="rs2"></td><td class="rs3">Class</td>' + c.monthly.map((m) => '<td class="rc' + lowCls(m.pct, 75) + '">' + (m.pct === null ? '' : Math.round(m.pct) + '%') + '</td>').join('') +
+        '<td class="rt" colspan="3"></td><td class="rt b' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</td>' + c.testAvg.map((t) => '<td class="rc tcol' + lowCls(t.avg, 33) + '">' + (t.avg === null ? '' : Math.round(t.avg) + '%') + '</td>').join('') +
+        (c.tests.length ? '<td class="rt b">' + pc(c.resAvg) + '</td><td class="rt"></td>' : '') + '</tr></tfoot></table></div></div>';
+      h += '<p class="note">Month columns = attendance % in that month (present ÷ lectures marked). Total % = the whole session. Test columns = marks % (Ab = absent, — = not entered); hover/tap-hold a cell to see the marks. Avg % = average of the tests the student appeared in. Below 75% attendance or 33% marks in red.</p>';
+    }
+    if (c.low.length) h += '<div class="section-title">⚠️ Short attendance — whole session (below 75%) · ' + c.low.length + '</div><div class="card pad reg-low">' +
+      c.low.map((r) => '<span><b>' + r.roll + '</b> ' + esc(r.name) + ' — <em>' + r.pct + '%</em> (' + r.p + '/' + r.marked + ')</span>').join('') + '</div>';
+    h += '<div class="reg-sign print-only"><div>Teacher’s signature</div><div>Head of Department</div><div>Principal</div></div>';
+    h += '<p class="note reg-foot">Generated by GGCS RWP on ' + esc(upto) + '.</p></div>';
+    $('regOut').innerHTML = h;
+    wireRegister(ctx, j);
+    document.querySelectorAll('#regOut .reg-mon[data-mon]').forEach((b) => { b.onclick = () => { regMonth = b.dataset.mon; render(); window.scrollTo(0, 0); }; });
+  }
+  function sessionCsv(ctx, j) {
+    const c = sessCalc(j);
+    const head = ['Roll No', 'Student Name'].concat(c.months.map((m) => monthLabel(m.month) + ' % (' + m.held + ' lectures)'), ['Present', 'Absent', 'Leave', 'Total %'], c.tests.map((t) => t + ' %'), c.tests.length ? ['Average %', 'Grade'] : []);
+    const rows = c.rows.map((r) => [r.roll, r.name].concat(r.mp.map((x) => (x.pct === null ? '' : x.pct)), [r.p, r.a, r.l, r.pct === null ? '' : r.pct], r.tp.map((x) => (x.st === 'ok' ? x.pct : x.st === 'Ab' ? 'Absent' : '')), c.tests.length ? [r.avg === null ? '' : r.avg, r.avg === null ? '' : gradeOf(r.avg)] : []));
+    csvDownload(('Class_record_' + yearLabel(ctx.year) + '_' + ctx.group + (ctx.section !== 'All' ? '_' + ctx.section : '') + '_' + ctx.subject + '_session').replace(/\s+/g, '_') + '.csv', [head].concat(rows));
   }
   function regCsv(ctx, j) {
     const c = regCalc(j);
