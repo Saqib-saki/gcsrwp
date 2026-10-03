@@ -1,26 +1,76 @@
 {
   "id": "./",
-  "name": "GCS Rawalpindi Portal",
-  "short_name": "GCS Portal",
+  "name": "GGCS RWP",
+  "short_name": "GGCS RWP",
   "description": "Govt. Graduate College Satellite Town, Rawalpindi — timetables, faculty workload, notices and resources for students and faculty.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./#/",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#10345c",
   "theme_color": "#10345c",
-  "categories": ["education"],
+  "categories": [
+    "education"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Time Table", "short_name": "Time Table", "url": "./#/timetable", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Faculty Workload", "short_name": "Faculty", "url": "./#/faculty", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Notices", "short_name": "Notices", "url": "./#/notices", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Time Table",
+      "short_name": "Time Table",
+      "url": "./#/timetable",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Faculty Workload",
+      "short_name": "Faculty",
+      "url": "./#/faculty",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Notices",
+      "short_name": "Notices",
+      "url": "./#/notices",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
