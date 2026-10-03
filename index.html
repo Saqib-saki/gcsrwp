@@ -159,7 +159,8 @@
   .mark-btn-2 { background: #1a5d4a; }
   .mark-btn-3 { background: #6b2d5c; }
   .soon-card { text-align: center; padding: 18px 12px; margin: 4px 0 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--chip-bg); color: var(--chip-text); font-size: 0.86rem; }
-  .yr-seg { margin-bottom: 8px; }
+  .yr-seg { margin-bottom: 8px; flex-wrap: wrap; overflow: visible; }
+  .yr-seg button { flex: 1 1 28%; padding: 8px 6px; }
   .bs-progs { display: flex; flex-wrap: wrap; gap: 6px; }
   .bs-prog { border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 20px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
   .bs-prog.on { background: var(--navy); border-color: var(--navy); color: #fff; }
@@ -746,12 +747,13 @@
   <section class="view" id="view-my">
     <div class="card pad" id="myForm">
       <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
-      <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option></select></div>
+      <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B3">BS · 3rd Semester</option><option value="B5">BS · 5th Semester</option><option value="B7">BS · 7th Semester</option></select></div>
       <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
-      <div class="field"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
+      <div class="field" id="myDobRow"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
+      <div class="field" id="myCnicRow" style="display:none"><label for="myCnic">Last 4 digits of your CNIC / B-Form</label><input id="myCnic" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="e.g. 3924" autocomplete="off"></div>
       <button class="btn-primary" id="myGo">Show my record</button>
       <div class="tt-error" id="myErr"></div>
-      <p class="note">Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.</p>
+      <p class="note" id="myHint">Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.</p>
     </div>
     <div id="myOut" style="display:none">
       <div class="signed-in">🎯 <span>Your record</span><button class="link-btn" id="myAgain">Check another roll no.</button></div>
@@ -772,7 +774,7 @@
       <div class="signed-in">👤 <span>Signed in as <b id="bdWho"></b></span><button class="link-btn" id="bdLogout">Sign out</button></div>
       <div id="bdNotAdmin" class="card pad" style="display:none"><p style="margin:0">Only the Principal and admins can see this board.</p></div>
       <div id="bdAdmin">
-        <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button></div>
+        <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
         <div class="seg" id="bdTabs">
           <button data-tab="day" class="on">📋 Day board</button>
           <button data-tab="week">📅 Weekly report</button>
@@ -816,7 +818,7 @@
 
     <div id="recMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="recWho"></b> <span class="lock-chip" id="recRole"></span></span><button class="link-btn" id="recLogout">Sign out</button></div>
-      <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button></div>
+      <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
       <div class="seg" id="recTabs">
         <button data-tab="find" class="on">🔎 Find student</button>
         <button data-tab="classes" id="recTabClasses">👥 My classes</button>
@@ -1341,7 +1343,7 @@
     $('facLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
       if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
     } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -1365,8 +1367,8 @@
       const seen = {};
       return BS_TT.filter((r) => r.teacher && nameKey(r.teacher) === k).reduce((a, r) => {
         const key = r.sem + '|' + r.period + '|' + (r.code || r.course);
-        if (seen[key]) { seen[key].level += ', ' + r.program; if (r.room && seen[key].room.split(' / ').indexOf(r.room) < 0) seen[key].room = (seen[key].room === '—' ? '' : seen[key].room + ' / ') + r.room; return a; }
-        const e = { level: SEM_LABEL[r.sem] + ' · ' + r.program, period: r.period, course: r.course, code: r.code || '—', room: r.room || '—', sem: r.sem };
+        if (seen[key]) { seen[key].level += ', ' + r.program; seen[key].progs.push(r.program); if (r.room && seen[key].room.split(' / ').indexOf(r.room) < 0) seen[key].room = (seen[key].room === '—' ? '' : seen[key].room + ' / ') + r.room; return a; }
+        const e = { level: SEM_LABEL[r.sem] + ' · ' + r.program, period: r.period, course: r.course, code: r.code || '—', room: r.room || '—', sem: r.sem, progs: [r.program] };
         seen[key] = e; a.push(e); return a;
       }, []).sort((a, b) => a.sem - b.sem || periodIndex(a.period) - periodIndex(b.period));
     }
@@ -1426,11 +1428,11 @@
     const canRec = (isMe || admin) && !!DATA.attendanceApi;
     const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
       rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : (canRec && !e.rotating ? klassLinks(e, p.name) : esc(e.klass))) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
-    h += '<div class="pf-wl-title">📚 Workload</div>' + (canRec && fixed.length ? '<p class="note no-print wl-hint">👆 Tap a <span class="wl-cls demo">blue class</span> to open its attendance and test record — the whole session so far, and month by month.</p>' : '');
+    h += '<div class="pf-wl-title">📚 Workload</div>' + (canRec && (fixed.length || bs.length) ? '<p class="note no-print wl-hint">👆 Tap a <span class="wl-cls demo">blue class</span> to open its attendance and test record — the whole session so far, and month by month.</p>' : '');
     let w = '';
     [1, 2].forEach((y) => { const rows = fixed.filter((e) => e.year === y); if (rows.length) w += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false); });
     if (bs.length) w += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
-      bs.slice().sort((a, b) => (a.sem || 0) - (b.sem || 0) || periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + esc(r.level) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+      bs.slice().sort((a, b) => (a.sem || 0) - (b.sem || 0) || periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + (canRec ? bsLinks(r, p.name) : esc(r.level)) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
     if (rot.length) w += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
     if (duties.length) w += '<div class="section-title">Extra duties / workload</div><div class="card pad"><ul class="pf-duties">' + duties.map((d) => '<li>' + esc(d) + '</li>').join('') + '</ul></div>';
     if (!w) w = '<div class="card"><div class="empty">No classes are assigned to ' + esc(p.name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
@@ -1492,6 +1494,12 @@
     return groups.map((g) => '<a class="wl-cls" href="#' + esc(regPath({ year: e.year, group: g, section: sec, subject: e.subject }) + '/' + encodeURIComponent(teacher || '')) + '">' + esc(g) + '</a>').join(' ') +
       (sec !== 'All' ? '<span class="ttnote">' + esc(sec) + '</span>' : '');
   }
+  /** BS workload row → one blue link per programme (only semesters whose student lists are in the app) */
+  function bsLinks(r, teacher) {
+    const y = 'B' + r.sem, codes = (r.progs || []).map((pg) => BS_CODE_OF[pg]).filter(Boolean);
+    if (BS_READY.indexOf(y) < 0 || !codes.length) return esc(r.level);
+    return esc(SEM_LABEL[r.sem] || '') + '<br>' + codes.map((g) => '<a class="wl-cls" href="#' + esc(regPath({ year: y, group: g, section: 'All', subject: r.course }) + '/' + encodeURIComponent(teacher || '')) + '">' + esc(g) + '</a>').join(' ');
+  }
   const regPath = (c) => '/register/' + [c.year, c.group, c.section, c.subject].map(encodeURIComponent).join('/');
   function regMonths() {
     const now = todayISO().slice(0, 7), out = [];
@@ -1503,7 +1511,7 @@
     if (!facSignedIn()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
     const [y0, group, section, subject] = parts;
     if (!group || !subject) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
-    const ctx = { year: Number(y0) === 2 ? 2 : 1, group, section: section || 'All', subject, teacher: parts[4] || attAuth.name };
+    const ctx = { year: yk(y0), group, section: section || 'All', subject, teacher: parts[4] || attAuth.name };
     const months = regMonths();
     const ck = [ctx.year, group, ctx.section, subject.toLowerCase()].join('|');
     if (ck !== regClassKey) { regClassKey = ck; regMonth = 'all'; }
@@ -1591,7 +1599,7 @@
       '<div class="stat"><b>' + c.n + '</b><span>Lectures held</span></div>' +
       '<div class="stat"><b class="' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</b><span>Class attendance</span></div>' +
       '<div class="stat"><b class="' + (c.low.length ? 'low' : '') + '">' + c.low.length + '</b><span>Below 75%</span></div>' +
-      '<div class="stat"><b>' + (j.test ? pc(c.avg) : '—') + '</b><span>' + (j.test ? 'Test average' : 'No test this month') + '</span></div>' +
+      '<div class="stat"><b>' + (j.test ? pc(c.avg) : '—') + '</b><span>' + (j.test ? 'Test average' : isBS(ctx.year) ? 'Tests: see whole session' : 'No test this month') + '</span></div>' +
       '<div class="stat"><b>' + (j.test && c.app.length ? pc(pct1(c.pass, c.app.length)) : '—') + '</b><span>Test pass rate</span></div></div>';
     // attendance register
     h += '<div class="section-title">🗓️ Attendance register · ' + esc(mon) + '</div>';
@@ -1638,7 +1646,7 @@
     wireRegister(ctx, j);
   }
   const MON_SHORT = (m) => MONTH_NAMES[Number(m.slice(5)) - 1].slice(0, 3);
-  const TEST_SHORT = (t) => (/^Pre/.test(t) ? 'Pre-Bd' : t.slice(0, 3) + ' T');
+  const TEST_SHORT = (t) => ({ 'Pre-Board Test': 'Pre-Bd', Sessional: 'Sess.', 'Mid Term': 'Mid', 'Final Term': 'Final' }[t] || t.slice(0, 3) + ' T');
   /** whole-session numbers: month-wise attendance + every test */
   function sessCalc(j) {
     const months = j.months || [], tests = j.tests || [];
@@ -1836,7 +1844,7 @@
   }
 
   let ttYear = 1;
-  const yearLabel = (y) => (y === 2 ? '2nd Year' : '1st Year');
+  const yearLabel = (y) => (isBS(y) ? 'BS ' + ORD(bsSemOf(y)) + ' Semester' : Number(y) === 2 ? '2nd Year' : '1st Year');
   const schedFor = (roll) => (ttYear === 2 ? (typeof buildSchedule2 === 'function' ? buildSchedule2(roll) : null) : (typeof buildSchedule === 'function' ? buildSchedule(roll) : null));
   function renderRollInput() {
     $('rollError').textContent = '';
@@ -1965,14 +1973,42 @@
   /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
   const ATT_GROUPS = ['M', 'E', 'C1', 'C2', 'C3', 'G', 'H', 'F1', 'F2', 'F3', 'F4', 'F5', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'D'];
   /** 1st / 2nd Year: groups, roll ranges, timetable builder and group names */
+  const BS_PROG = { CS: 'Computer Science', CHEM: 'Chemistry', ECO: 'Economics', ENG: 'English', ISL: 'Islamic Studies', MATH: 'Mathematics', PHY: 'Physics', STAT: 'Statistics', URDU: 'Urdu' };
+  const BS_CODES = Object.keys(BS_PROG), BS_CODE_OF = {}; BS_CODES.forEach((k) => { BS_CODE_OF[BS_PROG[k]] = k; });
+  const BS_NAMES = {}; BS_CODES.forEach((k) => { BS_NAMES[k] = 'BS ' + BS_PROG[k]; });
+  const BS_READY = ['B3', 'B5', 'B7'];            // BS semesters whose student lists are in the app
+  const ALL_YEARS = [1, 2].concat(BS_READY);
+  const ORD = (n) => n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
+  /** 1 | 2 | 'B3' … from a select value / data attribute / number */
+  function yk(v) { const t = String(v === undefined || v === null ? '' : v); const m = /^B([1-8])$/.exec(t) || /^BS\D*([1-8])/.exec(t); if (m) return 'B' + m[1]; return t === '2nd Year' || Number(v) === 2 ? 2 : 1; }
+  const isBS = (y) => String(y).charAt(0) === 'B';
+  const bsSemOf = (y) => Number(String(y).slice(1));
+  const ysfx = (y) => (y === 1 ? '' : String(y));
+  const yearOptValue = (y) => (isBS(y) ? 'BS ' + ORD(bsSemOf(y)) + ' Semester' : y === 2 ? '2nd Year' : '1st Year');
+  const BS_TESTS_DEF = ['Sessional', 'Mid Term', 'Final Term'];
+  /** every BS lecture of one semester from the BS timetables: [{group, section, period, subject, teacher, room}] */
+  const bsLecCache = {};
+  function bsLectures(y) {
+    if (bsLecCache[y]) return bsLecCache[y];
+    const sem = bsSemOf(y), out = [], seen = {};
+    if (typeof BS_TT !== 'undefined') BS_TT.forEach((r) => {
+      if (r.sem !== sem) return; const g = BS_CODE_OF[r.program]; if (!g || !r.course) return;
+      const k = g + '|' + r.period + '|' + r.course; if (seen[k]) return; seen[k] = 1;
+      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '' });
+    });
+    out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group));
+    bsLecCache[y] = out;
+    return out;
+  }
   function yrCfg(y) {
+    if (isBS(y)) return { year: y, bs: true, groups: BS_CODES, ranges: [], build: null, names: BS_NAMES };
     if (Number(y) === 2) {
       const R = typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : [];
       return { year: 2, groups: R.map((g) => g[0]), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
     }
     return { year: 1, groups: ATT_GROUPS, ranges: typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], build: typeof buildSchedule === 'function' ? buildSchedule : null, names: GROUP_NAMES };
   }
-  const yearOf = (v) => (v === '2nd Year' || Number(v) === 2 ? 2 : 1);
+  const yearOf = (v) => yk(v);
   const attYear = () => yearOf($('attClass').value), mkYear = () => yearOf($('mkClass').value);
   let attAuth = null, attMarks = {}, attStudents = [], attCtx = null, attBusy = false;
   try { attAuth = JSON.parse(store.get('attAuth') || 'null'); } catch (e) { attAuth = null; }
@@ -2040,6 +2076,7 @@
   function groupRange(code, y) { return yrCfg(y).ranges.find((g) => g[0] === code); }
 
   function lecturesFor(group, section, y) {
+    if (isBS(y)) return bsLectures(y).filter((l) => l.group === group).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher }));
     const cfg = yrCfg(y), buildSchedule = cfg.build;
     const g = groupRange(group, y); if (!g || !buildSchedule) return [];
     const lo = g[1], odd = lo % 2 ? lo : lo + 1, even = lo % 2 ? lo + 1 : lo;
@@ -2069,7 +2106,7 @@
     return e + (a.length - i) + (b.length - j) <= 1;
   }
   function subjOk(group, subj, y) {
-    const t = (attAuth && (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches)) || [];
+    const t = myTeaches(y);
     const mine = t.filter((x) => x.group === group);
     if (!t.length) return true;
     return mine.some((x) => normSubj(x.subject).toLowerCase() === normSubj(subj).toLowerCase());
@@ -2092,10 +2129,17 @@
   /** [{group, section, lectures:[{period, subject, teacher, rotating}]}] for the signed-in teacher; [] if not found in the timetable */
   function myClasses(y) {
     if (!attAuth) return [];
-    y = Number(y) === 2 ? 2 : 1;
+    y = yk(y);
     const cfg = yrCfg(y);
-    const key = y + '|' + attAuth.name + '|' + JSON.stringify((y === 2 ? attAuth.teaches2 : attAuth.teaches) || []);
+    const key = y + '|' + attAuth.name + '|' + JSON.stringify(myTeaches(y));
     if (myClassesCache[y] && myClassesCache[y].key === key) return myClassesCache[y].list;
+    if (isBS(y)) {
+      const byG = {};
+      bsLectures(y).forEach((l) => { if (!isMe(l.teacher, l.subject, l.group, y)) return; (byG[l.group] = byG[l.group] || { group: l.group, section: 'All', lectures: [] }).lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher }); });
+      const bl = Object.keys(byG).map((k) => byG[k]);
+      myClassesCache[y] = { key, list: bl };
+      return bl;
+    }
     const out = {};
     cfg.ranges.forEach(([g, lo, hi]) => {
       const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
@@ -2133,20 +2177,20 @@
     const y = attYear(), all = yrCfg(y).groups;
     const mine = limitToMine(y);
     const groups = mine ? all.filter((g) => myClasses(y).some((c) => c.group === g)) : all;
-    const prev = ($('attGroup').dataset.y === String(y) && $('attGroup').value) || store.get('attLastGroup' + (y === 2 ? '2' : ''));
+    const prev = ($('attGroup').dataset.y === String(y) && $('attGroup').value) || store.get('attLastGroup' + ysfx(y));
     $('attGroup').innerHTML = groupOpts(groups, y);
     $('attGroup').dataset.y = String(y);
     if (prev && groups.indexOf(prev) >= 0) $('attGroup').value = prev;
     $('attGroup').dataset.who = attAuth ? attAuth.name : '';
     $('attScopeNote').textContent = !attAuth || attAuth.role === 'Admin' ? '' : mine
       ? 'Showing only your ' + yearLabel(y) + ' classes from the timetable. Use "Other subject / period…" for a substitute lecture.'
-      : (myClasses(y === 2 ? 1 : 2).length ? 'You have no ' + yearLabel(y) + ' classes in the timetable — switch Class to ' + yearLabel(y === 2 ? 1 : 2) + ', or pick any group for a substitute lecture.'
+      : (ALL_YEARS.some((z) => z !== y && myClasses(z).length) ? 'You have no ' + yearLabel(y) + ' classes in the timetable — switch Class to ' + yearLabel(ALL_YEARS.find((z) => z !== y && myClasses(z).length)) + ', or pick any group for a substitute lecture.'
         : 'Your name was not found in the timetable, so all groups are shown. Ask the admin to check your name/subjects in the Teachers sheet.');
     fillAttSections();
   }
   function fillAttSections() {
     const g = $('attGroup').value, y = attYear();
-    const base = y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base;
     const prev = $('attSection').value;
     $('attSection').innerHTML = (secs.length ? secs : base).map((s) => '<option>' + s + '</option>').join('');
@@ -2216,7 +2260,7 @@
     try { const o = JSON.parse(store.get('rosters') || 'null'); if (o && o.who === who && o.map) return o; } catch (e) {}
     return { who, map: {} };
   }
-  const rcKey = (g, sec, y) => (Number(y) === 2 ? '2|' : '') + g + '|' + sec;
+  const rcKey = (g, sec, y) => (yk(y) === 1 ? '' : yk(y) + '|') + g + '|' + sec;
   function rcGet(g, sec, y) { const e = rcAll().map[rcKey(g, sec, y)]; return e ? { at: e.at, students: e.st.map((x) => ({ roll: x[0], name: x[1] })) } : null; }
   function rcPut(g, sec, students, y) { if (!attAuth || !(students || []).length) return; const o = rcAll(); o.map[rcKey(g, sec, y)] = { at: Date.now(), st: (students || []).map((x) => [x.roll, x.name]) }; store.set('rosters', JSON.stringify(o)); }
   let rcBusy = false;
@@ -2224,7 +2268,7 @@
   async function rcPrefetch() {
     if (rcBusy || !navigator.onLine || !attAuth || !DATA.attendanceApi || attAuth.role === 'Admin') { paintOffNote(); return; }
     const fresh = (c) => { const e = rcGet(c.group, c.section, c.year); return e && Date.now() - e.at <= RC_FRESH; };
-    const due = [1, 2].reduce((a, y) => a.concat(myClasses(y).map((c) => ({ group: c.group, section: c.section, year: y }))), []).filter((c) => !fresh(c));
+    const due = ALL_YEARS.reduce((a, y) => a.concat(myClasses(y).map((c) => ({ group: c.group, section: c.section, year: y }))), []).filter((c) => !fresh(c));
     if (!due.length) { paintOffNote(); return; }
     rcBusy = true;
     for (const c of due) {
@@ -2253,8 +2297,8 @@
     if (!signed) { $('attName').value = store.get('attLastName') || ''; return; }
     $('attWho').textContent = attAuth.name;
     if (!$('attDate').value) $('attDate').value = todayISO();
-    if ((!attAuth.teaches || !attAuth.teaches2) && navigator.onLine) {
-      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
+    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS) && navigator.onLine) {
+      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
     }
     pickClassYear('att');
     if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
@@ -2271,7 +2315,7 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -2291,24 +2335,24 @@
   $('attPeriod').addEventListener('change', paintTimeNote);
   /* Class chooser: only 1st Year is set up; 2nd Year and BS show a "coming soon" card */
   function classSoon(pre) {
-    const v = $(pre + 'Class').value, ready = v === '1st Year' || v === '2nd Year';
+    const v = $(pre + 'Class').value, ready = v === '1st Year' || v === '2nd Year' || BS_READY.indexOf(yk(v)) >= 0;
     $(pre + 'Body').style.display = ready ? '' : 'none';
     const c = $(pre + 'Soon');
     c.style.display = ready ? 'none' : 'block';
     if (!ready) c.innerHTML = (v.indexOf('BS') === 0 ? '🎓' : '📘') + '<b>' + esc(v) + '</b>' +
       (pre === 'att' ? 'Attendance for this class will open here' : 'Marks entry for this class will open here') +
-      (v.indexOf('BS') === 0 ? ' once the BS student lists are added. (The BS timetables are already in the app.)' : ' once its student list and timetable are added to the portal.');
+      (v.indexOf('BS') === 0 ? ' once the ' + esc(v) + ' student list is added.' : ' once its student list and timetable are added to the portal.');
     if (pre === 'att') { $('attListWrap').style.display = 'none'; $('attSumWrap').style.display = 'none'; if (ready && attAuth) fillAttGroups(); }
-    else { $('mkListWrap').style.display = 'none'; if (ready && attAuth) fillMkGroups(); }
+    else { $('mkListWrap').style.display = 'none'; if (ready) fillMkTests(); if (ready && attAuth) fillMkGroups(); }
   }
   /** a teacher who only teaches the 2nd Year starts on 2nd Year */
   function pickClassYear(pre) {
     const sel = $(pre + 'Class'), who = attAuth ? attAuth.name : '';
     if (!attAuth || sel.dataset.who === who) return;
     sel.dataset.who = who;
-    const has1 = pre === 'att' ? myClasses(1).length : (attAuth.teaches || []).length;
-    const has2 = pre === 'att' ? myClasses(2).length : (attAuth.teaches2 || []).length;
-    const want = attAuth.role !== 'Admin' && !has1 && has2 ? '2nd Year' : '1st Year';
+    const has = (y) => (pre === 'att' ? myClasses(y).length : myTeaches(y).length);
+    const first = attAuth.role === 'Admin' || has(1) ? 1 : (ALL_YEARS.find((y) => has(y)) || 1);
+    const want = yearOptValue(first);
     if (sel.value !== want) { sel.value = want; classSoon(pre); }
   }
   $('attClass').addEventListener('change', () => classSoon('att'));
@@ -2330,7 +2374,7 @@
     if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
     if (!isAdminUser()) { const t = timeState(lec.period); if (t.state === 'wait') { $('attErr').textContent = 'Not yet — you can load the list when the period starts.'; return; } }
     attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value, year: attYear() };
-    store.set('attLastGroup' + (attCtx.year === 2 ? '2' : ''), attCtx.group);
+    store.set('attLastGroup' + ysfx(attCtx.year), attCtx.group);
     $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
     try {
       let r, s, fromPhone = null;
@@ -2351,7 +2395,7 @@
       $('attList').innerHTML = attStudents.length ? attStudents.map((st) =>
         '<div class="att-row"><span class="roll">' + st.roll + '</span><span class="nm">' + esc(st.name) + '</span>' +
         '<button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>'
-      ).join('') : '<div class="empty">' + (attCtx.year === 2 ? 'No 2nd Year students are listed for this group yet. The admin adds them in “Student Records – 2nd Year”.' : 'No students found for this group/section.') + '</div>';
+      ).join('') : '<div class="empty">' + (attCtx.year !== 1 ? 'No ' + yearLabel(attCtx.year) + ' students are listed for this group yet. The admin adds them to the student records.' : 'No students found for this group/section.') + '</div>';
       $('attListWrap').style.display = 'block'; paintList();
       if (fromPhone) toast('📵 No internet — using the class list saved on this phone (' + fmtDate(new Date(fromPhone.at).toISOString().slice(0, 10)) + '). Mark and save as normal; it will be sent automatically.');
       else if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
@@ -2416,23 +2460,37 @@
   function groupSubjects(group, y) {
     const set = {};
     ['All', 'Odd', 'Even'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { if (!l.rotating) set[normSubj(l.subject)] = 1; }));
-    if (Number(y) !== 2) ['Urdu Batch 1'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { set[normSubj(l.subject)] = 1; }));
+    if (y === 1) ['Urdu Batch 1'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { set[normSubj(l.subject)] = 1; }));
     return Object.keys(set).filter(Boolean).sort();
+  }
+  /** Inter monthly tests, or Sessional / Mid / Final for BS */
+  function fillMkTests() {
+    const bs = isBS(mkYear()), want = bs ? 'bs' : 'inter';
+    if ($('mkTest').dataset.kind === want && $('mkTest').options.length) return;
+    const list = bs ? BS_TESTS_DEF : TESTS_DEF;
+    $('mkTest').innerHTML = list.map((t) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+    $('mkTest').dataset.kind = want;
+    $('mkTest').selectedIndex = bs ? 0 : defaultTest();
   }
   function defaultTest() {
     const m = new Date().getMonth(); // 0 = Jan
     return m === 9 ? 0 : m === 10 ? 1 : m === 11 ? 2 : m === 0 ? 3 : m === 1 ? 4 : m >= 2 && m <= 5 ? 5 : 0;
   }
   const isAdmin = () => attAuth && attAuth.role === 'Admin';
-  function myTeaches(y) { return (attAuth && (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches)) || []; }
+  function myTeaches(y) {
+    if (!attAuth) return [];
+    if (isBS(y)) return (attAuth.teachesBS || []).filter((t) => t.sem === bsSemOf(y)).map((t) => ({ group: t.group, subject: t.subject }));
+    return (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches) || [];
+  }
 
   function fillMkGroups() {
     const admin = isAdmin(), y = mkYear(), all = yrCfg(y).groups;
     const groups = admin ? all : all.filter((g) => myTeaches(y).some((t) => t.group === g));
     $('mkGroup').innerHTML = groups.map((g) => '<option value="' + g + '">' + esc(groupLabel(g, y)) + '</option>').join('');
-    const last = store.get('mkLastGroup' + (y === 2 ? '2' : '')); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
+    const last = store.get('mkLastGroup' + ysfx(y)); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
     $('mkNote').textContent = admin ? 'As admin you can enter marks for any group and subject.'
       : groups.length ? 'You can enter ' + yearLabel(y) + ' marks for: ' + myTeaches(y).map((t) => t.group + ' · ' + t.subject).join(', ') + '.'
+      : isBS(y) ? 'No ' + yearLabel(y) + ' courses are listed against your name in the BS timetable. For a class whose timetable is not in the app yet, mark its attendance once (Mark Attendance → Other subject) and you can then enter its marks.'
       : 'No ' + yearLabel(y) + ' subjects are listed against your name. Ask the admin to add them in the Teachers sheet (column "' + (y === 2 ? 'Teaches 2nd Year' : 'Teaches') + '").';
     $('mkLoad').disabled = !groups.length;
     fillMkSubjects();
@@ -2448,7 +2506,7 @@
   }
   function fillMkSections() {
     const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
-    const base = y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
     const use = secs.length ? secs : base;
     const prev = $('mkSection').value;
@@ -2464,12 +2522,9 @@
     $('mkMain').style.display = signed ? 'block' : 'none';
     if (!signed) { $('mkName').value = store.get('attLastName') || ''; return; }
     $('mkWho').textContent = attAuth.name + (isAdmin() ? ' (Admin)' : '');
-    if (!$('mkTest').options.length) {
-      $('mkTest').innerHTML = TESTS_DEF.map((t, i) => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
-      $('mkTest').selectedIndex = defaultTest();
-    }
-    if ((!attAuth.teaches || !attAuth.teaches2) && navigator.onLine) {
-      try { const j = await attApi('scope'); attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
+    fillMkTests();
+    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS) && navigator.onLine) {
+      try { const j = await attApi('scope'); attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
       catch (e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); return; } }
     }
     pickClassYear('mk');
@@ -2484,7 +2539,7 @@
     $('mkLoginBtn').disabled = true; $('mkLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       $('mkPin').value = ''; recScope = null; recAllRows = null; renderMarks();
     } catch (e) { $('mkLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('mkLoginBtn').disabled = false; $('mkLoginBtn').textContent = 'Sign in';
@@ -2521,7 +2576,7 @@
     const subject = mkSubjectVal();
     if (!subject) { $('mkErr').textContent = 'Choose or type the subject.'; return; }
     mkCtx = { test: $('mkTest').value, subject, group: $('mkGroup').value, section: $('mkSection').value, klass: $('mkClass').value, year: mkYear() };
-    store.set('mkLastGroup' + (mkCtx.year === 2 ? '2' : ''), mkCtx.group); store.set('mkLastSubject', $('mkSubject').value);
+    store.set('mkLastGroup' + ysfx(mkCtx.year), mkCtx.group); store.set('mkLastSubject', $('mkSubject').value);
     $('mkLoad').disabled = true; $('mkLoad').textContent = 'Loading…';
     try {
       let j, fromPhone = null;
@@ -2541,7 +2596,7 @@
         return '<div class="mk-row"><span class="roll">' + s.roll + '</span><span class="nm">' + esc(s.name) + '</span>' +
           '<input type="number" inputmode="decimal" step="0.5" min="0" data-roll="' + s.roll + '" value="' + esc(v.obt) + '"' + (v.absent ? ' disabled' : '') + ' aria-label="Marks for roll ' + s.roll + '">' +
           '<button class="abs-btn' + (v.absent ? ' on' : '') + '" data-roll="' + s.roll + '">Abs</button></div>';
-      }).join('') : '<div class="empty">' + (mkCtx.year === 2 ? 'No 2nd Year students are listed for this group yet. The admin adds them in “Student Records – 2nd Year”.' : 'No students found for this group/section.') + '</div>';
+      }).join('') : '<div class="empty">' + (mkCtx.year !== 1 ? 'No ' + yearLabel(mkCtx.year) + ' students are listed for this group yet. The admin adds them to the student records.' : 'No students found for this group/section.') + '</div>';
       $('mkListWrap').style.display = 'block'; paintMkCounts();
       if (fromPhone) toast('📵 No internet — using the class list saved on this phone. Enter marks and save; they will be sent automatically.');
       else if (Object.keys(j.marks).length) toast('Loaded marks already saved — you can correct them');
@@ -2607,8 +2662,8 @@
   /* ---------- attendance records: student-wise, class-wise, all students ---------- */
   let recScope = null, recTab = 'find', recAllRows = null, recClassData = null, recHistAll = false, recLastStudent = null, recYear = 1;
   $('recYearSeg').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b || Number(b.dataset.y) === recYear) return;
-    recYear = Number(b.dataset.y);
+    const b = e.target.closest('button'); if (!b || yk(b.dataset.y) === recYear) return;
+    recYear = yk(b.dataset.y);
     document.querySelectorAll('#recYearSeg button').forEach((x) => x.classList.toggle('on', x === b));
     recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = ''; $('recRollErr').textContent = '';
@@ -2687,7 +2742,7 @@
     $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
     } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
@@ -2811,7 +2866,7 @@
     const ring = p === null ? 'var(--muted)' : p < 75 ? 'var(--red)' : 'var(--green)';
     const TAG = { Present: 'c-P', Absent: 'c-A', Leave: 'c-L' };
     let h = '<div class="card pad"><div class="stu-head"><div class="pct-ring" style="--p:' + (p || 0) + ';--ring:' + ring + '"><span>' + (p === null ? '—' : p + '%') + '</span></div>' +
-      '<div><div class="stu-name">' + esc(s.name) + '</div><div class="stu-sub">' + (s.year === 2 ? '2nd Year · ' : '') + 'Roll ' + s.roll + ' · ' + esc(groupLabel(s.group, s.year || 1)) + '</div>' +
+      '<div><div class="stu-name">' + esc(s.name) + '</div><div class="stu-sub">' + (s.year && s.year !== 1 ? esc(yearLabel(s.year)) + ' · ' : '') + 'Roll ' + s.roll + ' · ' + esc(groupLabel(s.group, s.year || 1)) + '</div>' +
       '<div class="stu-sub">' + esc(s.subjectGroup || '') + '</div></div></div>' +
       '<div class="att-counts" style="margin:12px 0 0"><span class="c-P">Present ' + t.present + '</span><span class="c-A">Absent ' + t.absent + '</span><span class="c-L">Leave ' + t.leave + '</span><span style="color:var(--muted)">Lectures ' + t.total + '</span></div>' +
       (p !== null && p < 75 ? '<p class="note" style="color:var(--red);font-weight:700">Below 75% attendance.</p>' : '') + '</div>';
@@ -2846,16 +2901,16 @@
     $('myOut').style.display = myLast ? 'block' : 'none';
   }
   async function loadMy() {
-    const roll = parseInt($('myRoll').value, 10), dob = $('myDob').value;
+    const roll = parseInt($('myRoll').value, 10), dob = $('myDob').value, myY = yk($('myYear').value), cnic4 = $('myCnic').value.replace(/\D/g, '');
     $('myErr').textContent = '';
     if (!roll) { $('myErr').textContent = 'Enter your college roll number.'; return; }
-    if (!dob) { $('myErr').textContent = 'Enter your date of birth.'; return; }
+    if (isBS(myY) ? cnic4.length !== 4 : !dob) { $('myErr').textContent = isBS(myY) ? 'Enter the last 4 digits of your CNIC / B-Form number.' : 'Enter your date of birth.'; return; }
     const url = DATA.attendanceApi;
     if (!url) { $('myErr').textContent = 'This service is not set up yet.'; return; }
     if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
     $('myGo').disabled = true; $('myGo').textContent = 'Checking…';
     try {
-      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, dob, year: Number($('myYear').value) || 1 }) });
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify(isBS(myY) ? { action: 'myRecord', roll, cnic4, year: myY } : { action: 'myRecord', roll, dob, year: myY }) });
       const j = await res.json();
       if (!j.ok) throw new Error(/PIN|sign in/i.test(j.error || '') ? 'This service is being updated — please try again a little later.' : (j.error || 'Something went wrong.'));
       store.set('roll', String(roll));
@@ -2866,7 +2921,14 @@
   }
   $('myGo').addEventListener('click', loadMy);
   $('myDob').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
-  $('myAgain').addEventListener('click', () => { myLast = null; $('myDob').value = ''; $('myStudent').innerHTML = ''; renderMy(); });
+  function paintMyKind() {
+    const bs = isBS(yk($('myYear').value));
+    $('myDobRow').style.display = bs ? 'none' : ''; $('myCnicRow').style.display = bs ? '' : 'none';
+    $('myHint').textContent = bs ? 'BS students: use the last 4 digits of the CNIC / B-Form number given at admission. If it doesn’t work, ask your teacher or the department to check your record.' : 'Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.';
+  }
+  $('myYear').addEventListener('change', paintMyKind); paintMyKind();
+  $('myCnic').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
+  $('myAgain').addEventListener('click', () => { myLast = null; $('myDob').value = ''; $('myCnic').value = ''; $('myStudent').innerHTML = ''; renderMy(); });
 
   function openStudent(roll) { showRecTab('find'); loadStudent(roll); window.scrollTo(0, 0); }
 
@@ -3034,7 +3096,8 @@
   let allLecCache = {}, bdYear = 1;
   /** every fixed lecture in the timetable: [{group, section, period, subject, teacher}] (rotating VI/VII not included) */
   function allLectures(y) {
-    y = Number(y) === 2 ? 2 : 1;
+    y = yk(y);
+    if (isBS(y)) return bsLectures(y);
     if (allLecCache[y]) return allLecCache[y];
     const cfg = yrCfg(y), buildSchedule = cfg.build;
     const out = [], seen = {};
@@ -3165,8 +3228,8 @@
     if (tab === 'day') loadBoardDay();
   }
   $('bdYearSeg').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b || Number(b.dataset.y) === bdYear) return;
-    bdYear = Number(b.dataset.y);
+    const b = e.target.closest('button'); if (!b || yk(b.dataset.y) === bdYear) return;
+    bdYear = yk(b.dataset.y);
     document.querySelectorAll('#bdYearSeg button').forEach((x) => x.classList.toggle('on', x === b));
     bdData = null; $('bdList').innerHTML = ''; $('bdStats').innerHTML = ''; $('bdWeekOut').innerHTML = '';
     if (bdTab === 'day') loadBoardDay();
@@ -3179,7 +3242,7 @@
     $('bdLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
       setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
     } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('bdLoginBtn').disabled = false;
@@ -3301,7 +3364,7 @@
     h += '<button class="link-btn" id="bdWeekCsv" style="margin-top:10px">⬇ Download CSV</button>';
     h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended, one per teacher per period (a class taught to several groups together counts once, and counts as ❌ if any of its groups was not marked); CTI lectures are not counted.</p>';
     $('bdWeekOut').innerHTML = h;
-    $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + (j.year === 2 ? '2nd_Year_' : '1st_Year_') + from + '_to_' + to + '.csv',
+    $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + yearLabel(j.year).replace(/\s+/g, '_') + '_' + from + '_to_' + to + '.csv',
       [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
   }
 
