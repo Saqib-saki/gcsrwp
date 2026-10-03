@@ -103,7 +103,12 @@
   .patron .pt-badge img { width: 100%; height: 100%; object-fit: contain; }
   .patron .pt-badge.shield img { width: 80%; height: 80%; }
   .patron .pt-college { flex: 1; text-align: center; font-size: 0.74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #fff; line-height: 1.35; }
-  .patron .pt-mid { text-align: center; margin-top: 12px; }
+  .patron .pt-mid { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
+  .patron .pt-photo {
+    width: 92px; height: 92px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #e6ecf3;
+    border: 3px solid var(--gold); box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  }
+  .patron .pt-who { text-align: left; min-width: 0; }
   .patron .pt-label { font-size: 0.72rem; color: var(--gold); font-weight: 700; letter-spacing: .04em; }
   .patron .pt-name { font-size: 1.32rem; font-weight: 800; line-height: 1.15; color: #fff; margin-top: 2px; }
   .patron .pt-role { font-size: 0.82rem; color: #e6ecf3; font-weight: 600; }
@@ -464,9 +469,12 @@
         <span class="pt-badge shield"><img src="icons/college-logo.png" alt="College logo" onerror="this.parentNode.style.visibility='hidden'"></span>
       </div>
       <div class="pt-mid">
-        <div class="pt-label">Under the patronage of</div>
-        <div class="pt-name" id="ptName"></div>
-        <div class="pt-role" id="ptRole"></div>
+        <img class="pt-photo" src="icons/principal.jpg" alt="Prof. Dr. Athar Qaseem, Principal" onerror="this.style.display='none'">
+        <div class="pt-who">
+          <div class="pt-label">Under the patronage of</div>
+          <div class="pt-name" id="ptName"></div>
+          <div class="pt-role" id="ptRole"></div>
+        </div>
       </div>
       <div class="pt-dev">
         <div class="pt-dlabel">App developed by</div>

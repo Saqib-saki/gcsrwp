@@ -3,7 +3,7 @@
  * shows up straight away), falling back to the saved copy when offline.
  * You never need to edit this file when you update data.json or index.html.
  */
-const CACHE = 'gcs-portal-v11';
+const CACHE = 'gcs-portal-v12';
 const SHELL = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const SHELL = [
   './icons/icon-192.png',
   './icons/college-logo.png',
   './icons/hed-logo.png',
+  './icons/principal.jpg',
   './icons/icon-512.png',
   './icons/maskable-512.png',
   './icons/apple-touch-icon.png',
