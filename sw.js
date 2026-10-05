@@ -3,13 +3,14 @@
  * shows up straight away), falling back to the saved copy when offline.
  * You never need to edit this file when you update data.json or index.html.
  */
-const CACHE = 'gcs-portal-v16';
+const CACHE = 'gcs-portal-v17';
 const SHELL = [
   './',
   './index.html',
   './timetable-engine.js',
   './timetable-engine-2.js',
   './timetable-bs.js',
+  './timetable-star.js',
   './data.json',
   './manifest.json',
   './icons/icon-192.png',

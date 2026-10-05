@@ -936,6 +936,8 @@
     <div class="card">
       <button class="name-row" data-go="/timetable/y1"><span class="idx">1</span><span><b>1st Year</b><div class="tt-menu-sub">F.Sc · I.C.S · F.A · by roll number</div></span><span class="chev">&rsaquo;</span></button>
       <button class="name-row" data-go="/timetable/y2"><span class="idx">2</span><span><b>2nd Year</b><div class="tt-menu-sub">F.Sc · I.C.S · F.A · by roll number</div></span><span class="chev">&rsaquo;</span></button>
+      <button class="name-row" data-go="/timetable/star/1"><span class="idx">⭐</span><span><b>Bright Star · 1st Year</b><div class="tt-menu-sub">Bright Star section timetable</div></span><span class="chev">&rsaquo;</span></button>
+      <button class="name-row" data-go="/timetable/star/2"><span class="idx">⭐</span><span><b>Bright Star · 2nd Year</b><div class="tt-menu-sub">Bright Star section timetable</div></span><span class="chev">&rsaquo;</span></button>
       <button class="name-row" id="ttBsToggle"><span class="idx">BS</span><span><b>BS</b><div class="tt-menu-sub">1st · 3rd · 5th · 7th semester</div></span><span class="chev" id="ttBsChev">&rsaquo;</span></button>
       <div id="ttBsList" style="display:none">
         <button class="name-row sub" data-go="/timetable/bs/1"><span class="idx"></span><span>1st Semester</span><span class="chev">&rsaquo;</span></button>
@@ -1046,6 +1048,7 @@
 <script src="timetable-engine.js"></script>
 <script src="timetable-engine-2.js"></script>
 <script src="timetable-bs.js"></script>
+<script src="timetable-star.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1100,6 +1103,7 @@
     'faculty-edit':{ view: 'view-faculty-edit',  title: () => (facEditId ? 'Edit Profile' : 'Add Staff Member'), parent: () => (facEditId ? '/faculty/' + facEditId : '/faculty') },
     'tt-menu':     { view: 'view-tt-menu',       title: () => 'Time Table',         parent: '/' },
     'tt-bs':       { view: 'view-tt-bs',         title: () => 'BS Time Table',      parent: '/timetable' },
+    'tt-star':     { view: 'view-tt-bs',         title: () => 'Bright Star',        parent: '/timetable' },
     timetable:     { view: 'view-timetable',     title: () => yearLabel(ttYear) + ' Time Table', parent: '/timetable' },
     'timetable-one': { view: 'view-timetable-one', title: () => yearLabel(ttYear) + ' Time Table', parent: () => '/timetable/y' + ttYear },
     notices:       { view: 'view-notices',       title: () => 'Notices',            parent: '/' },
@@ -1127,6 +1131,7 @@
     if (a === 'timetable') {
       if (!arg) return { key: 'tt-menu' };
       const bs = /^bs\/(\d)$/.exec(arg); if (bs) return { key: 'tt-bs', arg: bs[1] };
+      const st = /^star\/([12])$/.exec(arg); if (st) return { key: 'tt-star', arg: st[1] };
       const y = /^y([12])(?:\/(\d+))?$/.exec(arg);
       if (y) { ttYear = Number(y[1]); return y[2] ? { key: 'timetable-one', arg: y[2] } : { key: 'timetable' }; }
       if (/^\d+$/.test(arg)) { ttYear = 1; return { key: 'timetable-one', arg }; } // old links: #/timetable/433
@@ -1167,6 +1172,7 @@
     lastRouteKey = r.key;
     if (r.key === 'timetable') renderRollInput();
     if (r.key === 'tt-bs') renderBsTimetable(Number(r.arg));
+    if (r.key === 'tt-star') renderStarTimetable(Number(r.arg));
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
     if (r.key === 'notices') renderNotices();
     if (r.key === 'resources') renderResources();
@@ -1238,7 +1244,7 @@
       if (!fn) return;
       const slots = {};
       ranges.forEach(([g, lo, hi]) => {
-        const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+        const rolls = sampleRolls(lo, hi, year);
         const map = {};
         rolls.forEach((r) => {
           const res = fn(r); if (!res || !res.code) return;
@@ -1266,6 +1272,14 @@
         String(sl.x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
           put(t, { year, period: sl.x.period, klass: sl.groups.join(', ') + (sl.sec !== 'All' ? ' (' + sl.sec + ')' : ''), subject: sl.x.subject, room: sl.x.room || '' }));
       });
+    });
+    if (hasStar()) [1, 2].forEach((year) => {
+      STAR_TT[year].forEach((e) => String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
+        put(t, { year, period: e.period, klass: 'STAR' + (e.sec !== 'All' ? ' (' + e.sec + ')' : ''), subject: e.subject, room: e.room || '' })));
+      STAR_ROT[year].forEach((e) => String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+        const m = /^(VI|VII) · (.*)$/.exec(e.subject);
+        put(t, { year, period: m ? m[1] : 'VI/VII', klass: 'Bright Star', subject: m ? m[2] : e.subject, room: e.room || '', rotating: true });
+      }));
     });
     wlIndex = out;
     return out;
@@ -1801,6 +1815,7 @@
 
   /* ---------- timetable ---------- */
   const GROUP_NAMES = {
+    STAR: 'Bright Star',
     M: 'F.Sc Pre-Medical', E: 'F.Sc Pre-Engineering',
     C1: 'I.C.S (Comp. Sci, Maths, Physics)', C2: 'I.C.S (Comp. Sci, Maths, Statistics)', C3: 'I.C.S (Comp. Sci, Maths, Economics)',
     G: 'General Science', H: 'F.A (I.T) — Comp. Sci, Economics, Statistics',
@@ -1843,6 +1858,27 @@
     $('bsOut').innerHTML = h;
   }
 
+  /** Bright Star section timetable (whole section, or one combination) */
+  function renderStarTimetable(y) {
+    $('ttBsTitle').textContent = 'Bright Star · ' + (y === 2 ? '2nd Year' : '1st Year');
+    if (!hasStar()) { $('bsProgs').innerHTML = ''; $('bsOut').innerHTML = '<div class="card pad empty">Timetable data failed to load. Please refresh.</div>'; return; }
+    const combos = ['Pre-Medical', 'Pre-Engineering', 'ICS'].filter((c) => (BRIGHT_STAR[y][c] || []).length);
+    let cur = store.get('starCombo' + y); if (combos.indexOf(cur) < 0) cur = combos[0] || 'ICS';
+    $('bsProgs').innerHTML = combos.map((c) => '<button class="bs-prog' + (c === cur ? ' on' : '') + '" data-p="' + esc(c) + '">' + esc(c) + '</button>').join('');
+    $('bsProgs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; store.set('starCombo' + y, b.dataset.p); renderStarTimetable(y); };
+    const rows = STAR_TT[y].filter((e) => starSecHas(e.sec, cur));
+    const rot = STAR_ROT[y].filter((e) => starSecHas(e.sec, cur));
+    let h = '<div class="card"><div class="overflow-x"><table class="wl bs-tt"><thead><tr><th>Period</th><th>Subject</th><th>Teacher</th><th>Room</th></tr></thead><tbody>';
+    ['I', 'II', 'III', 'IV', 'V'].forEach((pd) => rows.filter((r) => r.period === pd).forEach((r) => {
+      h += '<tr><td class="period">' + pd + '<span class="ttnote">' + esc(PERIOD_TIMES[pd] || '') + '</span></td><td><b>' + esc(r.subject) + '</b>' + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td><td>' + esc(r.teacher) + '</td><td>' + esc(r.room) + '</td></tr>';
+    }));
+    h += '</tbody></table></div></div>';
+    if (rot.length) h += '<div class="section-title">Periods VI–VII <span class="rotate-tag">rotates weekly</span></div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Subject</th><th>With</th><th>Teacher</th><th>Room</th></tr></thead><tbody>' +
+      rot.map((r) => '<tr><td>' + esc(r.subject) + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.teacher) + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+    h += '<p class="note">Bright Star students can also see this by typing their roll number in the ' + (y === 2 ? '2nd' : '1st') + ' Year timetable. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.</p>';
+    $('bsOut').innerHTML = h;
+  }
+
   let ttYear = 1;
   const yearLabel = (y) => (isBS(y) ? 'BS ' + ORD(bsSemOf(y)) + ' Semester' : Number(y) === 2 ? '2nd Year' : '1st Year');
   const schedFor = (roll) => (ttYear === 2 ? (typeof buildSchedule2 === 'function' ? buildSchedule2(roll) : null) : (typeof buildSchedule === 'function' ? buildSchedule(roll) : null));
@@ -1880,7 +1916,7 @@
 
     $('ttSummary').innerHTML =
       '<p class="tt-summary-name">Roll No. ' + roll + '</p>' +
-      '<p class="tt-summary-sub">' + yearLabel(ttYear) + ' · ' + esc((ttYear === 2 ? GROUP_NAMES_2 : GROUP_NAMES)[result.code] || result.group) + '</p>' +
+      '<p class="tt-summary-sub">' + yearLabel(ttYear) + ' · ' + esc(result.code === 'STAR' ? result.group : (ttYear === 2 ? GROUP_NAMES_2 : GROUP_NAMES)[result.code] || result.group) + '</p>' +
       '<span class="pill">Group ' + esc(result.code) + '</span>' +
       (result.code !== 'D' ? '<span class="pill">' + (roll % 2 ? 'Odd' : 'Even') + ' section</span>' : '') +
       (result.sheet ? '<span class="pill">' + esc(result.sheet) + ' sheet</span>' : '');
@@ -1971,7 +2007,7 @@
   }
 
   /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
-  const ATT_GROUPS = ['M', 'E', 'C1', 'C2', 'C3', 'G', 'H', 'F1', 'F2', 'F3', 'F4', 'F5', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'D'];
+  const ATT_GROUPS = ['M', 'E', 'C1', 'C2', 'C3', 'G', 'H', 'F1', 'F2', 'F3', 'F4', 'F5', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'D', 'STAR'];
   /** 1st / 2nd Year: groups, roll ranges, timetable builder and group names */
   const BS_PROG = { CS: 'Computer Science', CHEM: 'Chemistry', ECO: 'Economics', ENG: 'English', ISL: 'Islamic Studies', MATH: 'Mathematics', PHY: 'Physics', STAT: 'Statistics', URDU: 'Urdu' };
   const BS_CODES = Object.keys(BS_PROG), BS_CODE_OF = {}; BS_CODES.forEach((k) => { BS_CODE_OF[BS_PROG[k]] = k; });
@@ -2004,11 +2040,27 @@
     if (isBS(y)) return { year: y, bs: true, groups: BS_CODES, ranges: [], build: null, names: BS_NAMES };
     if (Number(y) === 2) {
       const R = typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : [];
-      return { year: 2, groups: R.map((g) => g[0]), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
+      return { year: 2, groups: R.map((g) => g[0]).concat(['STAR']), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
     }
     return { year: 1, groups: ATT_GROUPS, ranges: typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], build: typeof buildSchedule === 'function' ? buildSchedule : null, names: GROUP_NAMES };
   }
   const yearOf = (v) => yk(v);
+  /* ---------- Bright Star (timetable-star.js) ---------- */
+  const hasStar = () => typeof STAR_TT !== 'undefined';
+  const starOk = (y) => hasStar() && !isBS(y);
+  /** up to 6 sample rolls of a roll-series group, leaving out Bright Star students (they follow their own timetable) */
+  function sampleRolls(lo, hi, y) {
+    const out = [];
+    for (let r = lo; r <= hi && out.length < 6; r++) if (!(starOk(y) && isStarRoll(r, Number(y) === 2 ? 2 : 1))) out.push(r);
+    return out;
+  }
+  /** Bright Star lectures of a year: [{group:'STAR', section, period, subject, teacher, room}] */
+  function starLectures(y) {
+    if (!starOk(y)) return [];
+    const yy = Number(y) === 2 ? 2 : 1;
+    return STAR_TT[yy].map((e) => ({ group: 'STAR', section: e.sec, period: e.period, subject: e.subject, teacher: e.teacher, room: e.room }));
+  }
+  function starSectionsFor(y) { if (!starOk(y)) return ['All']; const yy = Number(y) === 2 ? 2 : 1; return STAR_SECTIONS.filter((sc) => sc === 'All' || STAR_TT[yy].some((e) => e.sec === sc)); }
   const attYear = () => yearOf($('attClass').value), mkYear = () => yearOf($('mkClass').value);
   let attAuth = null, attMarks = {}, attStudents = [], attCtx = null, attBusy = false;
   try { attAuth = JSON.parse(store.get('attAuth') || 'null'); } catch (e) { attAuth = null; }
@@ -2077,9 +2129,10 @@
 
   function lecturesFor(group, section, y) {
     if (isBS(y)) return bsLectures(y).filter((l) => l.group === group).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher }));
+    if (group === 'STAR') return starLectures(y).filter((l) => section === 'All' || l.section === section).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher }));
     const cfg = yrCfg(y), buildSchedule = cfg.build;
     const g = groupRange(group, y); if (!g || !buildSchedule) return [];
-    const lo = g[1], odd = lo % 2 ? lo : lo + 1, even = lo % 2 ? lo + 1 : lo;
+    const sm = sampleRolls(g[1], g[2], y), odd = sm.find((r) => r % 2) || g[1], even = sm.find((r) => r % 2 === 0) || g[1] + 1;
     const rolls = section === 'Odd' ? [odd] : section === 'Even' ? [even] : [odd, even];
     if (/^Urdu Batch/.test(section)) return [{ period: 'I', subject: 'Urdu', teacher: 'Batch ' + section.slice(-1) }];
     const seen = {}, out = [];
@@ -2106,7 +2159,8 @@
     return e + (a.length - i) + (b.length - j) <= 1;
   }
   function subjOk(group, subj, y) {
-    const t = myTeaches(y);
+    if (group === 'STAR') return true;
+    const t = myTeachesBase(y);
     const mine = t.filter((x) => x.group === group);
     if (!t.length) return true;
     return mine.some((x) => normSubj(x.subject).toLowerCase() === normSubj(subj).toLowerCase());
@@ -2142,7 +2196,7 @@
     }
     const out = {};
     cfg.ranges.forEach(([g, lo, hi]) => {
-      const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+      const rolls = sampleRolls(lo, hi, y);
       const map = {};
       rolls.forEach((r) => {
         const res = cfg.build ? cfg.build(r) : null; if (!res || (y === 2 && !res.code)) return;
@@ -2163,6 +2217,11 @@
           c.lectures.push({ period: e.period, subject: e.subject, teacher: e.teacher, rotating: e.rotating });
         });
       });
+    });
+    starLectures(y).forEach((l) => {
+      if (!isMe(l.teacher, l.subject, 'STAR', y)) return;
+      const ck = 'STAR|' + l.section;
+      (out[ck] = out[ck] || { group: 'STAR', section: l.section, lectures: [] }).lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher });
     });
     const list = Object.keys(out).map((k) => out[k]);
     myClassesCache[y] = { key, list };
@@ -2190,7 +2249,7 @@
   }
   function fillAttSections() {
     const g = $('attGroup').value, y = attYear();
-    const base = isBS(y) ? ['All'] : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base;
     const prev = $('attSection').value;
     $('attSection').innerHTML = (secs.length ? secs : base).map((s) => '<option>' + s + '</option>').join('');
@@ -2459,6 +2518,7 @@
   const normSubj = (s) => String(s || '').replace(/\s*Practical$/i, '').trim();
   function groupSubjects(group, y) {
     const set = {};
+    if (group === 'STAR') { starLectures(y).forEach((l) => { set[normSubj(l.subject)] = 1; }); return Object.keys(set).sort(); }
     ['All', 'Odd', 'Even'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { if (!l.rotating) set[normSubj(l.subject)] = 1; }));
     if (y === 1) ['Urdu Batch 1'].forEach((sec) => lecturesFor(group, sec, y).forEach((l) => { set[normSubj(l.subject)] = 1; }));
     return Object.keys(set).filter(Boolean).sort();
@@ -2477,10 +2537,19 @@
     return m === 9 ? 0 : m === 10 ? 1 : m === 11 ? 2 : m === 0 ? 3 : m === 1 ? 4 : m >= 2 && m <= 5 ? 5 : 0;
   }
   const isAdmin = () => attAuth && attAuth.role === 'Admin';
-  function myTeaches(y) {
+  function myTeachesBase(y) {
     if (!attAuth) return [];
     if (isBS(y)) return (attAuth.teachesBS || []).filter((t) => t.sem === bsSemOf(y)).map((t) => ({ group: t.group, subject: t.subject }));
     return (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches) || [];
+  }
+  /** subjects the teacher may enter marks for: Teachers sheet / BS timetable + their Bright Star lectures */
+  function myTeaches(y) {
+    const base = myTeachesBase(y);
+    const me = nameKey(attAuth && attAuth.name);
+    if (!me || isBS(y)) return base;
+    const star = [];
+    starLectures(y).forEach((l) => { if (String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && !star.some((x) => x.subject === l.subject)) star.push({ group: 'STAR', subject: l.subject }); });
+    return base.concat(star);
   }
 
   function fillMkGroups() {
@@ -2506,7 +2575,7 @@
   }
   function fillMkSections() {
     const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
-    const base = isBS(y) ? ['All'] : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
     const use = secs.length ? secs : base;
     const prev = $('mkSection').value;
@@ -3102,7 +3171,7 @@
     const cfg = yrCfg(y), buildSchedule = cfg.build;
     const out = [], seen = {};
     cfg.ranges.forEach(([g, lo, hi]) => {
-      const rolls = []; for (let r = lo; r <= Math.min(hi, lo + 5); r++) rolls.push(r);
+      const rolls = sampleRolls(lo, hi, y);
       const map = {};
       rolls.forEach((r) => {
         const res = typeof buildSchedule === 'function' ? buildSchedule(r) : null; if (!res || (y === 2 && !res.code)) return;
@@ -3122,6 +3191,7 @@
         });
       });
     });
+    starLectures(y).forEach((l) => out.push(l));
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group, undefined, { numeric: true }) || a.section.localeCompare(b.section));
     allLecCache[y] = out;
     return out;
