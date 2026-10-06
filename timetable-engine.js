@@ -42,8 +42,8 @@ function urduBatch(roll) {
 
 const URDU_BATCH_ROOMS = {
   1: { room: "UB3", teacher: "Prof. Tahira Ghafoor" },
-  2: { room: "UB4", teacher: "Prof. Amjad Zia" },
-  3: { room: "UB5", teacher: "Prof. Faiza Iftekhar" }
+  2: { room: "UB4", teacher: "Prof. Zia-Ur-Rehman" },
+  3: { room: "UB5", teacher: "Prof. Amjad Zia" }
 };
 
 // Each function takes (roll) and returns an array of
@@ -155,7 +155,7 @@ function buildSchedule(roll) {
   if (["F1","F2","F3","F4","F5"].includes(code)) {
     const p = parity(roll);
     rows.push({ period: "I", subject: "English", ...(p === "Odd" ? { room: "UB6", teacher: "Dr. Muhammad Ismaeel" } : { room: "UB7", teacher: "Prof. Nazia Latif" }), note: "with Arts (A)" });
-    rows.push({ period: "V", subject: "Urdu", room: "UB7", teacher: "Prof. Amjad Zia", note: "with Arts (A)" });
+    rows.push({ period: "V", subject: "Urdu", room: "UB7", teacher: "Prof. Zia-Ur-Rehman", note: "with Arts (A)" });
 
     if (code === "F1") {
       rows.push({ period: "II", subject: "History", room: "UB10", teacher: "Prof. Arsalan Iftikhar", note: "with A5, A7" });
@@ -197,7 +197,7 @@ function buildSchedule(roll) {
   if (["A1","A2","A3","A4","A5","A6","A7"].includes(code)) {
     const p = parity(roll);
     rows.push({ period: "I", subject: "English", ...(p === "Odd" ? { room: "UB6", teacher: "Dr. Muhammad Ismaeel" } : { room: "UB7", teacher: "Prof. Nazia Latif" }), note: "with F groups" });
-    rows.push({ period: "V", subject: "Urdu", room: "UB7", teacher: "Prof. Amjad Zia", note: "with F groups" });
+    rows.push({ period: "V", subject: "Urdu", room: "UB7", teacher: "Prof. Zia-Ur-Rehman", note: "with F groups" });
 
     if (["A1","A2","A3","A4","A5"].includes(code)) {
       rows.push({ period: "III", subject: "Islamic Studies (Islamiat)", room: "UB8", teacher: "CTI", note: "with F groups" });

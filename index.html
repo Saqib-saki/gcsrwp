@@ -392,6 +392,9 @@
   .reg-low { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.82rem; }
   .reg-low em { color: var(--red); font-style: normal; font-weight: 800; }
   .print-only { display: none; }
+  .att-mode button { flex: 1 1 50%; }
+  .att-ghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--chip-bg); color: var(--chip-text); font-weight: 800; font-size: 0.82rem; position: sticky; top: 0; z-index: 1; }
+  .att-ghead .link-btn { font-size: 0.74rem; }
   a.wl-cls, .wl-cls.demo { display: inline-block; background: #1d5fbf; color: #fff !important; font-weight: 800; font-size: 0.8rem; padding: 3px 9px; border-radius: 8px; margin: 1px 3px 3px 0; text-decoration: none; box-shadow: 0 1px 3px rgba(29,95,191,.35); }
   a.wl-cls:active { transform: scale(.96); }
   .wl-cls.demo { font-size: 0.72rem; padding: 1px 7px; }
@@ -659,6 +662,9 @@
         </div>
         <div class="soon-card" id="attSoon" style="display:none"></div>
         <div id="attBody">
+        <div class="seg att-mode" id="attModeSeg" style="display:none"><button data-m="whole" class="on">📚 Whole class</button><button data-m="group">One group</button></div>
+        <div class="field" id="attComboRow" style="display:none"><label for="attCombo">Lecture — all groups together</label><select id="attCombo"></select></div>
+        <div id="attOneGroup">
         <div class="field-row">
           <div class="field"><label for="attGroup">Group</label><select id="attGroup"></select></div>
           <div class="field"><label for="attSection">Section</label><select id="attSection"><option>All</option><option>Odd</option><option>Even</option><option>Urdu Batch 1</option><option>Urdu Batch 2</option><option>Urdu Batch 3</option></select></div>
@@ -667,6 +673,7 @@
         <div class="field-row" id="attOtherRow" style="display:none">
           <div class="field"><label for="attPeriod">Period</label><select id="attPeriod"><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option><option>VII</option></select></div>
           <div class="field"><label for="attOtherSubj">Subject</label><input id="attOtherSubj" placeholder="Subject name"></div>
+        </div>
         </div>
         <div class="tnote" id="attTimeNote" style="display:none"></div>
         <button class="btn-primary" id="attLoad">Load students</button>
@@ -2246,6 +2253,7 @@
       : (ALL_YEARS.some((z) => z !== y && myClasses(z).length) ? 'You have no ' + yearLabel(y) + ' classes in the timetable — switch Class to ' + yearLabel(ALL_YEARS.find((z) => z !== y && myClasses(z).length)) + ', or pick any group for a substitute lecture.'
         : 'Your name was not found in the timetable, so all groups are shown. Ask the admin to check your name/subjects in the Teachers sheet.');
     fillAttSections();
+    fillAttCombos();
   }
   function fillAttSections() {
     const g = $('attGroup').value, y = attYear();
@@ -2281,6 +2289,7 @@
   }
 
   function currentLecture() {
+    if (attWhole()) { const c = curCombo(); return c ? { period: c.period, subject: c.subject } : null; }
     const v = $('attSubject').value;
     if (v === 'other') return { period: $('attPeriod').value, subject: $('attOtherSubj').value.trim() };
     const l = JSON.parse($('attSubject').dataset.list || '[]')[Number(v)];
@@ -2342,7 +2351,7 @@
   }
   /** marks of an unsent sheet for the same lecture (so re-opening it offline shows what was marked) */
   function queuedMarks(ctx) {
-    const it = attQueue.get().filter((x) => (x.action || 'submit') === 'submit').reverse().find((x) => { const p = x.payload || {}; return p.date === ctx.date && p.period === ctx.period && p.subject === ctx.subject && p.group === ctx.group && p.section === ctx.section && Number(p.year || 1) === Number(ctx.year || 1); });
+    const it = attQueue.get().filter((x) => (x.action || 'submit') === 'submit').reverse().find((x) => { const p = x.payload || {}; return p.date === ctx.date && p.period === ctx.period && p.subject === ctx.subject && p.group === ctx.group && p.section === ctx.section && yk(p.year || 1) === yk(ctx.year || 1); });
     const full = { P: 'Present', A: 'Absent', L: 'Leave' }, out = {};
     if (it) (it.payload.marks || []).forEach((m) => { out[m.roll] = full[m.status] || 'Present'; });
     return out;
@@ -2418,11 +2427,118 @@
   $('mkClass').addEventListener('change', () => classSoon('mk'));
   $('attDate').addEventListener('change', paintTimeNote);
 
+  /* ---------- v10.3: whole class = every group of a combined lecture at once ---------- */
+  var attMode = store.get('attMode') || 'whole', attMulti = null, attCombos = [];
+  /** the teacher's lectures in this class, each with all its groups: [{period, subject, parts:[{group, section}]}] */
+  function myCombos(y) {
+    const map = {};
+    myClasses(y).forEach((c) => c.lectures.forEach((l) => {
+      if (l.rotating) return;
+      const k = l.period + '|' + normSubj(l.subject).toLowerCase();
+      const e = map[k] || (map[k] = { period: l.period, subject: l.subject, parts: [] });
+      if (!e.parts.some((p) => p.group === c.group && p.section === c.section)) e.parts.push({ group: c.group, section: c.section });
+    }));
+    const all = yrCfg(y).groups;
+    return Object.keys(map).map((k) => map[k]).map((e) => Object.assign(e, { parts: e.parts.sort((a, b) => all.indexOf(a.group) - all.indexOf(b.group) || a.section.localeCompare(b.section)) }))
+      .sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
+  }
+  const attWhole = () => attMode === 'whole' && attCombos.length > 0 && $('attModeSeg').style.display !== 'none';
+  const curCombo = () => attCombos[Number($('attCombo').value)] || null;
+  function fillAttCombos() {
+    const y = attYear();
+    attCombos = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y) : [];
+    const show = attCombos.length > 0;
+    $('attModeSeg').style.display = show ? 'flex' : 'none';
+    const prev = $('attCombo').value;
+    $('attCombo').innerHTML = attCombos.map((c, i) => '<option value="' + i + '">' + esc(c.period) + ' · ' + esc(c.subject) + ' · ' + esc(compactGroups(c.parts, y)) + (c.parts.length > 1 ? ' (' + c.parts.length + ' groups)' : '') + '</option>').join('');
+    if (prev && attCombos[Number(prev)]) $('attCombo').value = prev;
+    if (BELL && $('attDate').value === todayISO()) {
+      const n = nowMinLocal(); attCombos.forEach((c, i) => { const w = periodWin(c.period, todayISO()); if (w && n >= w[0] && n < w[1]) $('attCombo').value = String(i); });
+    }
+    applyAttMode();
+  }
+  function applyAttMode() {
+    const whole = attWhole();
+    document.querySelectorAll('#attModeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.m === (whole ? 'whole' : 'group')));
+    $('attComboRow').style.display = whole ? 'block' : 'none';
+    $('attOneGroup').style.display = whole ? 'none' : 'block';
+    $('attSummaryBtn').style.display = whole ? 'none' : 'block';
+    paintTimeNote();
+  }
+  $('attModeSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; attMode = b.dataset.m; store.set('attMode', attMode); $('attListWrap').style.display = 'none'; applyAttMode(); });
+  $('attCombo').addEventListener('change', () => { $('attListWrap').style.display = 'none'; paintTimeNote(); });
+
+  async function loadMulti(lec, date) {
+    const c = curCombo(), y = attYear();
+    attMulti = { date, period: c.period, subject: c.subject, year: y, klass: $('attClass').value, parts: c.parts.map((p) => ({ group: p.group, section: p.section })) };
+    attCtx = null;
+    let res = null, fromPhone = false;
+    try {
+      try { res = (await attApi('rosterMulti', { year: y, date, period: c.period, subject: c.subject, parts: attMulti.parts })).parts; }
+      catch (err) {
+        if (!/Unknown action/.test(err.message)) throw err;
+        res = [];   // older server: one request pair per group
+        for (const p of attMulti.parts) {
+          const ctx = { year: y, date, period: c.period, subject: c.subject, group: p.group, section: p.section };
+          const [r, s2] = await Promise.all([attApi('roster', ctx), attApi('getSession', ctx)]);
+          res.push({ group: p.group, section: p.section, students: r.students, marks: s2.marks });
+        }
+      }
+      res.forEach((p) => rcPut(p.group, p.section, p.students, y)); paintOffNote();
+    } catch (err) {
+      if (!err.offline) throw err;
+      res = attMulti.parts.map((p) => { const e = rcGet(p.group, p.section, y); return e ? { group: p.group, section: p.section, students: e.students, marks: queuedMarks({ date, period: c.period, subject: c.subject, group: p.group, section: p.section, year: y }) } : null; });
+      const miss = attMulti.parts.filter((p, i) => !res[i]).map((p) => p.group);
+      if (miss.length === attMulti.parts.length) { const e2 = new Error('offline-first'); e2.offline = true; throw e2; }
+      res = res.map((x, i) => x || { group: attMulti.parts[i].group, section: attMulti.parts[i].section, students: [], marks: {}, missing: true });
+      fromPhone = miss.length ? miss : true;
+    }
+    const back = { Present: 'P', Absent: 'A', Leave: 'L' };
+    attStudents = []; attMarks = {}; let already = 0;
+    res.forEach((p, i) => {
+      attMulti.parts[i].students = p.students;
+      already += Object.keys(p.marks || {}).length;
+      p.students.forEach((st) => { attStudents.push(Object.assign({ part: i }, st)); attMarks[st.roll] = back[(p.marks || {})[st.roll]] || 'P'; });
+    });
+    $('attListTitle').textContent = compactGroups(attMulti.parts, y) + ' · Period ' + attMulti.period + ' · ' + attMulti.subject + ' · ' + fmtDate(date);
+    $('attList').innerHTML = attMulti.parts.map((p, i) => '<div class="att-ghead"><span>' + esc(p.group + (p.section !== 'All' ? ' (' + p.section + ')' : '')) + ' · ' + (p.students || []).length + ' students</span>' +
+      ((p.students || []).length ? '<button class="link-btn att-gallp" data-part="' + i + '">All present</button>' : '') + '</div>' +
+      ((p.students || []).length ? p.students.map((st) => '<div class="att-row"><span class="roll">' + st.roll + '</span><span class="nm">' + esc(st.name) + '</span><button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>').join('')
+        : '<div class="empty">No students listed for ' + esc(p.group) + ' yet — it will be skipped.</div>')).join('');
+    $('attListWrap').style.display = 'block'; paintList();
+    if (fromPhone) toast('📵 No internet — using the class lists saved on this phone.' + (Array.isArray(fromPhone) ? ' Not saved on this phone yet: ' + fromPhone.join(', ') + ' (mark those when you are online).' : '') + ' Mark and save as normal; they will be sent automatically.');
+    else if (already) toast('Loaded the attendance already saved for this lecture — you can correct it');
+    $('attListWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  async function submitMulti() {
+    const m = attMulti, parts = m.parts.filter((p) => (p.students || []).length).map((p) => ({ group: p.group, section: p.section, marks: p.students.map((st) => ({ roll: st.roll, status: attMarks[st.roll] })) }));
+    if (!parts.length) { toast('No students to save.'); return; }
+    const base = { date: m.date, period: m.period, subject: m.subject, year: m.year, klass: m.klass };
+    const queueAll = (flag) => { const q = attQueue.get(); parts.forEach((p) => q.push({ payload: Object.assign({}, base, p, { section: p.section }, flag), auth: attAuth, at: Date.now() })); attQueue.set(q); renderPending(); scheduleRetry(); };
+    try {
+      let j;
+      try { j = await attApi('submitMulti', Object.assign({}, base, { parts })); }
+      catch (err) {
+        if (!/Unknown action/.test(err.message)) throw err;
+        j = { parts: [], saved: 0, present: 0, absent: 0, leave: 0, failed: 0 };
+        for (const p of parts) { try { const r = await attApi('submit', Object.assign({}, base, p)); j.parts.push(Object.assign({ ok: true }, r)); ['saved', 'present', 'absent', 'leave'].forEach((k) => { j[k] += r[k] || 0; }); j.timing = j.timing || r.timing; } catch (e2) { if (e2.offline || /^BUSY/.test(e2.message)) throw e2; j.parts.push({ ok: false, group: p.group, error: e2.message }); j.failed++; } }
+      }
+      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry' };
+      const bad = (j.parts || []).filter((r) => r.ok === false);
+      toast('Saved ✓ ' + (parts.length - bad.length) + ' group' + (parts.length - bad.length === 1 ? '' : 's') + ' · ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : '') + (TL[j.timing] || '') + (bad.length ? ' · ⚠️ not saved: ' + bad.map((r) => r.group + ' (' + r.error + ')').join('; ') : ''));
+      if (!bad.length) { $('attListWrap').style.display = 'none'; window.scrollTo(0, 0); }
+    } catch (e) {
+      if (e.offline) { queueAll({ queuedAt: Date.now() }); toast('No internet — all ' + parts.length + ' groups saved on this phone. They will be sent automatically.'); $('attListWrap').style.display = 'none'; }
+      else if (/^BUSY/.test(e.message)) { queueAll({ busyAt: Date.now() }); toast('Server busy — saved on this phone and will be sent automatically in a minute.'); $('attListWrap').style.display = 'none'; }
+      else toast(e.message);
+    }
+  }
+
   function paintList() {
     const c = { P: 0, A: 0, L: 0 };
     attStudents.forEach((s) => c[attMarks[s.roll]]++);
     $('attCounts').innerHTML = '<span class="c-P">Present ' + c.P + '</span><span class="c-A">Absent ' + c.A + '</span><span class="c-L">Leave ' + c.L + '</span><span style="color:var(--muted)">Total ' + attStudents.length + '</span>';
-    $('attSubmit').textContent = 'Save attendance (' + attStudents.length + ')';
+    $('attSubmit').textContent = 'Save attendance (' + attStudents.length + ')' + (attMulti && attMulti.parts.length > 1 ? ' · ' + attMulti.parts.length + ' groups' : '');
   }
   const LABEL = { P: 'Present', A: 'Absent', L: 'Leave' }, NEXT = { P: 'A', A: 'L', L: 'P' };
 
@@ -2432,6 +2548,14 @@
     if (!date) { $('attErr').textContent = 'Choose a date.'; return; }
     if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
     if (!isAdminUser()) { const t = timeState(lec.period); if (t.state === 'wait') { $('attErr').textContent = 'Not yet — you can load the list when the period starts.'; return; } }
+    if (attWhole()) {
+      $('attListWrap').style.display = 'none';
+      $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
+      try { await loadMulti(lec, date); } catch (e) { $('attErr').textContent = e.offline ? 'You need internet to open this class the first time. After that the list is kept on this phone and works without internet.' : e.message; if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderAttendance(); } }
+      $('attLoad').disabled = false; $('attLoad').textContent = 'Load students';
+      return;
+    }
+    attMulti = null;
     attCtx = { date, period: lec.period, subject: lec.subject, group: $('attGroup').value, section: $('attSection').value, klass: $('attClass').value, year: attYear() };
     store.set('attLastGroup' + ysfx(attCtx.year), attCtx.group);
     $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
@@ -2464,6 +2588,8 @@
   });
 
   $('attList').addEventListener('click', (e) => {
+    const g = e.target.closest('.att-gallp');
+    if (g) { const i = Number(g.dataset.part); attStudents.forEach((s) => { if (s.part === i) attMarks[s.roll] = 'P'; }); $('attList').querySelectorAll('.st-btn').forEach((x) => { if (attMarks[Number(x.dataset.roll)] === 'P') { x.className = 'st-btn st-P'; x.textContent = 'Present'; } }); paintList(); return; }
     const b = e.target.closest('.st-btn'); if (!b) return;
     const r = Number(b.dataset.roll); attMarks[r] = NEXT[attMarks[r]];
     b.className = 'st-btn st-' + attMarks[r]; b.textContent = LABEL[attMarks[r]]; paintList();
@@ -2471,6 +2597,11 @@
   $('attAllP').addEventListener('click', () => { attStudents.forEach((s) => { attMarks[s.roll] = 'P'; }); $('attList').querySelectorAll('.st-btn').forEach((b) => { b.className = 'st-btn st-P'; b.textContent = 'Present'; }); paintList(); });
 
   $('attSubmit').addEventListener('click', async () => {
+    if (attMulti && attStudents.length && !attBusy) {
+      attBusy = true; $('attSubmit').disabled = true; $('attSubmit').textContent = 'Saving…';
+      try { await submitMulti(); } finally { attBusy = false; $('attSubmit').disabled = false; paintList(); }
+      return;
+    }
     if (!attCtx || !attStudents.length || attBusy) return;
     attBusy = true; $('attSubmit').disabled = true; $('attSubmit').textContent = 'Saving…';
     const payload = Object.assign({}, attCtx, { marks: attStudents.map((s) => ({ roll: s.roll, status: attMarks[s.roll] })) });

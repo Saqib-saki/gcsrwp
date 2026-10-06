@@ -71,7 +71,7 @@ function buildSchedule2(roll) {
     add("I", "Physics", odd ? 5 : 6, odd ? "Prof. Muhammad Asghar" : "Prof. Zarmeen Malik", "M + E (" + OE + ")");
     add("II", "Chemistry", odd ? 5 : 6, odd ? "Prof. Noor ul Aen" : "Prof. Tehmina Akhtar", "M + E (" + OE + ")");
     add("III", "English", 5, "Prof. Fazal Mehmood", "M + E together");
-    add("IV", "Urdu", 5, "Prof. Amjad Zia", "M + E together");
+    add("IV", "Urdu", 5, "Prof. Zia-Ur-Rehman", "M + E together");
     if (code === "M") add("V", "Biology", 5, "Prof. Abdul Ghaffar Anjum");
     else add("V", "Mathematics", 6, "Prof. Iram Naz");
     rot("VI · Pak. Studies (1-2)", "E + M", 5, "Prof. Aamir Hayat");
