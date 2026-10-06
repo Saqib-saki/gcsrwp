@@ -993,11 +993,11 @@
     </div>
 
     <div id="ttRotatingWrap">
-      <div class="section-title"><span id="ttRotTitle">Islamic Ed. / Ethics / Practicals</span> <span class="rotate-tag">rotates weekly</span></div>
+      <div class="section-title"><span id="ttRotTitle">Periods VI &amp; VII</span></div>
       <div class="card pad">
         <div class="overflow-x">
           <table class="wl">
-            <thead><tr><th>Subject</th><th>Group</th><th>Room</th><th>Teacher</th></tr></thead>
+            <thead><tr><th>Period · Day</th><th>Subject</th><th>With</th><th>Room</th><th>Teacher</th></tr></thead>
             <tbody id="ttRotatingBody"></tbody>
           </table>
         </div>
@@ -1056,6 +1056,7 @@
 <script src="timetable-engine-2.js"></script>
 <script src="timetable-bs.js"></script>
 <script src="timetable-star.js"></script>
+<script src="timetable-67.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1259,12 +1260,7 @@
             const k = x.period + '|' + x.subject + '|' + x.teacher + '|' + x.room;
             const e = map[k] || (map[k] = { x, rolls: [] }); if (e.rolls.indexOf(r) < 0) e.rolls.push(r);
           });
-          (res.rotating || []).forEach((x) => {
-            String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
-              const m = /^(VI|VII) · (.*)$/.exec(x.subject);
-              put(t, { year, period: m ? m[1] : 'VI/VII', klass: x.group, subject: m ? m[2] : x.subject, room: x.room || '', rotating: true });
-            });
-          });
+
         });
         Object.keys(map).forEach((k) => {
           const e = map[k], secs = sectionsOf(e.rolls, rolls);
@@ -1283,11 +1279,15 @@
     if (hasStar()) [1, 2].forEach((year) => {
       STAR_TT[year].forEach((e) => String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
         put(t, { year, period: e.period, klass: 'STAR' + (e.sec !== 'All' ? ' (' + e.sec + ')' : ''), subject: e.subject, room: e.room || '' })));
-      STAR_ROT[year].forEach((e) => String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
-        const m = /^(VI|VII) · (.*)$/.exec(e.subject);
-        put(t, { year, period: m ? m[1] : 'VI/VII', klass: 'Bright Star', subject: m ? m[2] : e.subject, room: e.room || '', rotating: true });
-      }));
     });
+    if (hasSix()) [1, 2].forEach((year) => sixList(year).forEach((e) => {
+      const days = sixDayLabel(e), bySec = {};
+      e.parts.forEach((p) => { (bySec[p[1]] = bySec[p[1]] || []).push(p[0]); });
+      String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+        if (e.everyone || !days) { put(t, { year, period: e.period, klass: e.with, subject: e.subject, room: e.room || '', rotating: true, days }); return; }
+        Object.keys(bySec).forEach((sec) => put(t, { year, period: e.period, klass: bySec[sec].join(', ') + (sec !== 'All' ? ' (' + sec + ')' : ''), subject: e.subject, room: e.room || '', days }));
+      });
+    }));
     wlIndex = out;
     return out;
   }
@@ -1448,13 +1448,13 @@
     // workload
     const canRec = (isMe || admin) && !!DATA.attendanceApi;
     const tbl = (rows, withYear) => '<div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Period</th><th>Class</th><th>Subject</th><th>Room</th></tr></thead><tbody>' +
-      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : (canRec && !e.rotating ? klassLinks(e, p.name) : esc(e.klass))) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
+      rows.map((e) => '<tr><td class="period">' + esc(e.period) + '<span class="ttnote">' + esc(e.days || PERIOD_TIMES[e.period] || '') + '</span></td><td>' + (withYear ? esc(e.year === 2 ? '2nd Year' : '1st Year') + '<span class="ttnote">' + esc(e.klass) + '</span>' : (canRec && !e.rotating ? klassLinks(e, p.name) : esc(e.klass))) + '</td><td>' + esc(e.subject) + '</td><td>' + esc(e.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
     h += '<div class="pf-wl-title">📚 Workload</div>' + (canRec && (fixed.length || bs.length) ? '<p class="note no-print wl-hint">👆 Tap a <span class="wl-cls demo">blue class</span> to open its attendance and test record — the whole session so far, and month by month.</p>' : '');
     let w = '';
     [1, 2].forEach((y) => { const rows = fixed.filter((e) => e.year === y); if (rows.length) w += '<div class="section-title">' + (y === 1 ? '1st Year' : '2nd Year') + ' · daily</div>' + tbl(rows, false); });
     if (bs.length) w += '<div class="section-title">BS / other classes</div><div class="card"><div class="overflow-x"><table class="wl"><thead><tr><th>Semester</th><th>Period</th><th>Course</th><th>Room</th></tr></thead><tbody>' +
       bs.slice().sort((a, b) => (a.sem || 0) - (b.sem || 0) || periodIndex(a.period) - periodIndex(b.period)).map((r) => '<tr><td>' + (canRec ? bsLinks(r, p.name) : esc(r.level)) + '</td><td class="period">' + esc(r.period) + '</td><td>' + esc(r.course) + (r.code && r.code !== '—' ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.room) + '</td></tr>').join('') + '</tbody></table></div></div>';
-    if (rot.length) w += '<div class="section-title">Periods VI–VII · practicals <span class="rotate-tag">rotates weekly</span></div>' + tbl(rot, true);
+    if (rot.length) w += '<div class="section-title">Periods VI–VII · other <span class="rotate-tag">day not printed</span></div>' + tbl(rot, true);
     if (duties.length) w += '<div class="section-title">Extra duties / workload</div><div class="card pad"><ul class="pf-duties">' + duties.map((d) => '<li>' + esc(d) + '</li>').join('') + '</ul></div>';
     if (!w) w = '<div class="card"><div class="empty">No classes are assigned to ' + esc(p.name) + ' in the 1st / 2nd Year timetables yet.</div></div>';
     h += w + '<p class="note">Workload from the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) timetables' + (bs.length ? ' and the BS workload' : '') + '. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.' +
@@ -1918,8 +1918,8 @@
     const result = roll ? schedFor(roll) : null;
     if (!result || !result.code) { history.replaceState(history.state, '', '#/timetable/y' + ttYear); render(); return false; }
     store.set('roll', String(roll)); store.set('rollYear', String(ttYear));
-    $('ttRotTitle').textContent = ttYear === 2 ? 'Periods VI & VII — Pak. Studies / Tarjuma-tul-Quran / Ethics / Practicals' : 'Islamic Ed. / Ethics / Practicals';
-    $('ttRotNote').textContent = ttYear === 2 ? 'Numbers in brackets are as printed on the college timetable. These periods rotate — check the department noticeboard for this week.' : 'These periods rotate week to week — check the department noticeboard for the current week\'s rotation.';
+    $('ttRotTitle').textContent = ttYear === 2 ? 'Periods VI & VII — Pak. Studies / Tarjuma-tul-Quran / Ethics / Practicals' : 'Periods VI & VII — Islamic Ed. / Tarjuma / Ethics / Practicals';
+    $('ttRotNote').textContent = 'Days as printed on the college timetable (1 = Monday … 6 = Saturday). Period VI 12:15–1:00, Period VII 1:00–1:45.';
 
     $('ttSummary').innerHTML =
       '<p class="tt-summary-name">Roll No. ' + roll + '</p>' +
@@ -1936,7 +1936,7 @@
     const rot = result.rotating || [];
     $('ttRotatingWrap').style.display = rot.length ? 'block' : 'none';
     $('ttRotatingBody').innerHTML = rot.map((r) =>
-      '<tr><td>' + esc(r.subject) + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.room) + '</td><td>' + esc(r.teacher) + '</td></tr>'
+      '<tr><td class="period">' + esc(r.period || String(r.subject).split(' · ')[0]) + '<span class="ttnote">' + esc(r.days || 'day not printed') + '</span></td><td>' + esc(String(r.subject).replace(/^(VI|VII) · /, '')) + '</td><td>' + esc(r.group) + '</td><td>' + esc(r.room) + '</td><td>' + esc(r.teacher) + '</td></tr>'
     ).join('');
     return true;
   }
@@ -2067,6 +2067,20 @@
     const yy = Number(y) === 2 ? 2 : 1;
     return STAR_TT[yy].map((e) => ({ group: 'STAR', section: e.sec, period: e.period, subject: e.subject, teacher: e.teacher, room: e.room }));
   }
+  /* ---------- Periods VI / VII with days (timetable-67.js) ---------- */
+  const hasSix = () => typeof SIX7 !== 'undefined';
+  const sixList = (y) => (hasSix() && !isBS(y) ? SIX7[Number(y) === 2 ? 2 : 1] || [] : []);
+  /** VI/VII lectures as {group, section, period, subject, teacher, room, days:[…]} (only those printed with days and with students) */
+  function sixLectures(y) {
+    const out = [];
+    sixList(y).forEach((e) => {
+      const days = sixDays(e); if (!days || e.everyone) return;
+      e.parts.forEach((p) => out.push({ group: p[0], section: p[1], period: e.period, subject: e.subject, teacher: e.teacher, room: e.room, days }));
+    });
+    return out;
+  }
+  const weekdayOf = (iso) => (iso ? new Date(iso + 'T12:00:00Z').getUTCDay() : new Date().getDay());
+  const onDay = (l, wd) => !l.days || l.days.indexOf(wd) >= 0;
   function starSectionsFor(y) { if (!starOk(y)) return ['All']; const yy = Number(y) === 2 ? 2 : 1; return STAR_SECTIONS.filter((sc) => sc === 'All' || STAR_TT[yy].some((e) => e.sec === sc)); }
   const attYear = () => yearOf($('attClass').value), mkYear = () => yearOf($('mkClass').value);
   let attAuth = null, attMarks = {}, attStudents = [], attCtx = null, attBusy = false;
@@ -2146,8 +2160,8 @@
     rolls.forEach((r) => {
       const res = buildSchedule(r); if (!res) return;
       (res.rows || []).forEach((x) => { const k = x.period + '|' + x.subject; if (!seen[k]) { seen[k] = 1; out.push({ period: x.period, subject: x.subject, teacher: x.teacher }); } });
-      (res.rotating || []).forEach((x) => { const k = 'VI|' + x.subject; if (!seen[k]) { seen[k] = 1; out.push({ period: 'VI', subject: x.subject, teacher: x.teacher, rotating: true }); } });
     });
+    sixLectures(y).forEach((l) => { if (l.group === group && (l.section === section || l.section === 'All')) { const k = l.period + '|' + l.subject; if (!seen[k]) { seen[k] = 1; out.push({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days }); } } });
     return out;
   }
 
@@ -2208,7 +2222,6 @@
       rolls.forEach((r) => {
         const res = cfg.build ? cfg.build(r) : null; if (!res || (y === 2 && !res.code)) return;
         (res.rows || []).map((x) => ({ period: x.period, subject: x.subject, teacher: x.teacher }))
-          .concat((res.rotating || []).map((x) => ({ period: 'VI', subject: x.subject, teacher: x.teacher, rotating: true })))
           .forEach((x) => {
             const k = x.period + '|' + x.subject;
             const e = map[k] || (map[k] = { period: x.period, subject: x.subject, rotating: !!x.rotating, teacher: x.teacher, mine: [], all: [] });
@@ -2224,6 +2237,13 @@
           c.lectures.push({ period: e.period, subject: e.subject, teacher: e.teacher, rotating: e.rotating });
         });
       });
+    });
+    const meKey = nameKey(attAuth.name);
+    sixLectures(y).forEach((l) => {
+      if (!String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, meKey); })) return;
+      const ck = l.group + '|' + l.section;
+      const c = out[ck] || (out[ck] = { group: l.group, section: l.section, lectures: [] });
+      if (!c.lectures.some((x) => x.period === l.period && x.subject === l.subject)) c.lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days });
     });
     starLectures(y).forEach((l) => {
       if (!isMe(l.teacher, l.subject, 'STAR', y)) return;
@@ -2267,10 +2287,12 @@
 
   function fillSubjects() {
     const g = $('attGroup').value, sec = $('attSection').value, y = attYear();
-    const list = limitToMine(y)
+    let list = limitToMine(y)
       ? myClasses(y).filter((c) => c.group === g && c.section === sec).reduce((a, c) => a.concat(c.lectures), [])
         .sort((a, b) => periodIndex(a.period) - periodIndex(b.period))
       : lecturesFor(g, sec, y);
+    const wd = weekdayOf($('attDate').value);
+    list = list.filter((l) => onDay(l, wd));
     $('attSubject').innerHTML = list.map((l, i) =>
       '<option value="' + i + '">' + (l.rotating ? 'VI/VII' : l.period) + ' · ' + esc(l.subject) + (l.teacher ? ' (' + esc(l.teacher) + ')' : '') + '</option>'
     ).join('') + '<option value="other">Other subject / period…</option>';
@@ -2425,7 +2447,7 @@
   }
   $('attClass').addEventListener('change', () => classSoon('att'));
   $('mkClass').addEventListener('change', () => classSoon('mk'));
-  $('attDate').addEventListener('change', paintTimeNote);
+  $('attDate').addEventListener('change', () => { if (attAuth && $('attGroup').options.length) { fillSubjects(); fillAttCombos(); } paintTimeNote(); });
 
   /* ---------- v10.3: whole class = every group of a combined lecture at once ---------- */
   var attMode = store.get('attMode') || 'whole', attMulti = null, attCombos = [];
@@ -2435,7 +2457,7 @@
     myClasses(y).forEach((c) => c.lectures.forEach((l) => {
       if (l.rotating) return;
       const k = l.period + '|' + normSubj(l.subject).toLowerCase();
-      const e = map[k] || (map[k] = { period: l.period, subject: l.subject, parts: [] });
+      const e = map[k] || (map[k] = { period: l.period, subject: l.subject, parts: [], days: l.days || null });
       if (!e.parts.some((p) => p.group === c.group && p.section === c.section)) e.parts.push({ group: c.group, section: c.section });
     }));
     const all = yrCfg(y).groups;
@@ -2446,7 +2468,8 @@
   const curCombo = () => attCombos[Number($('attCombo').value)] || null;
   function fillAttCombos() {
     const y = attYear();
-    attCombos = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y) : [];
+    const wd = weekdayOf($('attDate').value);
+    attCombos = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y).filter((c) => onDay(c, wd)) : [];
     const show = attCombos.length > 0;
     $('attModeSeg').style.display = show ? 'flex' : 'none';
     const prev = $('attCombo').value;
@@ -3323,6 +3346,7 @@
       });
     });
     starLectures(y).forEach((l) => out.push(l));
+    sixLectures(y).forEach((l) => out.push(l));
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group, undefined, { numeric: true }) || a.section.localeCompare(b.section));
     allLecCache[y] = out;
     return out;
@@ -3334,7 +3358,7 @@
   function boardDay(date, rows, info, y) {
     const day = rows.filter((r) => r.date === date), used = new Set();
     const wd = new Date(date + 'T12:00:00Z').getUTCDay();
-    const items = wd === 0 ? [] : allLectures(y).map((e) => {
+    const items = wd === 0 ? [] : allLectures(y).filter((e) => onDay(e, wd)).map((e) => {
       const slot = day.filter((r) => r.period === e.period && r.group === e.group && secCompat(r.section, e.section));
       const hit = slot.find((r) => sameSubj(r.subject, e.subject)) || slot[0] || null;
       if (hit) used.add(hit);
@@ -3517,7 +3541,7 @@
       }).join('') + '</div>';
     }
     $('bdList').innerHTML = h || '<div class="card pad empty">Nothing to show for this filter.</div>';
-    $('bdNote').textContent = 'Based on the fixed timetable (Periods I–V), one row per teacher — a class taught to several groups together is one lecture. ✅ saved during the period · ⏰ saved after it ended · 📵 saved on a phone without internet and sent later (phone time shown). Updated ' + fmtHM(j.nowMin) + '.';
+    $('bdNote').textContent = 'Based on the timetable (Periods I–V daily; VI–VII on the days printed on the sheet), one row per teacher — a class taught to several groups together is one lecture. ✅ saved during the period · ⏰ saved after it ended · 📵 saved on a phone without internet and sent later (phone time shown). Updated ' + fmtHM(j.nowMin) + '.';
   }
 
   $('bdWeekGo').addEventListener('click', async () => {
@@ -3563,7 +3587,7 @@
     const withMiss = list.filter((e) => e.missed.length);
     if (withMiss.length) h += '<div class="bd-per"><span>Lectures not marked</span></div><div class="card pad">' + withMiss.map((e) => '<details><summary><b>' + esc(e.name) + '</b> — ' + e.missed.length + '</summary><ul style="margin:6px 0 10px;padding-left:18px;font-size:0.8rem">' + e.missed.map((m) => '<li>' + esc(m) + '</li>').join('') + '</ul></details>').join('') + '</div>';
     h += '<button class="link-btn" id="bdWeekCsv" style="margin-top:10px">⬇ Download CSV</button>';
-    h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = fixed timetable lectures (Periods I–V) whose period has ended, one per teacher per period (a class taught to several groups together counts once, and counts as ❌ if any of its groups was not marked); CTI lectures are not counted.</p>';
+    h += '<p class="note">Days counted: ' + (days.map((d) => fmtDate(d)).join(', ') || 'none') + '. A day on which nobody marked any attendance is treated as a holiday. Due = timetable lectures (Periods I–V, and VI–VII on their printed days) whose period has ended, one per teacher per period (a class taught to several groups together counts once, and counts as ❌ if any of its groups was not marked); CTI lectures are not counted.</p>';
     $('bdWeekOut').innerHTML = h;
     $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + yearLabel(j.year).replace(/\s+/g, '_') + '_' + from + '_to_' + to + '.csv',
       [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
