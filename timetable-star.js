@@ -1,5 +1,5 @@
 // Bright Star sections (2026-27) — 1st Year and 2nd Year.
-// Students: Bright Star-1 2026-27 merit list (1st Year) and the Bright Star attendance register (2nd Year).
+// Students: Bright Star-1 2026-27 merit list (1st Year) and the two Bright Star attendance registers (2nd Year, Oct 2026).
 // Timetable: the B.Star rows of the official 1st Year (w.e.f. 03-09-2026) and 2nd Year (w.e.f. 24-08-2026) sheets.
 // Bright Star students keep their own roll numbers; their combination decides which lecture they attend in
 // Periods I-II and V (e.g. Chemistry for Pre-Medical + Pre-Engineering, Computer for ICS).
@@ -11,9 +11,9 @@ const BRIGHT_STAR = {
     "ICS": [304, 305, 317, 323, 326, 333, 334, 339, 347, 350, 355, 357, 358, 365, 366, 383, 384, 1412]
   },
   2: {
-    "Pre-Medical": [],
-    "Pre-Engineering": [],
-    "ICS": [380, 381, 389, 390, 392, 398, 399, 401, 405, 406, 407, 411, 421]
+    "Pre-Medical": [2, 6, 10, 20, 23, 31, 33, 35, 46, 48, 49],
+    "Pre-Engineering": [154, 161, 169, 172],
+    "ICS": [309, 317, 325, 337, 341, 354, 365, 368, 380, 381, 389, 390, 392, 395, 398, 399, 401, 405, 406, 407, 411, 421]
   }
 };
 
