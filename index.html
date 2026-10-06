@@ -3746,7 +3746,7 @@
     const devs = Array.isArray(DATA.developers) && DATA.developers.length ? DATA.developers : ['Saqib Munawar', 'Ashar Shahzad', 'Dr. Ismail Abbasi'];
     $('ptName').textContent = pat; $('ptRole').textContent = patRole;
     $('ptCollege').textContent = DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi';
-    $('ptMsg').textContent = DATA.principalMessage || 'Learn with purpose, teach with passion — together let us make every day at GGCS a step towards excellence.';
+    $('ptMsg').textContent = DATA.principalMessage || 'Learn with purpose, teach with passion, and together let us make every day at GGCS a step towards excellence.';
     const dev = devs.slice(0, -1).join(', ') + (devs.length > 1 ? ' & ' : '') + devs[devs.length - 1];
     $('footDev').textContent = 'Under the patronage of ' + pat + ', ' + patRole + ' · Developed by ' + dev;
     $('aboutDev').textContent = dev || '—';
