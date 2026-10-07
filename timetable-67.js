@@ -39,7 +39,7 @@ const SIX7 = {
     { period: "VII", days: "2-2", subject: "Psychology Practical", with: "A + F", room: "LAB", teacher: "Prof. Muhammad Usman", parts: all_(["A3", "F2", "F4"]) },
     { period: "VII", days: "6-6", subject: "Computer Practical", with: "A + F", room: "LAB", teacher: "CTI", parts: all_(["F1", "F2", "F3", "F4", "F5"]) },
     // all groups
-    { period: "VI", days: "3-4", subject: "Ethics (Non-Muslim students)", with: "Non-Muslim students", room: "UB2", teacher: "Prof. Ashar Shahzad", parts: [], everyone: true }
+    { period: "VI", days: "3-4", subject: "Ethics (Non-Muslim students)", with: "Non-Muslim students", room: "UB2", teacher: "Prof. Ashar Shahzad", parts: [], everyone: true, cls: ["ETH", "All"] }
   ],
   2: [
     // Science
@@ -71,7 +71,7 @@ const SIX7 = {
     { period: "VII", days: "", subject: "Computer Practical", with: "D + B + H", room: "Lab", teacher: "Prof. Tuseef Ahmad", parts: all_(["B2", "B3", "D1", "D3"]) },
     { period: "VII", days: "", subject: "Psychology Practical", with: "B + D", room: "12", teacher: "Prof. Muhammad Usman", parts: all_(["B1", "B2", "B3"]) },
     // all groups
-    { period: "VI", days: "", subject: "Ethics (Non-Muslim students)", with: "Non-Muslim students", room: "11", teacher: "Prof. Ashar Shahzad", parts: [], everyone: true }
+    { period: "VI", days: "", subject: "Ethics (Non-Muslim students)", with: "Non-Muslim students", room: "11", teacher: "Prof. Ashar Shahzad", parts: [], everyone: true, cls: ["ETH", "All"] }
   ]
 };
 
@@ -120,3 +120,6 @@ function sixFor(roll, code, y) {
   if (typeof buildSchedule === "function") buildSchedule = wrap(buildSchedule, 1);
   if (typeof buildSchedule2 === "function") buildSchedule2 = wrap(buildSchedule2, 2);
 })();
+
+// v10.7: the Ethics class (group ETH = Non-Muslim students of every group; the list lives only in the private Student Records)
+if (typeof GROUP_NAMES_2 !== "undefined") GROUP_NAMES_2.ETH = "Ethics (Non-Muslim students)";

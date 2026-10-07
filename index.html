@@ -1894,7 +1894,7 @@
 
   /* ---------- timetable ---------- */
   const GROUP_NAMES = {
-    STAR: 'Bright Star',
+    STAR: 'Bright Star', ETH: 'Ethics (Non-Muslim students)',
     M: 'F.Sc Pre-Medical', E: 'F.Sc Pre-Engineering',
     C1: 'I.C.S (Comp. Sci, Maths, Physics)', C2: 'I.C.S (Comp. Sci, Maths, Statistics)', C3: 'I.C.S (Comp. Sci, Maths, Economics)',
     G: 'General Science', H: 'F.A (I.T) — Comp. Sci, Economics, Statistics',
@@ -2119,9 +2119,9 @@
     if (isBS(y)) return { year: y, bs: true, groups: BS_CODES, ranges: [], build: null, names: BS_NAMES };
     if (Number(y) === 2) {
       const R = typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : [];
-      return { year: 2, groups: R.map((g) => g[0]).concat(['STAR']), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
+      return { year: 2, groups: R.map((g) => g[0]).concat(['STAR', 'ETH']), ranges: R, build: typeof buildSchedule2 === 'function' ? buildSchedule2 : null, names: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
     }
-    return { year: 1, groups: ATT_GROUPS, ranges: typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], build: typeof buildSchedule === 'function' ? buildSchedule : null, names: GROUP_NAMES };
+    return { year: 1, groups: ATT_GROUPS.concat(ATT_GROUPS.indexOf('ETH') < 0 ? ['ETH'] : []), ranges: typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : [], build: typeof buildSchedule === 'function' ? buildSchedule : null, names: GROUP_NAMES };
   }
   const yearOf = (v) => yk(v);
   /* ---------- Bright Star (timetable-star.js) ---------- */
@@ -2146,7 +2146,9 @@
   function sixLectures(y) {
     const out = [];
     sixList(y).forEach((e) => {
-      const days = sixDays(e); if (!days || e.everyone) return;
+      const days = sixDays(e);
+      if (e.cls) { out.push({ group: e.cls[0], section: e.cls[1], period: e.period, subject: e.subject, teacher: e.teacher, room: e.room, days: days || null }); return; }
+      if (!days || e.everyone) return;
       e.parts.forEach((p) => out.push({ group: p[0], section: p[1], period: e.period, subject: e.subject, teacher: e.teacher, room: e.room, days }));
     });
     return out;
@@ -2349,7 +2351,7 @@
   }
   function fillAttSections() {
     const g = $('attGroup').value, y = attYear();
-    const base = isBS(y) ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : g === 'ETH' ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base;
     const prev = $('attSection').value;
     $('attSection').innerHTML = (secs.length ? secs : base).map((s) => '<option>' + s + '</option>').join('');
@@ -2801,7 +2803,7 @@
   }
   function fillMkSections() {
     const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
-    const base = isBS(y) ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
+    const base = isBS(y) ? ['All'] : g === 'ETH' ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
     const use = secs.length ? secs : base;
     const prev = $('mkSection').value;
@@ -3419,7 +3421,7 @@
       });
     });
     starLectures(y).forEach((l) => out.push(l));
-    sixLectures(y).forEach((l) => out.push(l));
+    sixLectures(y).forEach((l) => { if (l.days) out.push(l); });
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group, undefined, { numeric: true }) || a.section.localeCompare(b.section));
     allLecCache[y] = out;
     return out;
