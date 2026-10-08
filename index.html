@@ -1392,21 +1392,33 @@
       Object.keys(slots).forEach((k) => {
         const sl = slots[k];
         String(sl.x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
-          put(t, { year, period: sl.x.period, klass: sl.groups.join(', ') + (sl.sec !== 'All' ? ' (' + sl.sec + ')' : ''), subject: sl.x.subject, room: sl.x.room || '' }));
+          put(t, { year, period: sl.x.period, klass: sl.groups.join(', ') + (sl.sec !== 'All' ? ' (' + sl.sec + ')' : ''), subject: sl.x.subject, room: sl.x.room || '', parts: sl.groups.map((g) => [g, sl.sec]) }));
       });
     });
     if (hasStar()) [1, 2].forEach((year) => {
       STAR_TT[year].forEach((e) => String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) =>
-        put(t, { year, period: e.period, klass: 'STAR' + (e.sec !== 'All' ? ' (' + e.sec + ')' : ''), subject: e.subject, room: e.room || '' })));
+        put(t, { year, period: e.period, klass: 'STAR' + (e.sec !== 'All' ? ' (' + e.sec + ')' : ''), subject: e.subject, room: e.room || '', parts: [['STAR', e.sec]] })));
     });
     if (hasSix()) [1, 2].forEach((year) => sixList(year).forEach((e) => {
       const days = sixDayLabel(e), bySec = {};
       e.parts.forEach((p) => { (bySec[p[1]] = bySec[p[1]] || []).push(p[0]); });
       String(e.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
         if (e.everyone || !days) { put(t, { year, period: e.period, klass: e.with, subject: e.subject, room: e.room || '', rotating: true, days }); return; }
-        Object.keys(bySec).forEach((sec) => put(t, { year, period: e.period, klass: bySec[sec].join(', ') + (sec !== 'All' ? ' (' + sec + ')' : ''), subject: e.subject, room: e.room || '', days }));
+        Object.keys(bySec).forEach((sec) => put(t, { year, period: e.period, klass: bySec[sec].join(', ') + (sec !== 'All' ? ' (' + sec + ')' : ''), subject: e.subject, room: e.room || '', days, parts: bySec[sec].map((g) => [g, sec]) }));
       });
     }));
+    // v11.1: one lecture = one row — groups / sections taught together (same period, subject, room, days) are merged
+    Object.keys(out).forEach((t) => {
+      const merged = [], at = {};
+      out[t].forEach((e) => {
+        if (e.rotating || !e.parts) { merged.push(e); return; }
+        const k = e.year + '|' + e.period + '|' + normSubjKey(e.subject) + '|' + e.room + '|' + (e.days || '');
+        if (!at[k]) { at[k] = Object.assign({}, e, { parts: e.parts.slice() }); merged.push(at[k]); return; }
+        e.parts.forEach((p) => { if (!at[k].parts.some((q) => q[0] === p[0] && q[1] === p[1])) at[k].parts.push(p); });
+      });
+      merged.forEach((e) => { if (e.parts && e.parts.length > 1) e.klass = partsLabel(e.parts); });
+      out[t] = merged;
+    });
     wlIndex = out;
     return out;
   }
@@ -1625,8 +1637,19 @@
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const monthLabel = (m) => MONTH_NAMES[Number(m.slice(5)) - 1] + ' ' + m.slice(0, 4);
   let regMonth = '', regCache = {}, regClassKey = '';
-  /** workload "A1, A2 (Even)" → one blue link per group */
+  function normSubjKey(x) { return String(x || '').toLowerCase().replace(/[^a-z]/g, ''); }
+  /** [['C2','Even'],['G','All']] → "C2 (Even) + G" (groups with the same section listed together) */
+  function partsLabel(parts) {
+    const bySec = [], idx = {};
+    parts.forEach((p) => { if (idx[p[1]] === undefined) { idx[p[1]] = bySec.length; bySec.push([p[1], []]); } bySec[idx[p[1]]][1].push(p[0]); });
+    return bySec.map(([sec, gs]) => gs.join(', ') + (sec !== 'All' ? ' (' + sec + ')' : '')).join(' + ');
+  }
+  /** workload row → one blue link for the whole lecture (all its groups / sections in one record) */
   function klassLinks(e, teacher) {
+    if (e.parts && e.parts.length > 1) {
+      const sec = e.parts.map((p) => p[0] + ':' + p[1]).join('|');
+      return '<a class="wl-cls" href="#' + esc(regPath({ year: e.year, group: 'MULTI', section: sec, subject: e.subject }) + '/' + encodeURIComponent(teacher || '')) + '">' + esc(e.klass) + '</a>';
+    }
     const m = /^(.*?)(?: \(([^)]+)\))?$/.exec(String(e.klass || ''));
     const sec = (m && m[2]) || 'All';
     const groups = String((m && m[1]) || '').split(/\s*,\s*/).filter(Boolean);
@@ -1652,6 +1675,7 @@
     const [y0, group, section, subject] = parts;
     if (!group || !subject) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
     const ctx = { year: yk(y0), group, section: section || 'All', subject, teacher: parts[4] || attAuth.name };
+    if (group === 'MULTI') ctx.parts = String(section || '').split('|').map((x) => { const i = x.indexOf(':'); return { group: i < 0 ? x : x.slice(0, i), section: i < 0 ? 'All' : x.slice(i + 1) || 'All' }; }).filter((p) => p.group);
     const months = regMonths();
     const ck = [ctx.year, group, ctx.section, subject.toLowerCase()].join('|');
     if (ck !== regClassKey) { regClassKey = ck; regMonth = 'all'; }
@@ -1663,7 +1687,8 @@
   }
   async function loadRegister(ctx, key) {
     try {
-      const j = await attApi('classRecord', { year: ctx.year, group: ctx.group, section: ctx.section, subject: ctx.subject, month: regMonth });
+      const j = await attApi('classRecord', ctx.parts ? { year: ctx.year, parts: ctx.parts, subject: ctx.subject, month: regMonth } : { year: ctx.year, group: ctx.group, section: ctx.section, subject: ctx.subject, month: regMonth });
+      if (ctx.parts && j.students) j.students.forEach((x) => { regGroupOf[x.roll] = x.group; });
       regCache[key] = j;
       if (parseHash().key === 'register') paintRegister(ctx, j);
     } catch (e) {
@@ -1685,9 +1710,14 @@
     $('regOut').innerHTML = regControls(ctx, false) + regTitle(ctx) + body;
     wireRegister(ctx, null);
   }
-  const regClassName = (ctx) => yearLabel(ctx.year) + ' · ' + ctx.group + (ctx.section !== 'All' ? ' (' + ctx.section + ')' : '');
+  const regGroupOf = {};
+  const regClassName = (ctx) => yearLabel(ctx.year) + ' · ' + (ctx.parts ? partsLabel(ctx.parts.map((p) => [p.group, p.section])) : ctx.group + (ctx.section !== 'All' ? ' (' + ctx.section + ')' : ''));
+  const regGroupNames = (ctx) => (ctx.parts ? ctx.parts.map((p) => p.group).filter((g, i, a) => a.indexOf(g) === i) : [ctx.group]).map((g) => String(yrCfg(ctx.year).names[g] || '')).filter(Boolean).join(' · ');
+  /** in a combined class, show each student's group next to the name */
+  const regNm = (ctx, r) => esc(r.name) + (ctx.parts && regGroupOf[r.roll] ? ' <span class="ttnote">' + esc(regGroupOf[r.roll]) + '</span>' : '');
+  const regFile = (ctx) => (ctx.parts ? ctx.parts.map((p) => p.group + (p.section !== 'All' ? '_' + p.section : '')).join('+') : ctx.group + (ctx.section !== 'All' ? '_' + ctx.section : ''));
   function regTitle(ctx) {
-    return '<div class="reg-title no-print"><b>' + esc(ctx.subject) + '</b> — ' + esc(regClassName(ctx)) + '<div class="tt-menu-sub">' + esc(String(yrCfg(ctx.year).names[ctx.group] || '')) + '</div></div>';
+    return '<div class="reg-title no-print"><b>' + esc(ctx.subject) + '</b> — ' + esc(regClassName(ctx)) + '<div class="tt-menu-sub">' + esc(regGroupNames(ctx)) + '</div></div>';
   }
   const pct1 = (a, b) => (b ? Math.round(1000 * a / b) / 10 : null);
   /** all the numbers of one class-month */
@@ -1731,7 +1761,7 @@
     // print header
     h += '<div class="reg-print-head print-only"><img src="icons/college-logo.png" alt=""><div><div class="rph-college">' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</div>' +
       '<div class="rph-title">Monthly Class Record — ' + esc(mon) + '</div></div><img src="icons/hed-logo.png" alt=""></div>';
-    h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(String(yrCfg(ctx.year).names[ctx.group] || '')) + '</small></div>' +
+    h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(regGroupNames(ctx)) + '</small></div>' +
       '<div><span>Subject</span><b>' + esc(j.subject) + '</b></div><div><span>Teacher</span><b>' + esc(ctx.teacher) + '</b></div><div><span>Month</span><b>' + esc(mon) + '</b></div></div>';
     // summary
     h += '<div class="stat-grid reg-stats">' +
@@ -1749,7 +1779,7 @@
       const heads = j.sessions.map((x) => { const d = new Date(x.date + 'T12:00:00Z'); return '<th class="rd" title="' + esc(fmtDate(x.date) + ' · Period ' + x.period + (x.teacher && nameKey(x.teacher) !== nameKey(ctx.teacher) ? ' · marked by ' + x.teacher : '')) + '"><span>' + d.getUTCDate() + '</span><small>' + DAYS[d.getUTCDay()] + '</small><small>' + esc(x.period) + '</small></th>'; }).join('');
       h += '<div class="card reg-card"><div class="overflow-x"><table class="reg-tbl"><thead><tr><th class="rs1">#</th><th class="rs2">Roll</th><th class="rs3">Name</th>' + heads +
         '<th class="rt">P</th><th class="rt">A</th><th class="rt">L</th><th class="rt">Month %</th><th class="rt">Session %</th></tr></thead><tbody>' +
-        c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + esc(r.name) + '</td>' +
+        c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + regNm(ctx, r) + '</td>' +
           [...r.att].map((ch) => (ch === 'P' ? '<td class="rc rp">P</td>' : ch === 'A' ? '<td class="rc ra">A</td>' : ch === 'L' ? '<td class="rc rl">L</td>' : '<td class="rc rn">·</td>')).join('') +
           '<td class="rt">' + r.p + '</td><td class="rt' + (r.a ? ' ra-t' : '') + '">' + r.a + '</td><td class="rt">' + r.l + '</td><td class="rt b' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td><td class="rt' + lowCls(r.tdPct, 75) + '" title="' + r.tdN + ' lectures since the session started">' + pc(r.tdPct) + '</td></tr>').join('') +
         '</tbody><tfoot><tr><td class="rs1"></td><td class="rs2"></td><td class="rs3">Present</td>' + c.daily.map((d) => '<td class="rc">' + d.p + '</td>').join('') + '<td class="rt" colspan="5"></td></tr>' +
@@ -1768,7 +1798,7 @@
           '<span class="g gp"><b>Pass</b>' + c.pass + ' / ' + c.app.length + '</span></div>';
         const byRoll = c.rows.slice().sort((a, b) => a.roll - b.roll);
         h += '<div class="card"><div class="overflow-x"><table class="wl sum reg-marks"><thead><tr><th>#</th><th>Roll</th><th>Name</th><th class="num">Marks</th><th class="num">%</th><th class="num">Grade</th><th class="num">Position</th><th class="num">Month att.</th></tr></thead><tbody>' +
-          byRoll.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + r.roll + '</td><td>' + esc(r.name) + '</td>' +
+          byRoll.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + r.roll + '</td><td>' + regNm(ctx, r) + '</td>' +
             (r.mPct !== null ? '<td class="num">' + r.mark.obt + ' / ' + r.mark.total + '</td><td class="num' + lowCls(r.mPct, 33) + '">' + r.mPct + '%</td><td class="num' + (r.mPct < 33 ? ' low' : '') + '"><span class="grade">' + gradeOf(r.mPct) + '</span></td><td class="num">' + r.rank + '</td>'
               : r.mAbsent ? '<td class="num low" colspan="4">Absent</td>' : '<td class="num muted" colspan="4">not entered</td>') +
             '<td class="num' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td></tr>').join('') +
@@ -1812,7 +1842,7 @@
     let h = regControls(ctx, true) + regTitle(ctx) + '<div class="reg-sheet">';
     h += '<div class="reg-print-head print-only"><img src="icons/college-logo.png" alt=""><div><div class="rph-college">' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</div>' +
       '<div class="rph-title">Class Record — Whole Session (up to ' + esc(upto) + ')</div></div><img src="icons/hed-logo.png" alt=""></div>';
-    h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(String(yrCfg(ctx.year).names[ctx.group] || '')) + '</small></div>' +
+    h += '<div class="reg-meta"><div><span>Class</span><b>' + esc(regClassName(ctx)) + '</b><small>' + esc(regGroupNames(ctx)) + '</small></div>' +
       '<div><span>Subject</span><b>' + esc(j.subject) + '</b></div><div><span>Teacher</span><b>' + esc(ctx.teacher) + '</b></div><div><span>Period</span><b>Session till ' + esc(upto) + '</b></div></div>';
     h += '<div class="stat-grid reg-stats">' +
       '<div class="stat"><b>' + c.rows.length + '</b><span>Students</span></div>' +
@@ -1834,7 +1864,7 @@
         '<th class="rt">P</th><th class="rt">A</th><th class="rt">L</th><th class="rt">Total %</th>' +
         c.tests.map((t) => '<th class="rd tcol"><span>' + esc(TEST_SHORT(t)) + '</span><small>test %</small></th>').join('') +
         (c.tests.length ? '<th class="rt">Avg %</th><th class="rt">Grade</th>' : '') + '</tr></thead><tbody>' +
-        c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + esc(r.name) + '</td>' +
+        c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + regNm(ctx, r) + '</td>' +
           r.mp.map((x) => '<td class="rc mp' + lowCls(x.pct, 75) + '">' + (x.pct === null ? '<span class="rn">·</span>' : Math.round(x.pct) + '%') + '</td>').join('') +
           '<td class="rt">' + r.p + '</td><td class="rt' + (r.a ? ' ra-t' : '') + '">' + r.a + '</td><td class="rt">' + r.l + '</td><td class="rt b' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td>' +
           r.tp.map((x) => '<td class="rc tcol' + (x.st === 'ok' ? lowCls(x.pct, 33) : x.st === 'Ab' ? ' low' : '') + '" title="' + (x.st === 'ok' ? x.x.obt + ' / ' + x.x.total : '') + '">' + (x.st === 'ok' ? Math.round(x.pct) + '%' : x.st === 'Ab' ? 'Ab' : '<span class="rn">—</span>') + '</td>').join('') +
@@ -1856,7 +1886,7 @@
     const c = sessCalc(j);
     const head = ['Roll No', 'Student Name'].concat(c.months.map((m) => monthLabel(m.month) + ' % (' + m.held + ' lectures)'), ['Present', 'Absent', 'Leave', 'Total %'], c.tests.map((t) => t + ' %'), c.tests.length ? ['Average %', 'Grade'] : []);
     const rows = c.rows.map((r) => [r.roll, r.name].concat(r.mp.map((x) => (x.pct === null ? '' : x.pct)), [r.p, r.a, r.l, r.pct === null ? '' : r.pct], r.tp.map((x) => (x.st === 'ok' ? x.pct : x.st === 'Ab' ? 'Absent' : '')), c.tests.length ? [r.avg === null ? '' : r.avg, r.avg === null ? '' : gradeOf(r.avg)] : []));
-    csvDownload(('Class_record_' + yearLabel(ctx.year) + '_' + ctx.group + (ctx.section !== 'All' ? '_' + ctx.section : '') + '_' + ctx.subject + '_session').replace(/\s+/g, '_') + '.csv', [head].concat(rows));
+    csvDownload(('Class_record_' + yearLabel(ctx.year) + '_' + regFile(ctx) + '_' + ctx.subject + '_session').replace(/\s+/g, '_') + '.csv', [head].concat(rows));
   }
   function regCsv(ctx, j) {
     const c = regCalc(j);
@@ -1864,7 +1894,7 @@
     if (j.test) head.push(j.test + ' obtained', 'Total', 'Marks %', 'Grade', 'Position');
     const rows = c.rows.map((r) => [r.roll, r.name].concat([...r.att].map((ch) => (ch === '-' ? '' : ch)), [r.p, r.a, r.l, r.pct === null ? '' : r.pct, r.tdPct === null ? '' : r.tdPct])
       .concat(j.test ? (r.mPct !== null ? [r.mark.obt, r.mark.total, r.mPct, gradeOf(r.mPct), r.rank] : [r.mAbsent ? 'Absent' : '', '', '', '', '']) : []));
-    csvDownload(('Class_record_' + yearLabel(ctx.year) + '_' + ctx.group + (ctx.section !== 'All' ? '_' + ctx.section : '') + '_' + ctx.subject + '_' + j.month).replace(/\s+/g, '_') + '.csv', [head].concat(rows));
+    csvDownload(('Class_record_' + yearLabel(ctx.year) + '_' + regFile(ctx) + '_' + ctx.subject + '_' + j.month).replace(/\s+/g, '_') + '.csv', [head].concat(rows));
   }
   /** print the current page on landscape A4 (wide attendance register) */
   function printLandscape() {
