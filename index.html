@@ -2410,7 +2410,8 @@
 
   /* ---------- which classes does the signed-in teacher take? (from the timetable) ---------- */
   const SECTIONS_ALL = ['All', 'Odd', 'Even', 'Urdu Batch 1', 'Urdu Batch 2', 'Urdu Batch 3'];
-  const nameKey = (n) => String(n || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/^\s*(prof|pro|pr|dr|mr|ms|mrs|miss|sir)\.?\s+/, '').replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+  // strips every leading title ("Prof. Dr. Javaid Iqbal" → "javaid iqbal"), same as the server's nameKey_
+  const nameKey = (n) => String(n || '').toLowerCase().replace(/\(.*?\)/g, ' ').replace(/^\s*((prof|pro|pr|dr|mr|ms|mrs|miss|sir)\.?\s+)+/, '').replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
   function nearSame(a, b) {
     if (a === b) return true;
     if (a.length < 5 || b.length < 5 || Math.abs(a.length - b.length) > 1) return false;
