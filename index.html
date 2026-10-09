@@ -84,6 +84,25 @@
     border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: 0.82rem; cursor: pointer;
   }
 
+  .install-card { border-left-color: #17784a; background: linear-gradient(135deg, #eef7f1, var(--card-bg)); }
+  .install-card .inst-steps { margin: 8px 0 0; padding-left: 20px; font-size: 0.82rem; }
+  .install-card .inst-steps li { margin: 3px 0; }
+  .banner .banner-btn.alt { background: #17784a; }
+  a.banner-btn, a.banner-btn:visited { color: #fff !important; text-decoration: none; }
+  .install-card .inst-act { margin-top: 8px; }
+  .install-card .inst-act .banner-btn { margin-top: 0; padding: 10px 16px; font-size: 0.88rem; }
+  .inst-sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 12px; }
+  .inst-box { background: var(--card-bg); color: var(--text, inherit); width: 100%; max-width: 440px; border-radius: 18px; padding: 20px 18px 14px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.35); }
+  .inst-box h3 { margin: 8px 0 6px; font-size: 1.12rem; color: var(--accent); }
+  .inst-box .inst-why { margin: 0 0 12px; font-size: 0.86rem; color: var(--muted); }
+  .inst-box .inst-icon img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .inst-box .banner-btn { display: block; width: 100%; margin: 8px 0 0; padding: 12px; font-size: 0.95rem; border: none; border-radius: 10px; color: #fff; background: var(--navy); font-weight: 700; cursor: pointer; text-decoration: none; }
+  .inst-box .banner-btn.alt { background: #17784a; }
+  .inst-box .inst-steps { text-align: left; font-size: 0.85rem; margin: 10px 0 4px; padding-left: 22px; }
+  .inst-box .inst-steps li { margin: 4px 0; }
+  .inst-box .link-btn { margin-top: 10px; }
+  @media print { .inst-sheet { display: none !important; } }
+
   /* Home */
   .hello { margin: 4px 2px 16px; text-align: center; }
   .hello .today { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
@@ -573,9 +592,18 @@
 
 <main class="wrap">
 
-  <div id="installBanner" class="banner" role="status">
-    <button class="dismiss" id="installDismiss" aria-label="Dismiss">&times;</button>
-    <span id="installText"></span>
+  <div id="installBanner" class="banner install-card" role="status">
+    <button class="dismiss" id="installDismiss" aria-label="Later">&times;</button>
+    <div id="installText"></div>
+  </div>
+  <div id="installSheet" class="inst-sheet" role="dialog" aria-modal="true" aria-labelledby="instSheetTitle" style="display:none">
+    <div class="inst-box">
+      <div class="inst-icon"><img src="icons/icon-192.png" alt=""></div>
+      <h3 id="instSheetTitle">Put GGCS RWP on your home screen</h3>
+      <p class="inst-why">Then it opens with one tap like any app, keeps you signed in, and works without internet.</p>
+      <div id="instSheetBody"></div>
+      <button class="link-btn" id="instSheetLater">Not now</button>
+    </div>
   </div>
 
   <!-- HOME -->
@@ -1495,7 +1523,7 @@
     $('facLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
       if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
     } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -2679,7 +2707,7 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -3036,7 +3064,7 @@
     $('mkLoginBtn').disabled = true; $('mkLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       $('mkPin').value = ''; recScope = null; recAllRows = null; renderMarks();
     } catch (e) { $('mkLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('mkLoginBtn').disabled = false; $('mkLoginBtn').textContent = 'Sign in';
@@ -3240,7 +3268,7 @@
     $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
     } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
@@ -3742,7 +3770,7 @@
     $('bdLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
     } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('bdLoginBtn').disabled = false;
@@ -3765,9 +3793,9 @@
     $('siBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
       setBell(j.bell); $('siPin').value = ''; recScope = null; recAllRows = null; myClassesCache = {};
-      history.replaceState({ depth: 0 }, '', '#/'); render();
+      history.replaceState({ depth: 0 }, '', '#/'); render(); offerInstallAfterSignIn();
     } catch (e) { $('siErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('siBtn').disabled = false;
   });
@@ -3961,29 +3989,57 @@
   window.addEventListener('online', () => { netStatus(); loadData().then(() => { applyChrome(); render(); }); });
   window.addEventListener('offline', netStatus);
 
-  /* ---------- install banner ---------- */
-  (function () {
-    if (isStandalone() || store.get('installDismissed') === '1') return;
-    const banner = $('installBanner'), text = $('installText');
-    $('installDismiss').addEventListener('click', (e) => { e.stopPropagation(); banner.style.display = 'none'; store.set('installDismissed', '1'); });
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) {
-      text.innerHTML = '<b>Install this app:</b> tap the Share icon in Safari, then <b>Add to Home Screen</b>.';
-      banner.style.display = 'block';
-      return;
-    }
-    let deferred = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault(); deferred = e;
-      text.innerHTML = '<b>Install GGCS RWP</b> on this device — opens like an app and works offline.<br><button class="banner-btn" id="installBtn">Install</button>';
-      banner.style.display = 'block';
-      $('installBtn').addEventListener('click', async () => {
-        if (!deferred) return;
-        deferred.prompt(); await deferred.userChoice; deferred = null; banner.style.display = 'none';
-      });
-    });
-    window.addEventListener('appinstalled', () => { banner.style.display = 'none'; toast('Installed — find GGCS RWP on your home screen'); });
-  })();
+  /* ---------- install the app (v11.2) ----------
+     The banner comes back on every visit until the app is installed ("Later" hides it for a day only).
+     Teachers who sign in from the browser also get a one-tap "Install" sheet.
+     Inside WhatsApp / Facebook browsers (where installing is impossible) it offers "Open in Chrome". */
+  const UA = navigator.userAgent || '';
+  const isIOSdev = /iphone|ipad|ipod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(UA);
+  const inAppBrowser = /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Snapchat|; wv\)/i.test(UA);
+  const isSamsungBrowser = /SamsungBrowser/i.test(UA);
+  let installEvt = null, installedNow = false;
+  const chromeIntent = () => 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+  function installHtml(big) {
+    const btn = big ? 'banner-btn' : 'banner-btn';
+    if (isIOSdev) return '<ol class="inst-steps"><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> icon (square with an arrow ↑).</li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>';
+    if (isAndroid && inAppBrowser) return '<p style="margin:6px 0 0">This page is open <b>inside another app</b> (e.g. WhatsApp), where the app can’t be installed.</p>' +
+      '<a class="' + btn + ' alt" href="' + esc(chromeIntent()) + '">Open in Chrome</a>' +
+      '<ol class="inst-steps"><li>Or tap <b>⋮</b> (top-right) → <b>Open in Chrome</b>.</li><li>Then tap <b>Install</b> when it appears.</li></ol>';
+    if (installEvt) return '<button class="' + btn + '" data-install="1">📲 Install the app</button>';
+    if (isSamsungBrowser) return '<ol class="inst-steps"><li>Tap <b>≡</b> (bottom-right).</li><li>Tap <b>Add page to</b> → <b>Home screen</b>.</li></ol>';
+    return (isAndroid ? '<a class="' + btn + ' alt" href="' + esc(chromeIntent()) + '">Open in Chrome</a>' : '') +
+      '<ol class="inst-steps"><li>In Chrome, tap <b>⋮</b> (top-right).</li><li>Tap <b>Install app</b> (or <b>Add to Home screen</b>), then <b>Install</b>.</li></ol>';
+  }
+  async function doInstall() {
+    if (!installEvt) return;
+    installEvt.prompt();
+    try { const c = await installEvt.userChoice; if (c && c.outcome === 'accepted') installedNow = true; } catch (e) {}
+    installEvt = null; paintInstall();
+  }
+  function hideInstall() { $('installBanner').style.display = 'none'; $('installSheet').style.display = 'none'; }
+  function installLater() { return Number(store.get('installLaterUntil') || 0) > Date.now(); }
+  function paintInstall() {
+    if (isStandalone() || installedNow) { hideInstall(); return; }
+    $('installText').innerHTML = '<b>📲 Install the GGCS RWP app</b> on this phone — opens with one tap, keeps you signed in, works offline.<div class="inst-act">' + installHtml(false) + '</div>';
+    $('installBanner').style.display = installLater() ? 'none' : 'block';
+    if ($('installSheet').style.display !== 'none') $('instSheetBody').innerHTML = installHtml(true);
+  }
+  /** after a teacher signs in from the browser: offer the install right away (at most once a day) */
+  function offerInstallAfterSignIn() {
+    if (isStandalone() || installedNow || !(isAndroid || isIOSdev)) return;   // phones only
+    if (Number(store.get('installSheetUntil') || 0) > Date.now()) return;
+    store.set('installSheetUntil', String(Date.now() + 20 * 3600000));
+    $('instSheetBody').innerHTML = installHtml(true);
+    $('installSheet').style.display = 'flex';
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-install]')) { e.preventDefault(); doInstall(); } });
+  $('installDismiss').addEventListener('click', (e) => { e.stopPropagation(); store.set('installLaterUntil', String(Date.now() + 24 * 3600000)); $('installBanner').style.display = 'none'; });
+  $('instSheetLater').addEventListener('click', () => { $('installSheet').style.display = 'none'; });
+  $('installSheet').addEventListener('click', (e) => { if (e.target === $('installSheet')) $('installSheet').style.display = 'none'; });
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; paintInstall(); });
+  window.addEventListener('appinstalled', () => { installedNow = true; hideInstall(); toast('Installed — find GGCS RWP on your home screen'); });
+  paintInstall();
 
   /* ---------- service worker ---------- */
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
