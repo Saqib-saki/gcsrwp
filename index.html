@@ -1523,7 +1523,7 @@
     $('facLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
       if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
     } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -1557,6 +1557,7 @@
 
   function renderProfile(arg) {
     if (!facSignedIn()) { history.replaceState(history.state, '', '#/faculty'); render(); return false; }
+    refreshAllCounts(false);
     const admin = isAdminUser();
     if (arg !== 'me' && !admin) { history.replaceState(history.state, '', '#/faculty/me'); render(); return false; }
     const cached = arg === 'me' ? facMe : facCache[arg];
@@ -1590,7 +1591,13 @@
       return;
     }
     const all = wlFor(p.name).slice().sort((a, b) => a.year - b.year || periodIndex(a.period) - periodIndex(b.period));
-    const fixed = all.filter((e) => !e.rotating), rot = all.filter((e) => e.rotating), bs = bsFor(p.name);
+    // v11.2: leave out groups / sections that have no students yet
+    const fixed = all.filter((e) => !e.rotating).map((e) => {
+      if (!e.parts) return e;
+      const ps = e.parts.filter((q) => hasStudents(e.year, q[0], q[1]));
+      if (!ps.length) return null;
+      return ps.length === e.parts.length ? e : Object.assign({}, e, { parts: ps, klass: partsLabel(ps) });
+    }).filter(Boolean), rot = all.filter((e) => e.rotating), bs = bsFor(p.name);
     const duties = String(p.duties || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
     const exp = p.experience !== undefined && p.experience !== '' ? Number(p.experience) : null;
     const canPhoto = admin || isMe;
@@ -2508,7 +2515,7 @@
     if (!attAuth) return [];
     y = yk(y);
     const cfg = yrCfg(y);
-    const key = y + '|' + attAuth.name + '|' + JSON.stringify(myTeaches(y));
+    const key = y + '|' + attAuth.name + '|' + JSON.stringify(myTeaches(y)) + '|' + ccStamp(y);
     if (myClassesCache[y] && myClassesCache[y].key === key) return myClassesCache[y].list;
     if (isBS(y)) {
       const byG = {};
@@ -2552,9 +2559,52 @@
       const ck = 'STAR|' + l.section;
       (out[ck] = out[ck] || { group: 'STAR', section: l.section, lectures: [] }).lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher });
     });
-    const list = Object.keys(out).map((k) => out[k]);
+    const list = Object.keys(out).map((k) => out[k]).filter((c) => hasStudents(y, c.group, c.section));   // v11.2: no empty groups
     myClassesCache[y] = { key, list };
     return list;
+  }
+  /* ---------- v11.2: student counts per class, so groups / sections with no students are hidden ----------
+     Asked from the server after sign-in (counts only); kept on the phone for 3 h. Unknown → shown (never hide by mistake). */
+  var CC = {};
+  try { CC = JSON.parse(store.get('classCounts') || '{}') || {}; } catch (e) { CC = {}; }
+  const ccStamp = (y) => (CC[yk(y)] && CC[yk(y)].at) || 0;
+  function hasStudents(y, g, sec) {
+    if (isBS(y)) return true;
+    const e = CC[yk(y)]; if (!e || !e.map) return true;
+    const m = e.map, k = g + '|' + (sec || 'All');
+    if (m[k] !== undefined) return m[k] > 0;
+    if (m[g + '|All'] !== undefined) return m[g + '|All'] > 0;
+    return true;
+  }
+  const ccBusy = {};
+  async function refreshCounts(y, force) {
+    y = yk(y);
+    if (isBS(y) || !attAuth || !DATA.attendanceApi || !navigator.onLine || ccBusy[y]) return false;
+    if (!force && CC[y] && Date.now() - CC[y].at < 3 * 3600000) return false;
+    const seen = {}, parts = [];
+    const add = (g, sec) => { const k = g + '|' + (sec || 'All'); if (!g || seen[k]) return; seen[k] = 1; parts.push([g, sec || 'All']); };
+    yrCfg(y).groups.forEach((g) => add(g, 'All'));
+    allLectures(y).forEach((l) => add(l.group, l.section));
+    sixLectures(y).forEach((l) => add(l.group, l.section));
+    ccBusy[y] = 1;
+    try {
+      const j = await attApi('classCounts', { year: y, parts });
+      const before = JSON.stringify((CC[y] || {}).map || {});
+      CC[y] = { at: Date.now(), map: j.counts || {} };
+      store.set('classCounts', JSON.stringify(CC));
+      myClassesCache = {};
+      return JSON.stringify(CC[y].map) !== before;
+    } catch (e) { return false; } finally { ccBusy[y] = 0; }
+  }
+  /** refresh both years' counts; repaint the screen in use if anything changed */
+  function refreshAllCounts(force) {
+    Promise.all([refreshCounts(1, force), refreshCounts(2, force)]).then((ch) => {
+      if (!ch.some(Boolean)) return;
+      const k = parseHash().key;
+      if (k === 'attendance' && attAuth) { $('attGroup').dataset.who = ''; fillAttGroups(); }
+      else if (k === 'marks' && attAuth) fillMkGroups();
+      else if (k === 'faculty-one' || k === 'board') render();
+    });
   }
   const limitToMine = (y) => attAuth && attAuth.role !== 'Admin' && myClasses(y).length > 0;
   function groupOpts(groups, y) {
@@ -2564,7 +2614,7 @@
   function fillAttGroups() {
     const y = attYear(), all = yrCfg(y).groups;
     const mine = limitToMine(y);
-    const groups = mine ? all.filter((g) => myClasses(y).some((c) => c.group === g)) : all;
+    const groups = (mine ? all.filter((g) => myClasses(y).some((c) => c.group === g)) : all).filter((g) => hasStudents(y, g, 'All'));
     const prev = ($('attGroup').dataset.y === String(y) && $('attGroup').value) || store.get('attLastGroup' + ysfx(y));
     $('attGroup').innerHTML = groupOpts(groups, y);
     $('attGroup').dataset.y = String(y);
@@ -2580,7 +2630,7 @@
   function fillAttSections() {
     const g = $('attGroup').value, y = attYear();
     const base = isBS(y) ? ['All'] : g === 'ETH' ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
-    const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base;
+    const secs = (limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s)) : base).filter((s) => hasStudents(y, g, s));
     const prev = $('attSection').value;
     $('attSection').innerHTML = (secs.length ? secs : base).map((s) => '<option>' + s + '</option>').join('');
     if (prev && secs.indexOf(prev) >= 0) $('attSection').value = prev;
@@ -2683,6 +2733,7 @@
 
   function renderAttendance() {
     renderPending();
+    refreshAllCounts(false);
     const signed = !!attAuth;
     $('attLogin').style.display = signed ? 'none' : 'block';
     $('attMain').style.display = signed ? 'block' : 'none';
@@ -2707,7 +2758,7 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -3010,7 +3061,7 @@
 
   function fillMkGroups() {
     const admin = isAdmin(), y = mkYear(), all = yrCfg(y).groups;
-    const groups = admin ? all : all.filter((g) => myTeaches(y).some((t) => t.group === g));
+    const groups = (admin ? all : all.filter((g) => myTeaches(y).some((t) => t.group === g))).filter((g) => hasStudents(y, g, 'All'));
     $('mkGroup').innerHTML = groups.map((g) => '<option value="' + g + '">' + esc(groupLabel(g, y)) + '</option>').join('');
     const last = store.get('mkLastGroup' + ysfx(y)); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
     $('mkNote').textContent = admin ? 'As admin you can enter marks for any group and subject.'
@@ -3033,7 +3084,7 @@
     const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
     const base = isBS(y) ? ['All'] : g === 'ETH' ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
     const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
-    const use = secs.length ? secs : base;
+    const use0 = secs.length ? secs : base, use1 = use0.filter((sx) => hasStudents(y, g, sx)), use = use1.length ? use1 : use0;
     const prev = $('mkSection').value;
     $('mkSection').innerHTML = use.map((s) => '<option>' + s + '</option>').join('');
     if (prev && use.indexOf(prev) >= 0) $('mkSection').value = prev;
@@ -3042,6 +3093,7 @@
 
   async function renderMarks() {
     renderPending();
+    refreshAllCounts(false);
     const signed = !!attAuth;
     $('mkLogin').style.display = signed ? 'none' : 'block';
     $('mkMain').style.display = signed ? 'block' : 'none';
@@ -3064,7 +3116,7 @@
     $('mkLoginBtn').disabled = true; $('mkLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       $('mkPin').value = ''; recScope = null; recAllRows = null; renderMarks();
     } catch (e) { $('mkLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('mkLoginBtn').disabled = false; $('mkLoginBtn').textContent = 'Sign in';
@@ -3268,7 +3320,7 @@
     $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
     } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
@@ -3661,7 +3713,7 @@
   function boardDay(date, rows, info, y) {
     const day = rows.filter((r) => r.date === date), used = new Set();
     const wd = new Date(date + 'T12:00:00Z').getUTCDay();
-    const items = wd === 0 ? [] : allLectures(y).filter((e) => onDay(e, wd)).map((e) => {
+    const items = wd === 0 ? [] : allLectures(y).filter((e) => onDay(e, wd) && hasStudents(y, e.group, e.section)).map((e) => {
       const slot = day.filter((r) => r.period === e.period && r.group === e.group && secCompat(r.section, e.section));
       const hit = slot.find((r) => sameSubj(r.subject, e.subject)) || slot[0] || null;
       if (hit) used.add(hit);
@@ -3735,6 +3787,7 @@
   const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·' };
   let bdTab = 'day', bdData = null;
   function renderBoard() {
+    refreshAllCounts(false);
     const signed = !!attAuth;
     $('bdLogin').style.display = signed ? 'none' : 'block';
     $('bdMain').style.display = signed ? 'block' : 'none';
@@ -3770,7 +3823,7 @@
     $('bdLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
     } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('bdLoginBtn').disabled = false;
@@ -3793,7 +3846,7 @@
     $('siBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn();
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('siPin').value = ''; recScope = null; recAllRows = null; myClassesCache = {};
       history.replaceState({ depth: 0 }, '', '#/'); render(); offerInstallAfterSignIn();
     } catch (e) { $('siErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
