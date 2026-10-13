@@ -14,8 +14,8 @@ const SIX7 = {
     { period: "VI", days: "2-2", subject: "Physics Practical", with: "M + E", room: "LAB", teacher: "Prof. Muhammad Imran Bashir + Prof. Sidra Kanwal", parts: [["M", "All"], ["E", "All"]] },
     { period: "VI", days: "2-2", subject: "Physics Practical", with: "B.Star", room: "LAB", teacher: "Prof. Muhammad Asif Ali", parts: [["STAR", "All"]] },
     { period: "VII", days: "3-4", subject: "Tarjuma-tul-Quran", with: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", parts: [["M", "All"], ["E", "All"], ["STAR", "All"]] },
-    { period: "VII", days: "5-5", subject: "Chemistry Practical", with: "M + E", room: "LAB", teacher: "Prof. Madiha Aqsa + Prof. Zarafshan Nawaz", parts: [["M", "All"], ["E", "All"]] },
-    { period: "VII", days: "5-5", subject: "Chemistry Practical", with: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", parts: [["STAR", "Medical + Engineering"]] },
+    { period: "VII", days: "4-4", subject: "Chemistry Practical", with: "M + E", room: "LAB", teacher: "Prof. Madiha Aqsa + Prof. Zarafshan Nawaz", parts: [["M", "All"], ["E", "All"]] },
+    { period: "VII", days: "4-4", subject: "Chemistry Practical", with: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", parts: [["STAR", "Medical + Engineering"]] },
     { period: "VII", days: "1-1", subject: "Biology Practical", with: "M", room: "LAB", teacher: "Prof. Aeman Sehar", parts: [["M", "All"]] },
     { period: "VII", days: "1-1", subject: "Biology Practical", with: "B.Star", room: "LAB", teacher: "Prof. Nadeem Khan", parts: [["STAR", "Pre-Medical"]] },
     // I.C.S
@@ -55,9 +55,9 @@ const SIX7 = {
     // I.C.S
     { period: "VI", days: "4-4", subject: "Tarjuma-tul-Quran", with: "C1 + B.Star", room: "1", teacher: "Prof. Anwar ul Islam Qureshi", parts: [["C1", "All"], ["STAR", "ICS"]] },
     { period: "VI", days: "4-4", subject: "Tarjuma-tul-Quran", with: "C2 + C3 + H", room: "1", teacher: "Prof. Anwar ul Islam Qureshi", parts: [["C2", "All"], ["C3", "All"], ["H", "All"]] },
-    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C1 (Odd)", room: "1", teacher: "Prof. Naseer Ahmed Ansir", parts: [["C1", "Odd"]] },
-    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C1 (Even)", room: "2", teacher: "Prof. Muhammad Muttaher Bashir", parts: [["C1", "Even"]] },
-    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C2 + C3 + G + H", room: "3", teacher: "Prof. Ahmad Taib Arif", parts: [["C2", "All"], ["C3", "All"], ["G", "All"], ["H", "All"]] },
+    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C1 (Odd)", room: "1", teacher: "Prof. Mehmood ul Hassan Abbasi", parts: [["C1", "Odd"]] },
+    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C1 (Even)", room: "1", teacher: "Prof. Mehmood ul Hassan Abbasi", parts: [["C1", "Even"]] },
+    { period: "VI", days: "1-2", subject: "Pak. Studies", with: "C2 + C3 + G + H", room: "1", teacher: "Prof. Mehmood ul Hassan Abbasi", parts: [["C2", "All"], ["C3", "All"], ["G", "All"], ["H", "All"]] },
     { period: "VII", days: "6-6", subject: "Physics Practical", with: "C1 (Odd)", room: "Lab", teacher: "Prof. Muhammad Asif", parts: [["C1", "Odd"]] },
     { period: "VII", days: "6-6", subject: "Physics Practical", with: "C1 (Even)", room: "Lab", teacher: "Prof. Amir-ul-Nisa", parts: [["C1", "Even"]] },
     { period: "VII", days: "1-1", subject: "Statistics Practical", with: "C2-I + C2-II", room: "Lab", teacher: "Prof. Maryam Aslam", parts: [["C2", "All"]] },
@@ -66,10 +66,10 @@ const SIX7 = {
     // Arts
     { period: "VI", days: "4-4", subject: "Tarjuma-tul-Quran", with: "A + B + D", room: "1", teacher: "Prof. Anwar ul Islam Qureshi", parts: all_(ARTS_2) },
     { period: "VI", days: "1-2", subject: "Pak. Studies", with: "A + B + D", room: "10", teacher: "Prof. Arsalan Iftikhar", parts: all_(ARTS_2) },
-    { period: "VII", days: "3-4", subject: "Health & Physical Education Practical", with: "A + D", room: "Lab", teacher: "Prof. Samaviya Akhtar", parts: all_(["A2", "B1", "D2"]) },
-    { period: "VII", days: "", subject: "Geography Practical", with: "A + B + D", room: "Lab", teacher: "Prof. Salah-ud-Ahmad Khan Niazi", parts: all_(["D1"]) },
-    { period: "VII", days: "", subject: "Computer Practical", with: "D + B + H", room: "Lab", teacher: "Prof. Tuseef Ahmad", parts: all_(["B2", "B3", "D1", "D3"]) },
-    { period: "VII", days: "", subject: "Psychology Practical", with: "B + D", room: "12", teacher: "Prof. Muhammad Usman", parts: all_(["B1", "B2", "B3"]) },
+    { period: "VII", days: "1-1", subject: "Health & Physical Education Practical", with: "A + D", room: "Lab", teacher: "Prof. Samaviya Akhtar", parts: all_(["A2", "B1", "D2"]) },
+    { period: "VII", days: "2-2", subject: "Geography Practical", with: "A + B + D", room: "Lab", teacher: "Prof. Salah-ud-Ahmad Khan Niazi", parts: all_(["D1"]) },
+    { period: "VII", days: "3-3", subject: "Computer Practical", with: "D + B + H", room: "Lab", teacher: "Prof. Tuseef Ahmad", parts: all_(["B2", "B3", "D1", "D3"]) },
+    { period: "VII", days: "4-4", subject: "Psychology Practical", with: "B + D", room: "12", teacher: "Prof. Muhammad Usman", parts: all_(["B1", "B2", "B3"]) },
     // all groups
     { period: "VI", days: "", subject: "Ethics (Non-Muslim students)", with: "Non-Muslim students", room: "11", teacher: "Prof. Ashar Shahzad", parts: [], everyone: true, cls: ["ETH", "All"] }
   ]

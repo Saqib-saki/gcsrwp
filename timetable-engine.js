@@ -1,6 +1,6 @@
 // Timetable engine for GCS Rawalpindi — 1st Year (2026-27)
 // Encodes the period-by-period class assignments transcribed from the
-// official Science / I.C.S / Arts timetable sheets (w.e.f. 03-09-2026).
+// official Science / I.C.S / Arts timetable sheets (w.e.f. 03-09-2026; teacher changes from the revised sheet of Oct 2026).
 
 const GROUP_RANGES = [
   ["M",  1, 150],
@@ -43,7 +43,7 @@ function urduBatch(roll) {
 const URDU_BATCH_ROOMS = {
   1: { room: "UB3", teacher: "Prof. Tahira Ghafoor" },
   2: { room: "UB4", teacher: "Prof. Zia-Ur-Rehman" },
-  3: { room: "UB5", teacher: "Prof. Amjad Zia" }
+  3: { room: "UB5", teacher: "Prof. Faiza Iftekhar" }
 };
 
 // Each function takes (roll) and returns an array of
@@ -124,7 +124,7 @@ function buildSchedule(roll) {
 
     if (code === "C3") {
       rows.push({ period: "II", subject: "Computer Science", room: "UB5", teacher: "CTI" });
-      rows.push({ period: "III", subject: "Economics", ...(p === "Odd" ? { room: "UB6", teacher: "Prof. Farhan Mahmood", note: "with F2, H, G" } : { room: "UB7", teacher: "Prof. Imran Ejaz", note: "with H, G" }) });
+      rows.push({ period: "III", subject: "Economics", ...(p === "Odd" ? { room: "UB6", teacher: "Prof. Imran Ejaz", note: "with F2, H, G" } : { room: "UB7", teacher: "Prof. Farhan Mahmood", note: "with H, G" }) });
       rows.push({ period: "IV", subject: "English", ...(p === "Odd" ? { room: "UB5", teacher: "Prof. Zunaira Abbas" } : { room: "UB6", teacher: "Prof. Syed Zubair Naeem" }), note: "with C2, G, H" });
       rows.push({ period: "V", subject: "Mathematics", room: "UB5", teacher: "Dr. Ayesha Qureshi", note: "with C2, G" });
       rotating.push({ subject: "Islamic Education / Tarjuma-tul-Quran", group: "C2 + C3 + H", room: "UB3", teacher: "Prof. Syed M. Tahir Shah" });
@@ -133,7 +133,7 @@ function buildSchedule(roll) {
 
     if (code === "G") {
       rows.push({ period: "II", subject: "Statistics", room: "UB7", teacher: "Prof. Gulzar Ahmad", note: "with C2 (Even)" });
-      rows.push({ period: "III", subject: "Economics", room: "UB7", teacher: "Prof. Imran Ejaz", note: "with C3 (Even), H (Even)" });
+      rows.push({ period: "III", subject: "Economics", room: "UB7", teacher: "Prof. Farhan Mahmood", note: "with C3 (Even), H (Even)" });
       rows.push({ period: "IV", subject: "English", ...(p === "Odd" ? { room: "UB5", teacher: "Prof. Zunaira Abbas" } : { room: "UB6", teacher: "Prof. Syed Zubair Naeem" }), note: "with C2, C3, H" });
       rows.push({ period: "V", subject: "Mathematics", room: "UB5", teacher: "Dr. Ayesha Qureshi", note: "with C2, C3" });
       rotating.push({ subject: "Islamic Education / Tarjuma-tul-Quran", group: "C2 + C3 + H", room: "UB3", teacher: "Prof. Syed M. Tahir Shah" });
@@ -141,7 +141,7 @@ function buildSchedule(roll) {
 
     if (code === "H") {
       rows.push({ period: "II", subject: "Computer Science", room: "UB5", teacher: "CTI" });
-      rows.push({ period: "III", subject: "Economics", ...(p === "Odd" ? { room: "UB6", teacher: "Prof. Farhan Mahmood", note: "with F2, C3" } : { room: "UB7", teacher: "Prof. Imran Ejaz", note: "with C3" }) });
+      rows.push({ period: "III", subject: "Economics", ...(p === "Odd" ? { room: "UB6", teacher: "Prof. Imran Ejaz", note: "with F2, C3" } : { room: "UB7", teacher: "Prof. Farhan Mahmood", note: "with C3" }) });
       rows.push({ period: "IV", subject: "English", ...(p === "Odd" ? { room: "UB5", teacher: "Prof. Zunaira Abbas" } : { room: "UB6", teacher: "Prof. Syed Zubair Naeem" }), note: "with C2, C3, G" });
       rows.push({ period: "V", subject: "Statistics", room: "UB6", teacher: "Prof. Asif Raza Rizvi" });
       rotating.push({ subject: "Islamic Education / Tarjuma-tul-Quran", group: "C2 + C3 + H", room: "UB3", teacher: "Prof. Syed M. Tahir Shah" });
@@ -164,7 +164,7 @@ function buildSchedule(roll) {
     }
     if (code === "F2") {
       rows.push({ period: "II", subject: "Psychology", room: "19", teacher: "Prof. Muhammad Usman", note: "with Arts (A)" });
-      rows.push({ period: "III", subject: "Economics", room: "UB6", teacher: "Prof. Farhan Mahmood" });
+      rows.push({ period: "III", subject: "Economics", room: "UB6", teacher: "Prof. Imran Ejaz", note: "with C3, H (Odd)" });
       rows.push({ period: "IV", subject: "Computer Science", room: "UB10", teacher: "CTI", note: "with F1, F3, F4" });
     }
     if (code === "F3") {
@@ -203,7 +203,7 @@ function buildSchedule(roll) {
       rows.push({ period: "III", subject: "Islamic Studies (Islamiat)", room: "UB8", teacher: "CTI", note: "with F groups" });
     }
     if (["A1","A2","A6"].includes(code)) {
-      rows.push({ period: "II", subject: "Civics", room: "UB8", teacher: "Prof. Mehmood ul Hassan Abbasi" });
+      rows.push({ period: "II", subject: "Civics", room: "UB8", teacher: "Prof. Bushra Zahoor" });
     }
     if (code === "A1") {
       rows.push({ period: "IV", subject: "Arabic", room: "UB2", teacher: "Prof. Saeed Ahmed", note: "with F5, Arts" });
@@ -213,15 +213,15 @@ function buildSchedule(roll) {
     }
     if (code === "A3") {
       rows.push({ period: "II", subject: "Psychology", room: "19", teacher: "Prof. Muhammad Usman", note: "with F groups" });
-      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Samaviya Akhtar" });
+      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Rabia Noreen" });
     }
     if (code === "A4") {
       rows.push({ period: "II", subject: "Economics", room: "UB9", teacher: "Prof. Saadat Ali Khan", note: "with F3" });
-      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Samaviya Akhtar" });
+      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Rabia Noreen" });
     }
     if (code === "A5") {
       rows.push({ period: "II", subject: "History", room: "UB10", teacher: "Prof. Arsalan Iftikhar", note: "with F1, A7" });
-      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Samaviya Akhtar" });
+      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Rabia Noreen" });
     }
     if (code === "A6") {
       rows.push({ period: "III", subject: "Geography", room: "UB9", teacher: "Prof. Abdul Majeed Asif", note: "with F groups" });
@@ -230,7 +230,7 @@ function buildSchedule(roll) {
     if (code === "A7") {
       rows.push({ period: "II", subject: "History", room: "UB10", teacher: "Prof. Arsalan Iftikhar", note: "with F1, A5" });
       rows.push({ period: "III", subject: "Sociology", room: "UB10", teacher: "Prof. Farah Mushtaq", note: "with F groups" });
-      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Samaviya Akhtar" });
+      rows.push({ period: "IV", subject: "Health & Physical Education", room: "UB7", teacher: "Prof. Rabia Noreen" });
     }
 
     rows.sort((a, b) => "I,II,III,IV,V".split(",").indexOf(a.period) - "I,II,III,IV,V".split(",").indexOf(b.period));

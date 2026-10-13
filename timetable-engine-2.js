@@ -92,7 +92,7 @@ function buildSchedule2(roll) {
       add("IV", "Mathematics", odd ? 2 : 1, odd ? "Prof. Sumayya Mohsin" : "Mr. Imran", "C1 (" + OE + ")");
       add("V", "English", odd ? 1 : 2, odd ? "Prof. Aisha Rehmat" : "Prof. Muhammad Azam Mughal", "C1 (" + OE + ")");
       rot("VI · Tarjuma-tul-Quran (4-4)", "C1 + B.Star", 1, ANWAR);
-      rot("VI · Pak. Studies (1-2)", "C1 (" + OE + ")", odd ? 1 : 2, odd ? "Prof. Naseer Ahmed Ansir" : "Prof. Muhammad Muttaher Bashir");
+      rot("VI · Pak. Studies (1-2)", "C1 (" + OE + ")", 1, "Prof. Mehmood ul Hassan Abbasi");
       rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Prof. Ashar Shahzad");
       rot("VII · Physics Practical (6-6)", "C1 (" + OE + ")", "Lab", odd ? "Prof. Muhammad Asif" : "Prof. Amir-ul-Nisa");
       rot("VII · Computer Practical (2-2)", "C1", "Lab", "Prof. Tuseef Ahmad");
@@ -109,7 +109,7 @@ function buildSchedule2(roll) {
     else add("IV", "Mathematics", 3, "Prof. Misbah Rani", "C2 + C3 + G");
     add("V", "English", odd ? 3 : 4, odd ? "Prof. Zunaira Abbas" : "Prof. Asif Abbas", "C2 + C3 + G + H (" + OE + ")");
     rot("VI · Tarjuma-tul-Quran (4-4)", "C2 + C3 + H", 1, ANWAR);
-    rot("VI · Pak. Studies (1-2)", "C2 + C3 + G + H", 3, "Prof. Ahmad Taib Arif");
+    rot("VI · Pak. Studies (1-2)", "C2 + C3 + G + H", 1, "Prof. Mehmood ul Hassan Abbasi");
     rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Prof. Ashar Shahzad");
     if (code === "C2") rot("VII · Statistics Practical (1-1)", "C2-I + C2-II", "Lab", "Prof. Maryam Aslam");
     if (code !== "G") rot("VII · Computer Practical (2-2)", "C2 + C3 + H", "Lab", "Mr. Ahmed");
@@ -125,7 +125,7 @@ function buildSchedule2(roll) {
     B1: ["Psychology", 12, "Prof. Muhammad Usman", "B1 + B2 + B3"],
     B2: ["Psychology", 12, "Prof. Muhammad Usman", "B1 + B2 + B3"],
     B3: ["Psychology", 12, "Prof. Muhammad Usman", "B1 + B2 + B3"],
-    D2: ["History", 10, "Prof. Arsalan Iftikhar", "D2"],
+    D2: ["History", 10, "Prof. Muhammad Tayyab", "D2"],
     D3: ["Computer Science", "LT2", "Mr. Ahmed", "D3"]
   };
   const P2 = {
@@ -159,9 +159,9 @@ function buildSchedule2(roll) {
   rot("VI · Tarjuma-tul-Quran (4-4)", "A + B + D", 1, ANWAR);
   rot("VI · Pak. Studies (1-2)", "A + B + D", 10, "Prof. Arsalan Iftikhar");
   rot("VI · Ethics (Non-Muslim students)", "Non-Muslim students", 11, "Prof. Ashar Shahzad");
-  if (code === "A2" || code === "D2") rot("VII · Health & Phy. Education Practical (3-4)", "A + D", "Lab", "Prof. Samaviya Akhtar");
-  if (code === "D1") rot("VII · Geography Practical", "A + B + D", "Lab", "Prof. Salah-ud-Ahmad Khan Niazi");
-  if (["B2", "B3", "D1", "D3"].includes(code)) rot("VII · Computer Practical", "D + B + H", "Lab", "Prof. Tuseef Ahmad");
-  if (code[0] === "B") rot("VII · Psychology Practical", "B + D", 12, "Prof. Muhammad Usman");
+  if (code === "A2" || code === "D2") rot("VII · Health & Phy. Education Practical (1-1)", "A + D", "Lab", "Prof. Samaviya Akhtar");
+  if (code === "D1") rot("VII · Geography Practical (2-2)", "A + B + D", "Lab", "Prof. Salah-ud-Ahmad Khan Niazi");
+  if (["B2", "B3", "D1", "D3"].includes(code)) rot("VII · Computer Practical (3-3)", "D + B + H", "Lab", "Prof. Tuseef Ahmad");
+  if (code[0] === "B") rot("VII · Psychology Practical (4-4)", "B + D", 12, "Prof. Muhammad Usman");
   return { code, group: "F.A (Arts)", sheet: "2nd Year Arts", rows, rotating };
 }

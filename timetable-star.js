@@ -21,7 +21,7 @@ const BRIGHT_STAR = {
 const STAR_TT = {
   1: [
     { period: "I", subject: "Chemistry", room: "5-A", teacher: "Prof. Samad Yaseen", sec: "Medical + Engineering" },
-    { period: "I", subject: "Computer Science", room: "7", teacher: "CTI", sec: "ICS" },
+    { period: "I", subject: "Computer Science", room: "7", teacher: "Prof. Sidra Kanwal", sec: "ICS" },
     { period: "II", subject: "Biology", room: "5-A", teacher: "Prof. Nadeem Khan", sec: "Pre-Medical" },
     { period: "II", subject: "Mathematics", room: "7", teacher: "Prof. Nadia Zahir Babur", sec: "Engineering + ICS" },
     { period: "III", subject: "Physics", room: "5-A", teacher: "Prof. Muhammad Asif Ali", sec: "All" },
@@ -34,8 +34,8 @@ const STAR_TT = {
     { period: "II", subject: "Computer Science", room: "LT2", teacher: "Prof. Tuseef Ahmad", sec: "ICS", note: "with C1" },
     { period: "III", subject: "English", room: "5B", teacher: "Dr. Muhammad Ismaeel", sec: "All" },
     { period: "IV", subject: "Urdu", room: "5B", teacher: "Prof. Faiza Iftekhar", sec: "All" },
-    { period: "V", subject: "Biology", room: "5B", teacher: "Dr. Bushra Parveen", sec: "Pre-Medical" },
-    { period: "V", subject: "Mathematics", room: "7", teacher: "Prof. Abdul Jabbar", sec: "Engineering + ICS" }
+    { period: "V", subject: "Biology", room: "7", teacher: "Dr. Bushra Parveen", sec: "Pre-Medical" },
+    { period: "V", subject: "Mathematics", room: "5B", teacher: "Prof. Abdul Jabbar", sec: "Engineering + ICS" }
   ]
 };
 
@@ -46,7 +46,7 @@ const STAR_ROT = {
     { subject: "VI · Ethics (Non-Muslim students)", group: "Non-Muslim students", room: "UB2", teacher: "Prof. Ashar Shahzad", sec: "All" },
     { subject: "VI · Physics Practical (2-2)", group: "B.Star", room: "LAB", teacher: "Prof. Muhammad Asif Ali", sec: "All" },
     { subject: "VII · Tarjuma-tul-Quran (3-4)", group: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", sec: "All" },
-    { subject: "VII · Chemistry Practical (5-5)", group: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", sec: "Medical + Engineering" },
+    { subject: "VII · Chemistry Practical (4-4)", group: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", sec: "Medical + Engineering" },
     { subject: "VII · Biology Practical (1-1)", group: "B.Star", room: "LAB", teacher: "Prof. Nadeem Khan", sec: "Pre-Medical" }
   ],
   2: [
