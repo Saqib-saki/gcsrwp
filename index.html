@@ -863,7 +863,7 @@
   <section class="view" id="view-my">
     <div class="card pad" id="myForm">
       <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
-      <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B3">BS · 3rd Semester</option><option value="B5">BS · 5th Semester</option><option value="B7">BS · 7th Semester</option></select></div>
+      <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B1">BS · 1st Semester</option><option value="B3">BS · 3rd Semester</option><option value="B5">BS · 5th Semester</option><option value="B7">BS · 7th Semester</option></select></div>
       <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
       <div class="field" id="myDobRow"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
       <div class="field" id="myCnicRow" style="display:none"><label for="myCnic">Last 4 digits of your CNIC / B-Form</label><input id="myCnic" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="e.g. 3924" autocomplete="off"></div>
@@ -890,7 +890,7 @@
       <div class="signed-in">👤 <span>Signed in as <b id="bdWho"></b></span><button class="link-btn" id="bdLogout">Sign out</button></div>
       <div id="bdNotAdmin" class="card pad" style="display:none"><p style="margin:0">Only the Principal and admins can see this board.</p></div>
       <div id="bdAdmin">
-        <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
+        <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B1">BS 1st</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
         <div class="seg" id="bdTabs">
           <button data-tab="day" class="on">📋 Day board</button>
           <button data-tab="week">📅 Weekly report</button>
@@ -934,7 +934,7 @@
 
     <div id="recMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="recWho"></b> <span class="lock-chip" id="recRole"></span></span><button class="link-btn" id="recLogout">Sign out</button></div>
-      <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
+      <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B1">BS 1st</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
       <div class="seg" id="recTabs">
         <button data-tab="find" class="on">🔎 Find student</button>
         <button data-tab="classes" id="recTabClasses">👥 My classes</button>
@@ -2072,7 +2072,7 @@
       if (!rs.length) { if (!shared) h += '<tr class="bs-free"><td class="period">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td><td colspan="3">—</td></tr>'; return; }
       rs.forEach((r, i) => {
         h += '<tr>' + (i ? '<td></td>' : '<td class="period" rowspan="1">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td>') +
-          '<td><b>' + esc(r.course) + '</b>' + (r.code ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
+          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (r.days ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(r.days)) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
           '<td>' + esc(r.teacher || '—') + '</td><td>' + esc(r.room || '—') + '</td></tr>';
       });
     });
@@ -2358,7 +2358,7 @@
   const BS_PROG = { CS: 'Computer Science', CHEM: 'Chemistry', ECO: 'Economics', ENG: 'English', ISL: 'Islamic Studies', MATH: 'Mathematics', PHY: 'Physics', STAT: 'Statistics', URDU: 'Urdu' };
   const BS_CODES = Object.keys(BS_PROG), BS_CODE_OF = {}; BS_CODES.forEach((k) => { BS_CODE_OF[BS_PROG[k]] = k; });
   const BS_NAMES = {}; BS_CODES.forEach((k) => { BS_NAMES[k] = 'BS ' + BS_PROG[k]; });
-  const BS_READY = ['B3', 'B5', 'B7'];            // BS semesters whose student lists are in the app
+  const BS_READY = ['B1', 'B3', 'B5', 'B7'];      // BS semesters whose student lists are in the app
   const ALL_YEARS = [1, 2].concat(BS_READY);
   const ORD = (n) => n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
   /** 1 | 2 | 'B3' … from a select value / data attribute / number */
@@ -2370,13 +2370,17 @@
   const BS_TESTS_DEF = ['Sessional', 'Mid Term', 'Final Term'];
   /** every BS lecture of one semester from the BS timetables: [{group, section, period, subject, teacher, room}] */
   const bsLecCache = {};
+  /** "2-5" → [2,3,4,5] (1 = Mon … 6 = Sat); '' → null (every day) */
+  function bsDays(v) { const m = /^(\d)\s*-\s*(\d)$/.exec(String(v || '')); if (!m) return null; const a = []; for (let d = Number(m[1]); d <= Number(m[2]); d++) a.push(d); return a; }
+  const BS_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function bsDayLabel(v) { const d = bsDays(v); if (!d) return ''; return d.length === 1 ? BS_DAY[d[0]] : d.length === 6 ? 'Mon – Sat' : BS_DAY[d[0]] + ' – ' + BS_DAY[d[d.length - 1]]; }
   function bsLectures(y) {
     if (bsLecCache[y]) return bsLecCache[y];
     const sem = bsSemOf(y), out = [], seen = {};
     if (typeof BS_TT !== 'undefined') BS_TT.forEach((r) => {
       if (r.sem !== sem) return; const g = BS_CODE_OF[r.program]; if (!g || !r.course) return;
       const k = g + '|' + r.period + '|' + r.course; if (seen[k]) return; seen[k] = 1;
-      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '' });
+      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '', days: bsDays(r.days) });
     });
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group));
     bsLecCache[y] = out;
@@ -2552,7 +2556,7 @@
     if (myClassesCache[y] && myClassesCache[y].key === key) return myClassesCache[y].list;
     if (isBS(y)) {
       const byG = {};
-      bsLectures(y).forEach((l) => { if (!isMe(l.teacher, l.subject, l.group, y)) return; (byG[l.group] = byG[l.group] || { group: l.group, section: 'All', lectures: [] }).lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher }); });
+      bsLectures(y).forEach((l) => { if (!isMe(l.teacher, l.subject, l.group, y)) return; (byG[l.group] = byG[l.group] || { group: l.group, section: 'All', lectures: [] }).lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days }); });
       const bl = Object.keys(byG).map((k) => byG[k]);
       myClassesCache[y] = { key, list: bl };
       return bl;
