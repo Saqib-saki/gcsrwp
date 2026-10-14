@@ -2468,9 +2468,10 @@
   }
   const nowMinLocal = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const isAdminUser = () => !!(attAuth && attAuth.role === 'Admin');
-  /* v11.6: a lecture can be saved from the start of its period until 24 hours after it ends (no "Late");
-     earlier records of 1 Sep – 8 Oct 2026 (before the app started) can be entered at any time. */
+  /* v11.6/11.7: no "Late" and, for now, no time limit — any day from 1 Sep 2026 up to today can be saved at any time.
+     1 Sep – 8 Oct 2026 (before the app started) is labelled as an earlier record. */
   const BACK_FROM = '2026-09-01', BACK_TO = '2026-10-08';
+  const SAVE_LIMIT_H = 0;   // v11.7 soft start: 0 = any earlier day can be saved at any time (must match SAVE_LIMIT_HOURS in Code.gs)
   const isBackDate = (iso) => !!iso && iso >= BACK_FROM && iso <= BACK_TO;
   const addDaysISO = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const dayShort = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -2486,10 +2487,10 @@
     const n = nowMinLocal(), span = fmtHM(w[0]) + '–' + fmtHM(w[1]);
     const days = Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(date + 'T12:00:00Z')) / 86400000);
     const since = days * 1440 + n - w[1];
-    if (days === 0 && n < w[0]) return { state: 'wait', text: '⏳ Period ' + period + ' is ' + span + '. You can mark attendance from ' + fmtHM(w[0]) + '.' };
+    if (days === 0 && n < w[0]) return { state: 'info', text: '⏳ Period ' + period + ' is ' + span + ' today.' };
     if (days === 0 && n < w[1]) return { state: 'ok', text: '✅ Period ' + period + ' is on now (' + span + '). ' + (w[1] - n) + ' min left in the class.' };
-    if (since <= 1440) return { state: 'info', text: '🕒 Period ' + period + ' ended at ' + fmtHM(w[1]) + (days ? ' on ' + dayShort(date) : '') + '. You can still save it until ' + fmtHM(w[1]) + ' ' + (days ? 'today' : 'tomorrow') + '.' };
-    return { state: 'late', text: '⛔ The 24 hours to save Period ' + period + ' of ' + dayShort(date) + ' are over. Ask an admin to enter or correct it.' };
+    if (SAVE_LIMIT_H > 0 && since > SAVE_LIMIT_H * 60) return { state: 'late', text: '⛔ The time to save Period ' + period + ' of ' + dayShort(date) + ' is over. Ask an admin to enter or correct it.' };
+    return { state: 'info', text: '🕒 Period ' + period + (days ? ' of ' + dayShort(date) : ' ended at ' + fmtHM(w[1])) + '. You can save or correct it any time.' };
   }
   let dateWarn = '', dateWarnAt = 0;
   function paintTimeNote() {
@@ -2499,7 +2500,7 @@
     if (!admin && BELL && BELL.rule !== false) {
       d.min = BACK_FROM; d.max = todayISO();
       const v = d.value;
-      if (!v || v > todayISO() || (v < addDaysISO(todayISO(), -1) && !isBackDate(v))) { if (v && v !== todayISO()) dateWarnAt = Date.now(), dateWarn = 'You can choose today, yesterday (until 24 hours after the class) or an earlier record from 1 Sep – 8 Oct. Ask an admin for other days.'; d.value = todayISO(); }
+      if (!v || v > todayISO() || v < BACK_FROM) { if (v && v !== todayISO()) dateWarnAt = Date.now(), dateWarn = v > todayISO() ? 'You can’t choose a future date.' : 'Records before 1 Sep 2026 can’t be entered.'; d.value = todayISO(); }
     } else { d.removeAttribute('min'); d.removeAttribute('max'); }
     $('attBoardLink').style.display = admin ? 'block' : 'none';
     if (admin) { el.style.display = 'block'; el.className = 'tnote'; el.textContent = 'Admin: you can enter or correct any date and period.'; return; }
