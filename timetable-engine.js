@@ -41,9 +41,11 @@ function urduBatch(roll) {
 }
 
 const URDU_BATCH_ROOMS = {
-  1: { room: "UB3", teacher: "Prof. Tahira Ghafoor" },
+  // From the department's ICS Urdu roll lists (Oct 2026): 301, 304, 307 … → Dr. Faiza (UB-5);
+  // 302, 305, 308 … → Dr. Zia Ur Rehman (UB-4); 303, 306, 309 … → Dr. Tahira (UB-3).
+  1: { room: "UB5", teacher: "Prof. Faiza Iftekhar" },
   2: { room: "UB4", teacher: "Prof. Zia-Ur-Rehman" },
-  3: { room: "UB5", teacher: "Prof. Faiza Iftekhar" }
+  3: { room: "UB3", teacher: "Prof. Tahira Ghafoor" }
 };
 
 // Each function takes (roll) and returns an array of
