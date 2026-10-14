@@ -114,12 +114,12 @@ function buildSchedule(roll) {
     }
 
     if (code === "C2") {
-      rows.push({ period: "II", subject: "Statistics", ...(p === "Odd" ? { room: "UB6", teacher: "Prof. Maryam Aslam" } : { room: "UB7", teacher: "Prof. Gulzar Ahmad", note: "with G" }) });
+      rows.push({ period: "II", subject: "Statistics", room: "UB6", teacher: "Prof. Maryam Aslam", note: "C2 (Odd + Even) + G together" });
       rows.push({ period: "III", subject: "Computer Science", room: "UB5", teacher: "CTI" });
       rows.push({ period: "IV", subject: "English", ...(p === "Odd" ? { room: "UB5", teacher: "Prof. Zunaira Abbas" } : { room: "UB6", teacher: "Prof. Syed Zubair Naeem" }), note: "with C3, G, H" });
       rows.push({ period: "V", subject: "Mathematics", room: "UB5", teacher: "Dr. Ayesha Qureshi", note: "with C3, G" });
       rotating.push({ subject: "Islamic Education / Tarjuma-tul-Quran", group: "C2 + C3 + H", room: "UB3", teacher: "Prof. Syed M. Tahir Shah" });
-      rotating.push({ subject: "Statistics Practical", group: p === "Odd" ? "C2 (Odd)" : "C2 (Even) + G", room: "LAB", teacher: p === "Odd" ? "Prof. Maryam Aslam" : "Prof. Gulzar Ahmad" });
+      rotating.push({ subject: "Statistics Practical", group: "C2 + G", room: "LAB", teacher: "Prof. Maryam Aslam" });
     }
 
     if (code === "C3") {
@@ -132,7 +132,7 @@ function buildSchedule(roll) {
     }
 
     if (code === "G") {
-      rows.push({ period: "II", subject: "Statistics", room: "UB7", teacher: "Prof. Gulzar Ahmad", note: "with C2 (Even)" });
+      rows.push({ period: "II", subject: "Statistics", room: "UB6", teacher: "Prof. Maryam Aslam", note: "with C2 (Odd + Even)" });
       rows.push({ period: "III", subject: "Economics", room: "UB7", teacher: "Prof. Farhan Mahmood", note: "with C3 (Even), H (Even)" });
       rows.push({ period: "IV", subject: "English", ...(p === "Odd" ? { room: "UB5", teacher: "Prof. Zunaira Abbas" } : { room: "UB6", teacher: "Prof. Syed Zubair Naeem" }), note: "with C2, C3, H" });
       rows.push({ period: "V", subject: "Mathematics", room: "UB5", teacher: "Dr. Ayesha Qureshi", note: "with C2, C3" });

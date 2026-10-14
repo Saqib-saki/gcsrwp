@@ -25,8 +25,7 @@ const SIX7 = {
     { period: "VI", days: "1-1", subject: "Physics Practical", with: "C1 (Even)", room: "LAB", teacher: "Prof. Muhammad Tauseef", parts: [["C1", "Even"]] },
     { period: "VII", days: "3-4", subject: "Tarjuma-tul-Quran", with: "C1", room: "UB5", teacher: "Prof. Hafiz Zafar Mehmood", parts: [["C1", "All"]] },
     { period: "VII", days: "3-4", subject: "Tarjuma-tul-Quran", with: "C2 + C3 + H", room: "UB3", teacher: "Prof. Syed M. Tahir Shah", parts: [["C2", "All"], ["C3", "All"], ["H", "All"]] },
-    { period: "VII", days: "2-2", subject: "Statistics Practical", with: "C2 (Odd)", room: "LAB", teacher: "Prof. Maryam Aslam", parts: [["C2", "Odd"]] },
-    { period: "VII", days: "2-2", subject: "Statistics Practical", with: "C2 (Even) + G", room: "LAB", teacher: "Prof. Gulzar Ahmad", parts: [["C2", "Even"], ["G", "All"]] },
+    { period: "VII", days: "2-2", subject: "Statistics Practical", with: "C2 + G", room: "LAB", teacher: "Prof. Maryam Aslam", parts: [["C2", "All"], ["G", "All"]] }, // Oct 2026: Dr. Gulzar's C2 (Even) + G merged into Prof. Maryam's class
     { period: "VII", days: "2-2", subject: "Statistics Practical", with: "H", room: "LAB", teacher: "Prof. Asif Raza Rizvi", parts: [["H", "All"]] },
     { period: "VII", days: "5-6", subject: "Computer Practical", with: "C3 + H", room: "LAB", teacher: "CTI", parts: [["C3", "All"], ["H", "All"]] },
     { period: "VII", days: "5-6", subject: "Computer Practical", with: "F + C2", room: "LAB", teacher: "CTI", parts: [["C2", "All"]] },
