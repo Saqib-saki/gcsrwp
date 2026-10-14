@@ -2468,27 +2468,45 @@
   }
   const nowMinLocal = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const isAdminUser = () => !!(attAuth && attAuth.role === 'Admin');
-  /** {state: wait|ok|late|none, text} for the chosen lecture, as a teacher would be judged now */
-  function timeState(period) {
-    const today = todayISO();
+  /* v11.6: a lecture can be saved from the start of its period until 24 hours after it ends (no "Late");
+     earlier records of 1 Sep – 8 Oct 2026 (before the app started) can be entered at any time. */
+  const BACK_FROM = '2026-09-01', BACK_TO = '2026-10-08';
+  const isBackDate = (iso) => !!iso && iso >= BACK_FROM && iso <= BACK_TO;
+  const addDaysISO = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const dayShort = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  /** {state: wait|ok|info|late|none, text} for the chosen lecture and date, as a teacher would be judged now.
+      wait = not yet / no class, late = time over (both block loading); ok = class on now (green); info = can still save */
+  function timeState(period, date) {
+    const today = todayISO(); date = date || ($('attDate') && $('attDate').value) || today;
     if (!BELL || BELL.rule === false) return { state: 'none', text: '' };
-    if (new Date(today + 'T12:00:00Z').getUTCDay() === 0) return { state: 'wait', text: 'No classes today (Sunday).' };
-    const w = periodWin(period, today); if (!w) return { state: 'none', text: '' };
+    if (date > today) return { state: 'wait', text: 'That date is in the future.' };
+    if (new Date(date + 'T12:00:00Z').getUTCDay() === 0) return { state: 'wait', text: 'No classes on Sunday.' };
+    if (isBackDate(date)) return { state: 'info', text: '📅 Entering an earlier record (' + dayShort(date) + '). Records of 1 Sep – 8 Oct can be entered any time.' };
+    const w = periodWin(period, date); if (!w) return { state: 'none', text: '' };
     const n = nowMinLocal(), span = fmtHM(w[0]) + '–' + fmtHM(w[1]);
-    if (n < w[0]) return { state: 'wait', text: '⏳ Period ' + period + ' is ' + span + '. You can mark attendance from ' + fmtHM(w[0]) + '.' };
-    if (n < w[1]) return { state: 'ok', text: '✅ Period ' + period + ' is on now (' + span + ') — saving now counts as On time. ' + (w[1] - n) + ' min left.' };
-    return { state: 'late', text: '⏰ Period ' + period + ' ended at ' + fmtHM(w[1]) + '. You can still save today, but it will show as Late.' };
+    const days = Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(date + 'T12:00:00Z')) / 86400000);
+    const since = days * 1440 + n - w[1];
+    if (days === 0 && n < w[0]) return { state: 'wait', text: '⏳ Period ' + period + ' is ' + span + '. You can mark attendance from ' + fmtHM(w[0]) + '.' };
+    if (days === 0 && n < w[1]) return { state: 'ok', text: '✅ Period ' + period + ' is on now (' + span + '). ' + (w[1] - n) + ' min left in the class.' };
+    if (since <= 1440) return { state: 'info', text: '🕒 Period ' + period + ' ended at ' + fmtHM(w[1]) + (days ? ' on ' + dayShort(date) : '') + '. You can still save it until ' + fmtHM(w[1]) + ' ' + (days ? 'today' : 'tomorrow') + '.' };
+    return { state: 'late', text: '⛔ The 24 hours to save Period ' + period + ' of ' + dayShort(date) + ' are over. Ask an admin to enter or correct it.' };
   }
+  let dateWarn = '', dateWarnAt = 0;
   function paintTimeNote() {
     const el = $('attTimeNote'); if (!el || !attAuth) return;
-    const admin = isAdminUser();
-    $('attDate').disabled = !admin && !!(BELL && BELL.rule !== false);
-    if (!admin && BELL && BELL.rule !== false) $('attDate').value = todayISO();
+    const admin = isAdminUser(), d = $('attDate');
+    d.disabled = false;
+    if (!admin && BELL && BELL.rule !== false) {
+      d.min = BACK_FROM; d.max = todayISO();
+      const v = d.value;
+      if (!v || v > todayISO() || (v < addDaysISO(todayISO(), -1) && !isBackDate(v))) { if (v && v !== todayISO()) dateWarnAt = Date.now(), dateWarn = 'You can choose today, yesterday (until 24 hours after the class) or an earlier record from 1 Sep – 8 Oct. Ask an admin for other days.'; d.value = todayISO(); }
+    } else { d.removeAttribute('min'); d.removeAttribute('max'); }
     $('attBoardLink').style.display = admin ? 'block' : 'none';
     if (admin) { el.style.display = 'block'; el.className = 'tnote'; el.textContent = 'Admin: you can enter or correct any date and period.'; return; }
     const lec = currentLecture();
-    const t = timeState(lec ? lec.period : '');
-    el.style.display = t.text ? 'block' : 'none'; el.className = 'tnote ' + t.state; el.textContent = t.text;
+    const t = timeState(lec ? lec.period : '', d.value);
+    if (dateWarn && Date.now() - dateWarnAt < 15000) { t.text = '⚠️ ' + dateWarn; t.state = 'late'; }
+    el.style.display = t.text ? 'block' : 'none'; el.className = 'tnote ' + (t.state === 'info' ? '' : t.state); el.textContent = t.text;
   }
   setInterval(() => { if (parseHash().key === 'attendance') paintTimeNote(); }, 30000);
   function groupRange(code, y) { return yrCfg(y).ranges.find((g) => g[0] === code); }
@@ -2936,7 +2954,7 @@
         j = { parts: [], saved: 0, present: 0, absent: 0, leave: 0, failed: 0 };
         for (const p of parts) { try { const r = await attApi('submit', Object.assign({}, base, p)); j.parts.push(Object.assign({ ok: true }, r)); ['saved', 'present', 'absent', 'leave'].forEach((k) => { j[k] += r[k] || 0; }); j.timing = j.timing || r.timing; } catch (e2) { if (e2.offline || /^BUSY/.test(e2.message)) throw e2; j.parts.push({ ok: false, group: p.group, error: e2.message }); j.failed++; } }
       }
-      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry' };
+      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry', 'Back entry': ' · 📅 earlier record' };
       const bad = (j.parts || []).filter((r) => r.ok === false);
       toast('Saved ✓ ' + (parts.length - bad.length) + ' group' + (parts.length - bad.length === 1 ? '' : 's') + ' · ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : '') + (TL[j.timing] || '') + (bad.length ? ' · ⚠️ not saved: ' + bad.map((r) => r.group + ' (' + r.error + ')').join('; ') : ''));
       if (!bad.length) { $('attListWrap').style.display = 'none'; window.scrollTo(0, 0); }
@@ -2960,7 +2978,7 @@
     const lec = currentLecture(), date = $('attDate').value;
     if (!date) { $('attErr').textContent = 'Choose a date.'; return; }
     if (!lec || !lec.subject) { $('attErr').textContent = 'Choose or type the subject.'; return; }
-    if (!isAdminUser()) { const t = timeState(lec.period); if (t.state === 'wait') { $('attErr').textContent = 'Not yet — you can load the list when the period starts.'; return; } }
+    if (!isAdminUser()) { const t = timeState(lec.period, date); if (t.state === 'wait' || t.state === 'late') { $('attErr').textContent = t.state === 'late' ? t.text : (t.text || 'Not yet — you can load the list when the period starts.'); return; } }
     if (attWhole()) {
       $('attListWrap').style.display = 'none';
       $('attLoad').disabled = true; $('attLoad').textContent = 'Loading…';
@@ -3020,7 +3038,7 @@
     const payload = Object.assign({}, attCtx, { marks: attStudents.map((s) => ({ roll: s.roll, status: attMarks[s.roll] })) });
     try {
       const j = await attApi('submit', payload);
-      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry' };
+      const TL = { 'On time': ' · ✅ On time', Late: ' · ⏰ Late', Offline: ' · 📵 sent later', Admin: ' · admin entry', 'Back entry': ' · 📅 earlier record' };
       toast('Saved ✓ ' + j.present + ' present, ' + j.absent + ' absent' + (j.leave ? ', ' + j.leave + ' leave' : '') + (TL[j.timing] || ''));
       $('attListWrap').style.display = 'none'; window.scrollTo(0, 0);
     } catch (e) {
@@ -3057,7 +3075,7 @@
   });
 
   /* ---------- enter marks ---------- */
-  const TESTS_DEF = ['October Test', 'November Test', 'December Test', 'January Test', 'February Test', 'Pre-Board Test'];
+  const TESTS_DEF = ['September Test', 'October Test', 'November Test', 'December Test', 'January Test', 'February Test', 'Pre-Board Test'];
   let mkStudents = [], mkVals = {}, mkCtx = null, mkBusy = false;
   const normSubj = (s) => String(s || '').replace(/\s*Practical$/i, '').trim();
   function groupSubjects(group, y) {
