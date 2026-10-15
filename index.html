@@ -249,6 +249,19 @@
   .mg-row.off { opacity: .6; } .mg-off { display: inline-block; font-size: .68rem; font-weight: 800; border-radius: 10px; padding: 1px 7px; background: #fdeedb; color: #8a4b00; margin-left: 4px; }
   .mg-act { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
   .mg-danger { background: #b42318 !important; color: #fff !important; border-color: #b42318 !important; }
+  .ms-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; } .ms-bar .field { margin: 0; flex: 1; min-width: 130px; }
+  table.ms { border-collapse: collapse; font-size: .72rem; min-width: 760px; width: 100%; }
+  table.ms th, table.ms td { border: 1px solid var(--border); padding: 4px; vertical-align: top; text-align: left; }
+  table.ms th { background: var(--chip-bg); position: sticky; top: 0; } table.ms td.g { font-weight: 800; white-space: nowrap; background: var(--chip-bg); position: sticky; left: 0; }
+  .ms-c { display: block; width: 100%; text-align: left; border: 1px solid transparent; background: none; color: var(--text); border-radius: 6px; padding: 3px 4px; margin-bottom: 2px; cursor: pointer; font: inherit; line-height: 1.25; }
+  .ms-c:hover { border-color: var(--border); } .ms-c b { display: block; } .ms-c small { color: var(--muted); display: block; }
+  .ms-c.chg { background: #fff4d6; } .ms-c.vac { background: #fde4e1; } .ms-c.hit { outline: 2px solid var(--navy); }
+  .ms-empty { display: block; width: 100%; border: 1px dashed var(--border); background: none; color: var(--muted); border-radius: 6px; padding: 6px 2px; cursor: pointer; font: inherit; }
+  .ms-act { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .ms-act > div { background: var(--card-bg); color: var(--text); width: min(520px, 100%); border-radius: 16px 16px 0 0; padding: 14px 16px 18px; }
+  .ms-act button.opt { display: block; width: 100%; text-align: left; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; padding: 11px 12px; margin-top: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+  @media print { body.print-ms > *:not(#msPrint) { display: none !important; } body.print-ms #msPrint { display: block !important; } #msPrint table.ms { min-width: 0; font-size: 7pt; } @page { size: landscape; margin: 8mm; } }
+  #msPrint { display: none; }
   .ttc-tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   .ttc-tasks button { text-align: left; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 12px; padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; font: inherit; }
   .ttc-tasks button span { font-size: 1.2rem; } .ttc-tasks button b { font-size: .82rem; } .ttc-tasks button small { font-size: .7rem; color: var(--muted); }
@@ -817,6 +830,7 @@
         <div class="card pad">
           <p class="screen-title" style="margin-top:0">What needs to change?</p>
           <div class="ttc-tasks" id="ttcTasks">
+            <button data-task="master" style="grid-column:1/-1"><span>📋</span><b>Master timetable — see and change</b><small>Full timetable of 1st Year, 2nd Year and each BS semester. Tap any class to change it.</small></button>
             <button data-task="left"><span>👤</span><b>A teacher has left / is on long leave</b><small>Give all their classes to another teacher, or mark them vacant (CTI)</small></button>
             <button data-task="vacant"><span>🪑</span><b>Vacant classes (CTI)</b><small>Classes still waiting for a teacher — assign one</small></button>
             <button data-task="teacher"><span>🔄</span><b>Change the teacher of a class</b><small>One class or section</small></button>
@@ -3406,7 +3420,7 @@
       if (starOk(y)) (STAR_TT[y] || []).forEach((e) => { if (pred(e.teacher)) out.push({ year: String(y), group: 'STAR', section: e.sec, period: e.period, subject: e.subject, teacher: e.teacher, room: e.room || '' }); });
       (SIX7[y] || []).forEach((e) => { if (!pred(e.teacher)) return; (e.cls ? [e.cls] : e.parts).forEach((p) => { if (e.cls || hasStudents(y, p[0], p[1])) out.push({ year: String(y), group: p[0], section: p[1], period: e.period, subject: e.subject, teacher: e.teacher, room: e.room || '', days: e.days || '' }); }); });
     });
-    BS_READY.forEach((b) => bsLectures(b).forEach((l) => { if (pred(l.teacher)) out.push({ year: b, group: l.group, section: 'All', period: l.period, subject: l.subject, teacher: l.teacher, room: l.room || '', days: (l.days || []).join('-') }); }));
+    BS_READY.forEach((b) => bsLectures(b).forEach((l) => { if (pred(l.teacher)) out.push({ year: b, group: l.group, section: 'All', period: l.period, subject: l.subject, teacher: l.teacher, room: l.room || '', days: l.days && l.days.length ? l.days[0] + '-' + l.days[l.days.length - 1] : '' }); }));
     return out;
   }
   function myTeaches(y) {
@@ -4771,6 +4785,72 @@
     return () => ({ year: $(pre + 'Year').value, group: $(pre + 'Group').value, section: $(pre + 'Sec').value, period: $(pre + 'Per').value, subject: $(pre + 'Subj').value });
   }
   document.getElementById('ttcTasks').addEventListener('click', (e) => { const b = e.target.closest('button[data-task]'); if (!b) return; document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.toggle('on', x === b)); ttcTask(b.dataset.task); });
+  /* v12.3: master timetable — the whole timetable of a class year as a grid (groups × periods); tap a class to change it */
+  let msYear = '1', msFind = '';
+  function msEntries(y) {
+    return scanClasses(() => true).filter((x) => x.year === String(yk(y)));
+  }
+  function msChanged(e) {
+    return ttcActive().some((x) => (x.action === 'replace' ? ttYearOk(x, e.year) && ttHasName(e.teacher, x.teacher)
+      : String(x.year) === e.year && ttParts(x).some((p) => p[0] === e.group) && ((x.action === 'move' ? x.toPeriod : x.period) === e.period) && ttNorm(x.subject) === ttNorm(e.subject)));
+  }
+  function msGrid(y, forPrint) {
+    const E = msEntries(y), groups = [];
+    const order = isBS(y) ? BS_CODES : yrCfg(y).ranges.map((r) => r[0]).concat(['STAR']);
+    order.forEach((g) => { if (E.some((x) => x.group === g)) groups.push(g); });
+    E.forEach((x) => { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
+    const q = nameKey(msFind);
+    let h = '<table class="ms"><thead><tr><th>Group</th>' + PERIODS.map((p) => '<th>' + p + '</th>').join('') + '</tr></thead><tbody>';
+    groups.forEach((g) => {
+      h += '<tr><td class="g">' + esc(g) + (isBS(y) ? '<br><small>' + esc(BS_PROG[g] || '') + '</small>' : '') + '</td>';
+      PERIODS.forEach((p) => {
+        const L = E.filter((x) => x.group === g && x.period === p).sort((a, b) => String(a.section).localeCompare(String(b.section)));
+        h += '<td>' + L.map((x) => {
+          const k = E.indexOf(x), cls = (isVacant(x.teacher) ? ' vac' : '') + (msChanged(x) ? ' chg' : '') + (q && String(x.teacher).split('+').some((t) => { const k = nameKey(t); return k && (k.indexOf(q) >= 0 || nearSame(k, q)); }) ? ' hit' : '');
+          return (forPrint ? '<div class="ms-c' + cls + '">' : '<button class="ms-c' + cls + '" data-e="' + k + '">') + '<b>' + (x.section && x.section !== 'All' ? esc(x.section) + ': ' : '') + esc(x.subject) + '</b><small>' + esc(x.teacher || '—') + (x.room ? ' · ' + esc(x.room) : '') + (x.days ? ' · ' + esc(String(x.days)) : '') + '</small>' + (forPrint ? '</div>' : '</button>');
+        }).join('') + (forPrint ? '' : '<button class="ms-empty" data-add="' + esc(g + '|' + p) + '">＋</button>') + '</td>';
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    return { html: groups.length ? h : '<div class="empty">No timetable for this class yet.</div>', E };
+  }
+  function ttcMaster(F, close) {
+    F.innerHTML = '<p class="screen-title" style="margin-top:0">📋 Master timetable</p>' +
+      '<div class="ms-bar"><div class="field"><label for="msYear">Class</label>' + yearSel('msYear', msYear) + '</div><div class="field"><label for="msFind">Find a teacher</label><input id="msFind" list="msStaff" value="' + esc(msFind) + '" placeholder="Highlight a teacher’s classes">' + staffList('msStaff', true) + '</div></div>' +
+      '<p class="note" style="margin:0 0 8px">Tap a class to change its teacher, move it, swap, merge or cancel it. Tap ＋ to add a class. <span style="background:#fff4d6;padding:0 4px;border-radius:4px">Yellow</span> = changed, <span style="background:#fde4e1;padding:0 4px;border-radius:4px">red</span> = no teacher (CTI). Periods VI–VII show their days (1 = Mon … 6 = Sat).</p>' +
+      '<div class="overflow-x" id="msWrap"></div>' +
+      '<div class="btn-row"><button class="btn-secondary" id="msPrintBtn">🖨 Print / PDF</button><button class="btn-secondary" id="msCsv">⬇ Excel (CSV)</button><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
+    let cur = null;
+    const paint = () => { msYear = $('msYear').value; msFind = $('msFind').value; cur = msGrid(msYear, false); $('msWrap').innerHTML = cur.html; };
+    $('msYear').onchange = paint; $('msFind').oninput = paint; paint();
+    $('tcClose').onclick = close;
+    $('msWrap').onclick = (e) => {
+      const b = e.target.closest('[data-e]'), a = e.target.closest('[data-add]');
+      if (a) { const [g, p] = a.dataset.add.split('|'); ttcTask('add', { year: msYear, group: g, section: 'All', period: p }); return; }
+      if (!b) return;
+      const x = cur.E[Number(b.dataset.e)], preset = { year: x.year, group: x.group, section: x.section || 'All', period: x.period, subject: x.subject };
+      const sh = document.createElement('div'); sh.className = 'ms-act';
+      sh.innerHTML = '<div><b>' + esc(yearLabel(yk(x.year)) + ' · ' + x.group + (x.section !== 'All' ? ' (' + x.section + ')' : '') + ' · Period ' + x.period) + '</b><div class="note" style="margin:2px 0 0">' + esc(x.subject) + ' — ' + esc(x.teacher || 'no teacher') + (x.room ? ' · ' + esc(x.room) : '') + '</div>' +
+        [['teacher', '🔄 Change the teacher'], ['move', '⏱️ Move to another period'], ['swap', '🔀 Swap with another class'], ['merge', '🔗 Merge with other sections / groups'], ['cancel', '❌ Cancel this class']].map((o) => '<button class="opt" data-t="' + o[0] + '">' + o[1] + '</button>').join('') +
+        (!isVacant(x.teacher) ? '<button class="opt" data-t="left">👤 ' + esc(x.teacher.split('+')[0].trim()) + ' has left — move all their classes</button>' : '') +
+        '<button class="opt" data-t="" style="text-align:center;font-weight:400">Close</button></div>';
+      sh.onclick = (ev) => {
+        const o = ev.target.closest('button.opt'); if (!o && ev.target !== sh) return; sh.remove(); if (!o || !o.dataset.t) return;
+        document.querySelectorAll('#ttcTasks button').forEach((z) => z.classList.toggle('on', z.dataset.task === o.dataset.t));
+        ttcTask(o.dataset.t, o.dataset.t === 'left' ? x.teacher.split('+')[0].trim() : preset);
+      };
+      document.body.appendChild(sh);
+    };
+    $('msPrintBtn').onclick = () => {
+      let box = $('msPrint'); if (!box) { box = document.createElement('div'); box.id = 'msPrint'; document.body.appendChild(box); }
+      box.innerHTML = '<div style="text-align:center;font-weight:800;margin-bottom:4px">' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + ' — ' + esc(yearLabel(yk(msYear))) + ' Time Table (with changes, ' + esc(fmtDate(todayISO())) + ')</div>' + msGrid(msYear, true).html;
+      document.body.classList.add('print-ms');
+      const done = () => { document.body.classList.remove('print-ms'); window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done); setTimeout(() => window.print(), 200);
+    };
+    $('msCsv').onclick = () => csvDownload('Timetable_' + yearLabel(yk(msYear)).replace(/\s+/g, '_') + '.csv', [['Group', 'Section', 'Period', 'Subject', 'Teacher', 'Room', 'Days']].concat(cur.E.slice().sort((a, b) => a.group.localeCompare(b.group) || periodIndex(a.period) - periodIndex(b.period)).map((x) => [x.group, x.section, x.period, x.subject, x.teacher, x.room, x.days || ''])));
+  }
   function ttcTask(task, preset) {
     const F = $('ttcForm'); F.style.display = 'block';
     const close = () => { F.style.display = 'none'; document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.remove('on')); };
@@ -4816,6 +4896,7 @@
       };
       return;
     }
+    if (task === 'master') { ttcMaster(F, close); return; }
     if (task === 'merge') {
       F.innerHTML = '<p class="screen-title" style="margin-top:0">🔗 Merge classes</p><p class="note" style="margin-top:0">Tick the sections or groups that will sit together for this subject in this period. One teacher takes the whole merged class, and it opens as one class in Mark Attendance and Marks.</p>' +
         '<div class="field-row">' + fld('Class', yearSel('mgcYear', mgYearSel || '1')) + fld('Period', perSel('mgcPer', 'I')) + '</div>' + fld('Subject', '<select id="mgcSubj"></select>') + '<div id="mgcParts"></div>' +
@@ -4835,7 +4916,10 @@
         $('mgcParts').innerHTML = cand.length ? cand.map((x, k) => '<label class="ttc-chk"><input type="checkbox" data-k="' + k + '"><span><b>' + esc(x.group + (x.section !== 'All' ? ' (' + x.section + ')' : '')) + '</b> — ' + esc(x.teacher || 'no teacher') + (x.room ? ' · 📍 ' + esc(x.room) : '') + '</span></label>').join('') : '<p class="note">No classes of this subject in this period.</p>';
         if (cand.length && !$('tcTeacher').value) $('tcTeacher').value = isVacant(cand[0].teacher) ? '' : cand[0].teacher.split('+')[0].trim();
       };
-      $('mgcYear').onchange = fillSub; $('mgcPer').onchange = fillSub; $('mgcSubj').onchange = fillParts; fillSub();
+      $('mgcYear').onchange = fillSub; $('mgcPer').onchange = fillSub; $('mgcSubj').onchange = fillParts;
+      if (preset) { $('mgcYear').value = preset.year; $('mgcPer').value = preset.period; }
+      fillSub();
+      if (preset) { $('mgcSubj').value = preset.subject; fillParts(); const k = cand.findIndex((x) => x.group === preset.group && x.section === preset.section); if (k >= 0) document.querySelector('#mgcParts input[data-k="' + k + '"]').checked = true; }
       $('tcClose').onclick = close;
       $('tcSave').onclick = () => {
         const picked = Array.prototype.slice.call(document.querySelectorAll('#mgcParts input:checked')).map((i) => cand[Number(i.dataset.k)]);
@@ -4854,7 +4938,10 @@
       const fillS = () => { ['1', '2'].forEach((n) => { const L = ttcLectures(y(), $('swGroup').value, $('swSec').value, $('swP' + n).value); $('swS' + n).innerHTML = L.length ? L.map((l) => '<option value="' + esc(l.subject) + '">' + esc(l.subject + ' — ' + (l.teacher || '')) + '</option>').join('') : '<option value="">(no class)</option>'; }); };
       const fillSec = () => { $('swSec').innerHTML = ttcSections(y(), $('swGroup').value).map((s) => '<option>' + esc(s) + '</option>').join(''); fillS(); };
       const fillG = () => { $('swGroup').innerHTML = mgGroups(y()).map((g) => '<option>' + esc(g) + '</option>').join(''); fillSec(); };
-      $('swYear').onchange = fillG; $('swGroup').onchange = fillSec; $('swSec').onchange = fillS; $('swP1').onchange = fillS; $('swP2').onchange = fillS; fillG();
+      $('swYear').onchange = fillG; $('swGroup').onchange = fillSec; $('swSec').onchange = fillS; $('swP1').onchange = fillS; $('swP2').onchange = fillS;
+      if (preset) { $('swYear').value = preset.year; }
+      fillG();
+      if (preset) { $('swGroup').value = preset.group; fillSec(); $('swSec').value = preset.section; $('swP1').value = preset.period; fillS(); $('swS1').value = preset.subject; }
       $('tcClose').onclick = close;
       $('tcSave').onclick = () => {
         const g = $('swGroup').value, sec = $('swSec').value, p1 = $('swP1').value, p2 = $('swP2').value, s1 = $('swS1').value, s2 = $('swS2').value;
