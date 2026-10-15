@@ -493,6 +493,7 @@
   .reg-foot { text-align: right; }
   .staff-signin-row { text-align: center; margin: 18px 0 4px; font-size: .85rem; color: var(--muted); }
   .pin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .fac-pin-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; } .fac-pin-tools .btn-go { width: 100%; }
   .pin-slip { border: 1.5px dashed #9aa9b8; border-radius: 12px; padding: 12px 14px; background: var(--card, #fff); break-inside: avoid; page-break-inside: avoid; }
   .ps-top { display: flex; align-items: center; gap: 8px; font-size: .72rem; font-weight: 700; color: #0b4429; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid #d5dde5; padding-bottom: 6px; margin-bottom: 8px; }
   .ps-top img { width: 26px; height: 26px; object-fit: contain; }
@@ -752,11 +753,6 @@
     <button class="mark-btn mark-btn-3" id="boardBtn" data-go="/board" style="display:none">
       <span style="font-size:1.4rem">📋</span>
       <span><div class="q-title">Principal’s Board</div><div class="q-sub">Admins · who marked attendance today, weekly report</div></span>
-      <span class="chev">&rsaquo;</span>
-    </button>
-    <button class="mark-btn mark-btn-3" id="pinsBtn" data-go="/pins" style="display:none">
-      <span style="font-size:1.4rem">🔑</span>
-      <span><div class="q-title">Staff PIN slips</div><div class="q-sub">Admins · sign-in name &amp; PIN for every teacher, print or send</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
     <button class="mark-btn mark-btn-3" id="manageBtn" data-go="/manage" style="display:none">
@@ -1113,6 +1109,11 @@
         <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
         <button class="btn-go" id="facAdd">＋ Add</button>
       </div>
+      <div class="fac-pin-tools">
+        <button class="btn-go" id="facNewT">🆕 New teacher — sign-in &amp; PIN</button>
+        <button class="btn-go alt" id="facPins">🔑 PIN slips (all staff)</button>
+      </div>
+      <div class="card pad" id="facNewForm" style="display:none"></div>
       <div class="tt-error" id="facErr"></div>
       <div id="nameList"><div class="card pad empty">Loading staff…</div></div>
     </div>
@@ -1358,7 +1359,7 @@
     my:            { view: 'view-my',            title: () => 'My Attendance & Results', parent: '/' },
     board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     signin:        { view: 'view-signin',        title: () => 'Staff sign-in',      parent: '/' },
-    pins:          { view: 'view-pins',          title: () => 'Staff PIN slips',    parent: '/' },
+    pins:          { view: 'view-pins',          title: () => 'Staff PIN slips',    parent: '/faculty' },
     manage:        { view: 'view-manage',        title: () => 'Manage',             parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
@@ -1482,7 +1483,6 @@
     // v10.6: students & public see only the 4 student tiles; signed-in teachers also see the Staff area; admins see everything
     const signedIn = !!attAuth;
     $('staffArea').style.display = signedIn ? 'block' : 'none';
-    $('pinsBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('manageBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('staffSigninRow').style.display = signedIn || !DATA.attendanceApi ? 'none' : 'block';
     $('staffSignoutRow').style.display = signedIn ? 'block' : 'none';
@@ -1731,6 +1731,45 @@
     catch (e) { if (!/Unknown action/.test(e.message) && set !== undefined) toast(e.message); }
   }
   $('facGateBtn').addEventListener('click', () => { if (gateOpen !== null) loadGate(!gateOpen); });
+  /* v12.4: PIN slips moved here from the home screen; new teachers get a profile + sign-in PIN in one step */
+  $('facPins').addEventListener('click', () => go('/pins'));
+  $('facNewT').addEventListener('click', () => {
+    const F = $('facNewForm');
+    if (F.style.display === 'block') { F.style.display = 'none'; return; }
+    F.innerHTML = '<p class="screen-title" style="margin-top:0">🆕 New teacher</p><p class="note" style="margin-top:0">Makes the teacher’s profile and a 6-digit sign-in PIN. Then give the slip to the teacher privately.</p>' +
+      '<div class="field"><label for="ntName">Full name</label><input id="ntName" placeholder="e.g. Prof. Ayesha Khan"></div>' +
+      '<div class="field-row"><div class="field"><label for="ntDesig">Designation</label><select id="ntDesig">' + DESIG_ORDER.concat(['Visiting Lecturer', 'CTI']).map((d) => '<option' + (d === 'Lecturer' ? ' selected' : '') + '>' + esc(d) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="ntSubj">Subject</label><input id="ntSubj" placeholder="e.g. English"></div></div>' +
+      '<div class="field"><label for="ntOther">Short name used in the timetable (optional)</label><input id="ntOther" placeholder="e.g. Prof. Ayesha"></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="ntSave">Create sign-in</button><button class="btn-secondary" id="ntClose">Close</button></div><div class="tt-error" id="ntErr"></div><div id="ntSlip"></div>';
+    F.style.display = 'block';
+    $('ntClose').onclick = () => { F.style.display = 'none'; };
+    $('ntSave').onclick = async () => {
+      const name = $('ntName').value.trim().replace(/\s+/g, ' ');
+      $('ntErr').textContent = '';
+      if (!name) { $('ntErr').textContent = 'Enter the teacher’s full name.'; return; }
+      const dup = (facList || []).find((s) => nameKey(s.name) === nameKey(name));
+      const b = $('ntSave'); b.disabled = true; b.textContent = 'Creating…';
+      try {
+        let id = dup ? dup.id : '';
+        if (!id) id = (await attApi('staffSave', { profile: { name, designation: $('ntDesig').value, subject: $('ntSubj').value.trim(), logins: $('ntOther').value.trim() } })).id;
+        const j = await attApi('staffPin', { id });
+        const s = { id, name: j.name, login: j.name, pin: j.pin, designation: $('ntDesig').value, subject: $('ntSubj').value.trim() };
+        const link = appLink().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        $('ntSlip').innerHTML = (dup ? '<p class="note">' + esc(dup.name) + ' already had a profile — here is the sign-in.</p>' : '') +
+          '<div class="pin-slip" style="margin-top:10px"><div class="ps-top"><img src="icons/college-logo.png" alt="">GGCS RWP · Staff sign-in</div><div class="ps-name">' + esc(s.name) + '</div><div class="ps-sub">' + esc([s.designation, s.subject].filter(Boolean).join(' · ')) + '</div>' +
+          '<div class="ps-row"><span>Sign-in name</span><b>' + esc(s.login) + '</b></div><div class="ps-pin">' + esc(s.pin) + '</div><div class="ps-how">Open <b>' + esc(link) + '</b> → Staff sign-in (bottom of the home screen) → type your name and PIN. Keep your PIN private.</div>' +
+          '<div class="ps-act no-print"><button id="ntSend">📤 Send</button><button id="ntCopy">📋 Copy</button></div></div>' +
+          '<p class="note">' + (j.created ? 'New sign-in created.' : 'This teacher already had a sign-in — same PIN shown.') + ' Give their classes in Manage → Timetable changes (e.g. 🪑 Vacant classes or 👤 teacher left).</p>';
+        const text = pinText(s);
+        $('ntSend').onclick = async () => { if (navigator.share) { try { await navigator.share({ text }); } catch (e) {} } else { try { await navigator.clipboard.writeText(text); toast('Copied'); } catch (e) { window.prompt('Copy this message:', text); } } };
+        $('ntCopy').onclick = async () => { try { await navigator.clipboard.writeText(text); toast('Copied — paste it in the teacher’s WhatsApp chat'); } catch (e) { window.prompt('Copy this message:', text); } };
+        facList = null; loadFacultyList();
+        toast('Sign-in ready ✓ ' + s.name);
+      } catch (e) { if (!facAuthFail(e)) $('ntErr').textContent = e.offline ? 'You need internet.' : e.message; }
+      b.disabled = false; b.textContent = 'Create sign-in';
+    };
+  });
   async function loadFacultyList() {
     $('facErr').textContent = '';
     try { const j = await attApi('staffList'); facList = j.staff || []; paintFacultyList(); }
@@ -4724,7 +4763,7 @@
     try { const j = await attApi('ttChangeDelete', { id }); setTTC(j.changes); toast('Deleted ✓ back to the printed timetable for that'); ttcPaintList(false); }
     catch (err) { $('ttcErr').textContent = err.offline ? 'You need internet.' : err.message; del.disabled = false; }
   });
-  const STAFF_NAMES = () => (typeof STAFF !== 'undefined' ? STAFF.map((s) => s.name) : []).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => nameKey(a).localeCompare(nameKey(b)));
+  const STAFF_NAMES = () => (typeof STAFF !== 'undefined' ? STAFF.map((s) => s.name) : []).concat((facList || []).map((s) => s.name)).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => nameKey(a).localeCompare(nameKey(b)));
   const staffList = (id, withCti) => '<datalist id="' + id + '">' + (withCti ? '<option value="CTI">' : '') + STAFF_NAMES().map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist>';
   function ttcSections(y, g) {
     if (isBS(y)) return ['All'];
