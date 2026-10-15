@@ -249,6 +249,12 @@
   .mg-row.off { opacity: .6; } .mg-off { display: inline-block; font-size: .68rem; font-weight: 800; border-radius: 10px; padding: 1px 7px; background: #fdeedb; color: #8a4b00; margin-left: 4px; }
   .mg-act { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
   .mg-danger { background: #b42318 !important; color: #fff !important; border-color: #b42318 !important; }
+  .ttc-tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .ttc-tasks button { text-align: left; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 12px; padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; font: inherit; }
+  .ttc-tasks button span { font-size: 1.2rem; } .ttc-tasks button b { font-size: .82rem; } .ttc-tasks button small { font-size: .7rem; color: var(--muted); }
+  .ttc-tasks button.on { border-color: var(--navy); box-shadow: 0 0 0 2px var(--navy) inset; }
+  .ttc-cls { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .82rem; } .ttc-cls:last-child { border-bottom: none; } .ttc-cls > div { flex: 1; min-width: 0; } .ttc-cls small { color: var(--muted); display: block; }
+  .ttc-chk { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .85rem; } .ttc-chk input { width: 20px; height: 20px; }
   .ttc-item { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: .85rem; } .ttc-item:last-child { border-bottom: none; }
   .ttc-item .t { font-weight: 800; } .ttc-item .s { color: var(--muted); font-size: .76rem; margin-top: 2px; } .ttc-item .b { display: flex; gap: 8px; margin-top: 6px; }
   .ttc-tag { display: inline-block; font-size: .7rem; font-weight: 800; border-radius: 10px; padding: 1px 8px; margin-right: 6px; background: var(--chip-bg); }
@@ -809,9 +815,18 @@
       </div>
       <div id="mgTT" style="display:none">
         <div class="card pad">
-          <p class="screen-title" style="margin-top:0">Change who teaches a class, add an extra class, or cancel one.</p>
-          <p class="note" style="margin-top:0">Changes show at once in student timetables, teachers’ classes (attendance &amp; marks) and Faculty Profiles. The printed timetable is not changed — delete a change to go back to it.</p>
-          <button class="btn-primary" id="ttcNew">＋ New timetable change</button>
+          <p class="screen-title" style="margin-top:0">What needs to change?</p>
+          <div class="ttc-tasks" id="ttcTasks">
+            <button data-task="left"><span>👤</span><b>A teacher has left / is on long leave</b><small>Give all their classes to another teacher, or mark them vacant (CTI)</small></button>
+            <button data-task="vacant"><span>🪑</span><b>Vacant classes (CTI)</b><small>Classes still waiting for a teacher — assign one</small></button>
+            <button data-task="teacher"><span>🔄</span><b>Change the teacher of a class</b><small>One class or section</small></button>
+            <button data-task="move"><span>⏱️</span><b>Move a class to another period</b><small>e.g. Period II → Period IV</small></button>
+            <button data-task="swap"><span>🔀</span><b>Swap two classes</b><small>Two classes of a group exchange periods</small></button>
+            <button data-task="merge"><span>🔗</span><b>Merge classes</b><small>e.g. Odd + Even, or two groups, taught together by one teacher</small></button>
+            <button data-task="add"><span>➕</span><b>Add an extra class</b></button>
+            <button data-task="cancel"><span>❌</span><b>Cancel a class</b></button>
+          </div>
+          <p class="note" style="margin-bottom:0">Changes show at once in student timetables, teachers’ attendance &amp; marks lists and Faculty Profiles. The printed timetable stays as it is — delete a change to go back to it.</p>
           <div class="tt-error" id="ttcErr"></div>
         </div>
         <div class="card pad" id="ttcForm" style="display:none"></div>
@@ -1501,18 +1516,30 @@
     if (code === 'STAR' && typeof starSecHas === 'function') return starSecHas(sec, starComboOf(roll, y));
     return true;
   }
-  /** periods I–V of a 1st / 2nd Year student (Bright Star and Periods VI–VII are changed in their own lists) */
+  /* v12.2: change kinds — teacher (one class or several parts), merge (several sections/groups → one teacher), add, cancel,
+     move (to another period), replace (every class of a teacher who left → another teacher or CTI). */
+  const ttParts = (x) => (x.parts ? String(x.parts).split(';').map((p) => p.split('|')).filter((p) => p[0] && p[0].trim()).map((p) => [p[0].trim(), (p[1] || 'All').trim()]) : [[x.group, x.section || 'All']]);
+  const ttYearOk = (x, y) => (x.action === 'replace' ? (!x.year || x.year === 'all' || String(x.year) === String(y)) : String(x.year) === String(y));
+  const ttHasName = (field, name) => !!nameKey(name) && String(field || '').split('+').some((t) => nameKey(t) === nameKey(name));
+  const ttSwapName = (field, x) => String(field || '').split('+').map((t) => (nameKey(t) === nameKey(x.fromTeacher) ? x.teacher : t.trim())).join(' + ');
+  const ttcOrdered = () => { const a = ttcActive(); return a.filter((x) => x.action === 'replace').concat(a.filter((x) => x.action !== 'replace')); };
+  const ttNote = (x, def) => x.note || def;
+  /** periods I–V (and classes moved into other periods) of a 1st / 2nd Year student; Bright Star and Periods VI–VII are changed in their own lists */
   function ttcApplyRows(res, roll, y) {
     if (!res || !res.code || res.code === 'STAR' || !TTC.length) return res;
-    const list = ttcActive().filter((x) => String(x.year) === String(y) && x.group === res.code && !isSixP(x.period) && ttcSecHas(x.section, roll, res.code, y));
-    if (!list.length) return res;
-    let rows = (res.rows || []).slice();
-    list.forEach((x) => {
+    let rows = (res.rows || []).slice(), changed = false;
+    ttcOrdered().forEach((x) => {
+      if (!ttYearOk(x, y)) return;
+      if (x.action === 'replace') { rows = rows.map((w) => (ttHasName(w.teacher, x.fromTeacher) ? (changed = true, Object.assign({}, w, { teacher: ttSwapName(w.teacher, x), note: ttNote(x, 'Teacher changed') })) : w)); return; }
+      if (!ttParts(x).some((p) => p[0] === res.code && ttcSecHas(p[1], roll, res.code, y))) return;
       const hit = (w) => w.period === x.period && ttNorm(w.subject) === ttNorm(x.subject);
+      changed = true;
       if (x.action === 'cancel') rows = rows.filter((w) => !hit(w));
-      else if (x.action === 'add') { rows = rows.filter((w) => !hit(w)); rows.push({ period: x.period, subject: x.subject, teacher: x.teacher, room: x.room || '', note: x.note || 'Timetable change' }); }
-      else rows = rows.map((w) => (hit(w) ? Object.assign({}, w, { teacher: x.teacher, room: x.room || w.room, note: x.note || 'Timetable change' }) : w));
+      else if (x.action === 'add') { if (!isSixP(x.period)) { rows = rows.filter((w) => !hit(w)); rows.push({ period: x.period, subject: x.subject, teacher: x.teacher, room: x.room || '', note: ttNote(x, 'Extra class') }); } }
+      else if (x.action === 'move') rows = rows.map((w) => (hit(w) ? Object.assign({}, w, { period: x.toPeriod, teacher: x.teacher || w.teacher, room: x.room || w.room, note: ttNote(x, 'Moved from Period ' + x.period) }) : w));
+      else rows = rows.map((w) => (hit(w) ? Object.assign({}, w, { teacher: x.teacher, room: x.room || w.room, note: ttNote(x, x.action === 'merge' ? 'Merged class' : 'Teacher changed') }) : w));
     });
+    if (!changed) return res;
     rows.sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
     return Object.assign({}, res, { rows });
   }
@@ -1520,31 +1547,40 @@
   if (typeof buildSchedule2 === 'function') { const ttcB2 = buildSchedule2; buildSchedule2 = function (r) { return ttcApplyRows(ttcB2(r), Number(r), 2); }; }
   /** Bright Star, Periods VI–VII and BS: rebuilt from the printed lists, then the changes are applied */
   function ttcApplyData() {
-    const act = ttcActive(), clone = (o) => JSON.parse(JSON.stringify(o));
+    const act = ttcOrdered(), clone = (o) => JSON.parse(JSON.stringify(o));
     if (TT_PRISTINE.star) [1, 2].forEach((y) => {
       let base = clone(TT_PRISTINE.star[y] || []);
-      act.filter((x) => String(x.year) === String(y) && x.group === 'STAR' && !isSixP(x.period)).forEach((x) => {
-        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (!x.section || x.section === 'All' || e.sec === x.section);
+      act.filter((x) => ttYearOk(x, y)).forEach((x) => {
+        if (x.action === 'replace') { base.forEach((e) => { if (ttHasName(e.teacher, x.fromTeacher)) e.teacher = ttSwapName(e.teacher, x); }); return; }
+        if (isSixP(x.period) && x.action !== 'move') return;
+        const secs = ttParts(x).filter((p) => p[0] === 'STAR').map((p) => p[1]); if (!secs.length) return;
+        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && secs.some((s) => s === 'All' || e.sec === s);
         if (x.action === 'cancel') base = base.filter((e) => !hit(e));
-        else if (x.action === 'add') base.push({ period: x.period, subject: x.subject, room: x.room || '', teacher: x.teacher, sec: x.section || 'All', note: x.note || '' });
-        else base.forEach((e) => { if (hit(e)) { e.teacher = x.teacher; if (x.room) e.room = x.room; } });
+        else if (x.action === 'add') secs.forEach((s) => base.push({ period: x.period, subject: x.subject, room: x.room || '', teacher: x.teacher, sec: s, note: x.note || '' }));
+        else base.forEach((e) => { if (hit(e)) { if (x.action === 'move') e.period = x.toPeriod; if (x.teacher) e.teacher = x.teacher; if (x.room) e.room = x.room; } });
       });
       STAR_TT[y].length = 0; base.forEach((e) => STAR_TT[y].push(e));
     });
     if (TT_PRISTINE.six) [1, 2].forEach((y) => {
       let base = clone(TT_PRISTINE.six[y] || []);
-      act.filter((x) => String(x.year) === String(y) && isSixP(x.period)).forEach((x) => {
-        const mine = (p) => p[0] === x.group && (!x.section || x.section === 'All' || p[1] === x.section || p[1] === 'All');
-        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (e.cls ? e.cls[0] === x.group : e.parts.some(mine));
-        if (x.action === 'add') { base.push({ period: x.period, days: x.days || '1-6', subject: x.subject, with: x.group + (x.section && x.section !== 'All' ? ' (' + x.section + ')' : ''), room: x.room || '', teacher: x.teacher, parts: [[x.group, x.section || 'All']] }); return; }
+      act.filter((x) => ttYearOk(x, y)).forEach((x) => {
+        if (x.action === 'replace') { base.forEach((e) => { if (ttHasName(e.teacher, x.fromTeacher)) e.teacher = ttSwapName(e.teacher, x); }); return; }
+        if (!isSixP(x.period)) return;
+        const P = ttParts(x);
+        const mine = (p) => P.some((q) => p[0] === q[0] && (q[1] === 'All' || p[1] === q[1] || p[1] === 'All'));
+        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (e.cls ? P.some((q) => q[0] === e.cls[0]) : e.parts.some(mine));
+        const label = P.map((q) => q[0] + (q[1] !== 'All' ? ' (' + q[1] + ')' : '')).join(' + ');
+        if (x.action === 'add') { base.push({ period: x.period, days: x.days || '1-6', subject: x.subject, with: label, room: x.room || '', teacher: x.teacher, parts: P }); return; }
         const next = [];
         base.forEach((e) => {
           if (!hit(e)) { next.push(e); return; }
           const keep = e.cls ? [] : e.parts.filter((p) => !mine(p)), moved = e.cls ? null : e.parts.filter(mine);
           if (x.action === 'cancel') { if (keep.length) next.push(Object.assign({}, e, { parts: keep })); return; }
-          if (e.cls || !keep.length) { next.push(Object.assign({}, e, { teacher: x.teacher, room: x.room || e.room })); return; }
+          const upd = { teacher: x.teacher || e.teacher, room: x.room || e.room };
+          if (x.action === 'move') { upd.period = x.toPeriod; if (x.days) upd.days = x.days; }
+          if (e.cls || !keep.length) { next.push(Object.assign({}, e, upd)); return; }
           next.push(Object.assign({}, e, { parts: keep }));
-          next.push(Object.assign({}, e, { parts: moved, teacher: x.teacher, room: x.room || e.room, with: x.group + (x.section && x.section !== 'All' ? ' (' + x.section + ')' : '') }));
+          next.push(Object.assign({}, e, upd, { parts: moved, with: label }));
         });
         base = next;
       });
@@ -1552,12 +1588,14 @@
     });
     if (TT_PRISTINE.bs) {
       let base = clone(TT_PRISTINE.bs);
-      act.filter((x) => /^B\d$/.test(String(x.year))).forEach((x) => {
-        const sem = Number(String(x.year).slice(1)), prog = BS_PROG[x.group] || x.group;
-        const hit = (r) => r.sem === sem && r.program === prog && r.period === x.period && ttNorm(r.course) === ttNorm(x.subject);
+      act.forEach((x) => {
+        if (x.action === 'replace') { base.forEach((r) => { if ((!x.year || x.year === 'all' || x.year === 'B' + r.sem) && ttHasName(r.teacher, x.fromTeacher)) r.teacher = ttSwapName(r.teacher, x); }); return; }
+        if (!/^B\d$/.test(String(x.year))) return;
+        const sem = Number(String(x.year).slice(1)), progs = ttParts(x).map((p) => BS_PROG[p[0]] || p[0]);
+        const hit = (r) => r.sem === sem && progs.indexOf(r.program) >= 0 && r.period === x.period && ttNorm(r.course) === ttNorm(x.subject);
         if (x.action === 'cancel') base = base.filter((r) => !hit(r));
-        else if (x.action === 'add') base.push({ sem, program: prog, period: x.period, course: x.subject, code: '', teacher: x.teacher, room: x.room || '', note: x.note || '', days: x.days || '' });
-        else base.forEach((r) => { if (hit(r)) { r.teacher = x.teacher; if (x.room) r.room = x.room; } });
+        else if (x.action === 'add') progs.forEach((prog) => base.push({ sem, program: prog, period: x.period, course: x.subject, code: '', teacher: x.teacher, room: x.room || '', note: x.note || '', days: x.days || '' }));
+        else base.forEach((r) => { if (hit(r)) { if (x.action === 'move') { r.period = x.toPeriod; if (x.days) r.days = x.days; } if (x.teacher) r.teacher = x.teacher; if (x.room) r.room = x.room; } });
       });
       BS_TT.length = 0; base.forEach((r) => BS_TT.push(r));
     }
@@ -3339,11 +3377,42 @@
     return (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches) || [];
   }
   /** subjects the teacher may enter marks for: Teachers sheet / BS timetable + their Bright Star lectures */
+  /** v12.2: {group, subject} given to this teacher by timetable changes (one class, merged parts, or all classes of a teacher who left) */
+  let ttcMineCache = {};
+  function ttcMine(me, y) {
+    const yy = String(yk(y)), key = me + '|' + yy + '|' + JSON.stringify(TTC);
+    if (ttcMineCache[key]) return ttcMineCache[key];
+    const isMeT = (t) => String(t || '').split('+').some((s) => { const k = nameKey(s); return k && nearSame(k, me); });
+    const act = ttcActive().filter((x) => x.action !== 'cancel' && isMeT(x.teacher));
+    let out = [];
+    act.filter((x) => x.action !== 'replace' && String(x.year) === yy).forEach((x) => ttParts(x).forEach((p) => out.push({ group: p[0], subject: x.subject })));
+    if (act.some((x) => x.action === 'replace' && ttYearOk(x, yy))) out = out.concat(scanClasses(isMeT).filter((e) => e.year === yy).map((e) => ({ group: e.group, subject: e.subject })));
+    ttcMineCache = {}; ttcMineCache[key] = out;
+    return out;
+  }
+  /** every class (year, group, section, period, subject, teacher, room) whose teacher matches pred — from the timetables with changes applied */
+  function scanClasses(pred) {
+    const out = [];
+    [1, 2].forEach((y) => {
+      const cfg = yrCfg(y);
+      cfg.ranges.forEach(([g, lo, hi]) => {
+        const rolls = sampleRolls(lo, hi, y), map = {};
+        rolls.forEach((r) => {
+          const res = cfg.build ? cfg.build(r) : null; if (!res || !res.code || res.code === 'STAR') return;
+          (res.rows || []).forEach((w) => { if (!pred(w.teacher)) return; const k = w.period + '|' + w.subject + '|' + w.teacher; const e = map[k] || (map[k] = { w, rolls: [] }); if (e.rolls.indexOf(r) < 0) e.rolls.push(r); });
+        });
+        Object.keys(map).forEach((k) => { const e = map[k]; sectionsOf(e.rolls, rolls).forEach((sec) => { if (hasStudents(y, g, sec)) out.push({ year: String(y), group: g, section: sec, period: e.w.period, subject: e.w.subject, teacher: e.w.teacher, room: e.w.room || '' }); }); });
+      });
+      if (starOk(y)) (STAR_TT[y] || []).forEach((e) => { if (pred(e.teacher)) out.push({ year: String(y), group: 'STAR', section: e.sec, period: e.period, subject: e.subject, teacher: e.teacher, room: e.room || '' }); });
+      (SIX7[y] || []).forEach((e) => { if (!pred(e.teacher)) return; (e.cls ? [e.cls] : e.parts).forEach((p) => { if (e.cls || hasStudents(y, p[0], p[1])) out.push({ year: String(y), group: p[0], section: p[1], period: e.period, subject: e.subject, teacher: e.teacher, room: e.room || '', days: e.days || '' }); }); });
+    });
+    BS_READY.forEach((b) => bsLectures(b).forEach((l) => { if (pred(l.teacher)) out.push({ year: b, group: l.group, section: 'All', period: l.period, subject: l.subject, teacher: l.teacher, room: l.room || '', days: (l.days || []).join('-') }); }));
+    return out;
+  }
   function myTeaches(y) {
     const me = nameKey(attAuth && attAuth.name);
     // v12: classes given by an admin's timetable change
-    const base = myTeachesBase(y).concat(!me ? [] : ttcActive().filter((x) => x.action !== 'cancel' && String(x.year) === String(yk(y)) && String(x.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }))
-      .map((x) => ({ group: x.group, subject: x.subject }))).filter((t, i, a) => a.findIndex((u) => u.group === t.group && u.subject === t.subject) === i);
+    const base = myTeachesBase(y).concat(!me ? [] : ttcMine(me, y)).filter((t, i, a) => a.findIndex((u) => u.group === t.group && u.subject === t.subject) === i);
     if (!me || isBS(y)) return base;
     const star = [];
     starLectures(y).forEach((l) => { if (String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && !star.some((x) => x.subject === l.subject)) star.push({ group: 'STAR', subject: l.subject }); });
@@ -4611,32 +4680,38 @@
   /** class lists and counts kept on phones are refreshed after a change */
   function mgClassCountsStale(y) { try { if (CC[yk(y)]) { CC[yk(y)].at = 0; store.set('classCounts', JSON.stringify(CC)); } } catch (e) {} store.set('rosters', ''); myClassesCache = {}; }
 
-  /* ----- timetable changes ----- */
-  const ACT_LABEL = { teacher: 'Teacher changed', add: 'Extra class', cancel: 'Class cancelled' };
+  /* ----- timetable changes (v12.2: task-based) ----- */
+  const ACT_LABEL = { teacher: 'Teacher changed', add: 'Extra class', cancel: 'Class cancelled', move: 'Moved', merge: 'Merged', replace: 'Teacher left' };
+  const isVacant = (t) => !String(t || '').trim() || /^\s*(cti|—|-|vacant)\s*$/i.test(String(t));
+  const partsLabel2 = (x) => ttParts(x).map((p) => p[0] + (p[1] && p[1] !== 'All' ? ' (' + p[1] + ')' : '')).join(' + ');
+  const yLab = (v) => (v === 'all' || !v ? 'All classes' : yearLabel(yk(v)));
   async function ttcPaintList(fetchFirst) {
     if (fetchFirst) { $('ttcList').innerHTML = '<div class="empty">Loading…</div>'; await refreshTTC(true); }
     const t = todayISO();
-    const list = TTC.slice().sort((a, b) => String(a.year).localeCompare(String(b.year)) || a.group.localeCompare(b.group) || periodIndex(a.period) - periodIndex(b.period));
-    $('ttcList').innerHTML = list.length ? list.map((x) => '<div class="ttc-item"><div class="t"><span class="ttc-tag ' + esc(x.action) + '">' + esc(ACT_LABEL[x.action] || x.action) + '</span>' +
-      esc(yearLabel(yk(x.year))) + ' · ' + esc(x.group) + (x.section && x.section !== 'All' ? ' (' + esc(x.section) + ')' : '') + ' · Period ' + esc(x.period) + ' · ' + esc(x.subject) + '</div>' +
-      '<div class="s">' + (x.action === 'cancel' ? 'Not held' : '👤 ' + esc(x.teacher) + (x.room ? ' · 📍 ' + esc(x.room) : '') + (x.days ? ' · days ' + esc(x.days) : '')) +
-      (x.from ? ' · from ' + esc(fmtDate(x.from)) + (x.from > t ? ' (not started yet)' : '') : '') + (x.note ? ' · ' + esc(x.note) : '') + '</div>' +
-      '<div class="b"><button class="mini-btn" data-ed="' + esc(x.id) + '">✏️ Edit</button><button class="mini-btn" data-del="' + esc(x.id) + '">🗑 Delete</button></div></div>').join('')
+    const list = TTC.slice().sort((a, b) => String(a.year).localeCompare(String(b.year)) || String(a.group || a.parts).localeCompare(String(b.group || b.parts)) || periodIndex(a.period) - periodIndex(b.period));
+    const what = (x) => {
+      if (x.action === 'replace') return esc(yLab(x.year)) + ' · all classes of ' + esc(x.fromTeacher) + ' → <b>' + esc(x.teacher) + '</b>';
+      const head = esc(yLab(x.year)) + ' · ' + esc(partsLabel2(x)) + ' · Period ' + esc(x.period) + ' · ' + esc(x.subject);
+      if (x.action === 'move') return head + ' → <b>Period ' + esc(x.toPeriod) + '</b>' + (x.teacher ? ' · 👤 ' + esc(x.teacher) : '');
+      if (x.action === 'cancel') return head + ' · not held';
+      return head + ' · 👤 <b>' + esc(x.teacher) + '</b>';
+    };
+    $('ttcList').innerHTML = list.length ? list.map((x) => '<div class="ttc-item"><div class="t"><span class="ttc-tag ' + esc(x.action) + '">' + esc(ACT_LABEL[x.action] || x.action) + '</span>' + what(x) + '</div>' +
+      '<div class="s">' + (x.room ? '📍 ' + esc(x.room) + ' · ' : '') + (x.days ? 'days ' + esc(x.days) + ' · ' : '') + (x.from ? 'from ' + esc(fmtDate(x.from)) + (x.from > t ? ' (not started yet)' : '') : 'from the start') + (x.note ? ' · ' + esc(x.note) : '') + '</div>' +
+      '<div class="b"><button class="mini-btn" data-del="' + esc(x.id) + '">🗑 Delete</button></div></div>').join('')
       : '<div class="empty">No changes — everyone follows the printed timetable.</div>';
   }
   let ttcDelArm = {};
   $('ttcList').addEventListener('click', async (e) => {
-    const ed = e.target.closest('[data-ed]'), del = e.target.closest('[data-del]');
-    if (ed) { const x = TTC.find((z) => z.id === ed.dataset.ed); if (x) ttcOpenForm(x); return; }
-    if (!del) return;
+    const del = e.target.closest('[data-del]'); if (!del) return;
     const id = del.dataset.del;
     if (Date.now() - (ttcDelArm[id] || 0) > 6000) { ttcDelArm[id] = Date.now(); del.textContent = 'Tap again to delete'; return; }
     del.disabled = true;
-    try { const j = await attApi('ttChangeDelete', { id }); setTTC(j.changes); toast('Deleted ✓ back to the printed timetable for that class'); ttcPaintList(false); }
+    try { const j = await attApi('ttChangeDelete', { id }); setTTC(j.changes); toast('Deleted ✓ back to the printed timetable for that'); ttcPaintList(false); }
     catch (err) { $('ttcErr').textContent = err.offline ? 'You need internet.' : err.message; del.disabled = false; }
   });
-  $('ttcNew').addEventListener('click', () => ttcOpenForm(null));
-  const STAFF_NAMES = () => (typeof STAFF !== 'undefined' ? STAFF.map((s) => s.name) : []).concat(['CTI']).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => nameKey(a).localeCompare(nameKey(b)));
+  const STAFF_NAMES = () => (typeof STAFF !== 'undefined' ? STAFF.map((s) => s.name) : []).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => nameKey(a).localeCompare(nameKey(b)));
+  const staffList = (id, withCti) => '<datalist id="' + id + '">' + (withCti ? '<option value="CTI">' : '') + STAFF_NAMES().map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist>';
   function ttcSections(y, g) {
     if (isBS(y)) return ['All'];
     if (g === 'STAR') return starSectionsFor(y);
@@ -4649,57 +4724,168 @@
     try {
       if (isBS(y)) L = bsLectures(y).filter((l) => l.group === g);
       else if (g === 'STAR') L = starLectures(y).filter((l) => sec === 'All' || l.section === sec || l.section === 'All').concat(sixLectures(y).filter((l) => l.group === 'STAR'));
-      else L = lecturesFor(g, sec || 'All', y);
+      else L = lecturesFor(g, sec || 'All', y).concat(sec === 'All' ? [] : []);
+      if (!isBS(y) && g !== 'STAR') (SIX7[Number(y) === 2 ? 2 : 1] || []).forEach((e) => { if ((e.cls ? e.cls[0] === g : e.parts.some((p) => p[0] === g && (sec === 'All' || p[1] === sec || p[1] === 'All'))) && !L.some((l) => l.period === e.period && l.subject === e.subject)) L.push({ period: e.period, subject: e.subject, teacher: e.teacher }); });
     } catch (e) { L = []; }
     const seen = {};
-    return L.filter((l) => l.period === period && !seen[l.subject] && (seen[l.subject] = 1));
+    return L.filter((l) => (!period || l.period === period) && !seen[l.period + l.subject] && (seen[l.period + l.subject] = 1));
   }
-  function ttcOpenForm(x) {
-    ttcEditId = x ? x.id : null;
-    const v = x || { year: mgYearSel || '1', group: '', section: 'All', period: 'I', subject: '', action: 'teacher', teacher: '', room: '', days: '', from: todayISO(), note: '' };
-    $('ttcForm').innerHTML = '<p class="screen-title" style="margin-top:0">' + (x ? '✏️ Edit timetable change' : '＋ New timetable change') + '</p>' +
-      '<div class="field-row"><div class="field"><label for="tcYear">Class</label><select id="tcYear">' + MG_YEARS().map((o) => '<option value="' + o[0] + '"' + (String(v.year) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label for="tcAct">What</label><select id="tcAct"><option value="teacher">Change the teacher</option><option value="add">Add an extra class</option><option value="cancel">Cancel a class</option></select></div></div>' +
-      '<div class="field-row"><div class="field"><label for="tcGroup">Group</label><select id="tcGroup"></select></div><div class="field"><label for="tcSec">Section</label><select id="tcSec"></select></div></div>' +
-      '<div class="field-row"><div class="field"><label for="tcPer">Period</label><select id="tcPer">' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].map((p) => '<option' + (p === v.period ? ' selected' : '') + '>' + p + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label for="tcSubj">Subject</label><input id="tcSubj" list="tcSubjList" value="' + esc(v.subject) + '" placeholder="Choose or type"><datalist id="tcSubjList"></datalist></div></div>' +
-      '<p class="note" id="tcNow" style="margin-top:0"></p>' +
-      '<div id="tcTeachRow"><div class="field"><label for="tcTeacher">Teacher</label><input id="tcTeacher" list="tcStaffList" value="' + esc(v.teacher) + '" placeholder="Start typing a name"><datalist id="tcStaffList">' + STAFF_NAMES().map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist></div>' +
-      '<div class="field-row"><div class="field"><label for="tcRoom">Room (optional)</label><input id="tcRoom" value="' + esc(v.room) + '"></div><div class="field"><label for="tcDays">Days (optional)</label><input id="tcDays" value="' + esc(v.days) + '" placeholder="e.g. 1-5 = Mon–Fri"></div></div></div>' +
-      '<div class="field-row"><div class="field"><label for="tcFrom">From date</label><input id="tcFrom" type="date" value="' + esc(v.from || '') + '"></div><div class="field"><label for="tcNote">Note (optional)</label><input id="tcNote" value="' + esc(v.note) + '" placeholder="e.g. on leave, new teacher"></div></div>' +
-      '<div class="btn-row"><button class="btn-primary" id="tcSave">💾 Save change</button><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
-    $('ttcForm').style.display = 'block';
-    $('tcAct').value = v.action;
-    const fillGroups = () => { const y = yk($('tcYear').value), gs = mgGroups(y); $('tcGroup').innerHTML = gs.map((g) => '<option value="' + esc(g) + '">' + esc(g + (yrCfg(y).names && yrCfg(y).names[g] ? ' — ' + yrCfg(y).names[g] : '')) + '</option>').join(''); if (gs.indexOf(v.group) >= 0) $('tcGroup').value = v.group; fillSecs(); };
-    const fillSecs = () => { const y = yk($('tcYear').value), ss = ttcSections(y, $('tcGroup').value); $('tcSec').innerHTML = ss.map((s) => '<option>' + esc(s) + '</option>').join(''); if (ss.indexOf(v.section) >= 0) $('tcSec').value = v.section; fillSubj(); };
-    const fillSubj = () => {
-      const y = yk($('tcYear').value), L = ttcLectures(y, $('tcGroup').value, $('tcSec').value, $('tcPer').value);
-      $('tcSubjList').innerHTML = L.map((l) => '<option value="' + esc(l.subject) + '">').join('');
-      if (!$('tcSubj').value && L.length && $('tcAct').value !== 'add') $('tcSubj').value = L[0].subject;
-      const cur = L.filter((l) => ttNorm(l.subject) === ttNorm($('tcSubj').value));
-      $('tcNow').textContent = L.length ? 'Now in this period: ' + L.map((l) => l.subject + ' — ' + (l.teacher || 'no teacher')).join(' · ') : 'No class in this period now.';
-      if (cur.length && !$('tcRoom').value && cur[0].room) $('tcRoom').placeholder = cur[0].room;
+  const PERIODS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  const yearSel = (id, v, withAll) => '<select id="' + id + '">' + (withAll ? '<option value="all">All classes</option>' : '') + MG_YEARS().map((o) => '<option value="' + o[0] + '"' + (String(v) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select>';
+  const perSel = (id, v) => '<select id="' + id + '">' + PERIODS.map((p) => '<option' + (p === v ? ' selected' : '') + '>' + p + '</option>').join('') + '</select>';
+  const fld = (label, inner) => '<div class="field"><label>' + label + '</label>' + inner + '</div>';
+  const inp = (id, v, ph, extra) => '<input id="' + id + '" value="' + esc(v || '') + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + (extra || '') + '>';
+  const fromNote = () => '<div class="field-row">' + fld('From date', inp('tcFrom', todayISO(), '', ' type="date"')) + fld('Note (optional)', inp('tcNote', '', 'e.g. left the college, on leave')) + '</div>';
+  const saveRow = (label) => '<div class="btn-row"><button class="btn-primary" id="tcSave">💾 ' + label + '</button><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
+  async function ttcSave(changes, msg) {
+    const b = $('tcSave'); if (b) { b.disabled = true; b.textContent = 'Saving…'; }
+    $('tcErr').textContent = '';
+    try {
+      let j = null; for (const ch of changes) j = await attApi('ttChangeSave', { change: ch });
+      setTTC(j.changes); toast(msg || 'Saved ✓ now in use'); $('ttcForm').style.display = 'none';
+      document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.remove('on')); ttcPaintList(false);
+    } catch (e) { $('tcErr').textContent = e.offline ? 'You need internet.' : e.message; if (b) { b.disabled = false; b.textContent = '💾 Save'; } }
+  }
+  /** the class picker used by most forms: class year, group, section, period, subject (from the current timetable) */
+  function classPicker(pre, v) {
+    v = v || {};
+    return '<div class="field-row">' + fld('Class', yearSel(pre + 'Year', v.year || mgYearSel || '1')) + fld('Group', '<select id="' + pre + 'Group"></select>') + '</div>' +
+      '<div class="field-row">' + fld('Section', '<select id="' + pre + 'Sec"></select>') + fld('Period', perSel(pre + 'Per', v.period || 'I')) + '</div>' +
+      fld('Subject', '<select id="' + pre + 'Subj"></select>') + '<p class="note" id="' + pre + 'Now" style="margin-top:0"></p>';
+  }
+  function wirePicker(pre, v, onChange, allowNew) {
+    v = v || {};
+    const y = () => yk($(pre + 'Year').value);
+    const fillG = () => { const gs = mgGroups(y()); $(pre + 'Group').innerHTML = gs.map((g) => '<option value="' + esc(g) + '">' + esc(g + (yrCfg(y()).names && yrCfg(y()).names[g] ? ' — ' + yrCfg(y()).names[g] : '')) + '</option>').join(''); if (v.group && gs.indexOf(v.group) >= 0) $(pre + 'Group').value = v.group; fillS(); };
+    const fillS = () => { const ss = ttcSections(y(), $(pre + 'Group').value); $(pre + 'Sec').innerHTML = ss.map((s) => '<option>' + esc(s) + '</option>').join(''); if (v.section && ss.indexOf(v.section) >= 0) $(pre + 'Sec').value = v.section; fillSub(); };
+    const fillSub = () => {
+      const L = ttcLectures(y(), $(pre + 'Group').value, $(pre + 'Sec').value, $(pre + 'Per').value);
+      $(pre + 'Subj').innerHTML = L.map((l) => '<option value="' + esc(l.subject) + '">' + esc(l.subject + ' — ' + (l.teacher || 'no teacher')) + '</option>').join('') + (allowNew ? '<option value="__new">✏️ Type a new subject…</option>' : '') + (!L.length && !allowNew ? '<option value="">(no class in this period)</option>' : '');
+      if (v.subject && L.some((l) => l.subject === v.subject)) $(pre + 'Subj').value = v.subject;
+      $(pre + 'Now').textContent = L.length ? 'Now in Period ' + $(pre + 'Per').value + ': ' + L.map((l) => l.subject + ' — ' + (l.teacher || 'no teacher')).join(' · ') : 'No class in this period now.';
+      if (onChange) onChange(L);
     };
-    const paintAct = () => { $('tcTeachRow').style.display = $('tcAct').value === 'cancel' ? 'none' : 'block'; };
-    $('tcYear').onchange = () => { v.group = ''; fillGroups(); }; $('tcGroup').onchange = fillSecs; $('tcSec').onchange = fillSubj; $('tcPer').onchange = () => { $('tcSubj').value = ''; fillSubj(); };
-    $('tcSubj').oninput = fillSubj; $('tcAct').onchange = paintAct;
-    fillGroups(); paintAct();
-    $('tcClose').onclick = () => { $('ttcForm').style.display = 'none'; };
-    $('tcSave').onclick = async () => {
-      const ch = { id: ttcEditId || '', year: $('tcYear').value, group: $('tcGroup').value, section: $('tcSec').value, period: $('tcPer').value, subject: $('tcSubj').value.trim(),
-        action: $('tcAct').value, teacher: $('tcTeacher').value.trim(), room: $('tcRoom').value.trim(), days: $('tcDays').value.trim(), from: $('tcFrom').value, note: $('tcNote').value.trim() };
-      $('tcErr').textContent = '';
-      if (!ch.subject) { $('tcErr').textContent = 'Choose or type the subject.'; return; }
-      if (ch.action !== 'cancel' && !ch.teacher) { $('tcErr').textContent = 'Choose the teacher.'; return; }
-      if (ch.action !== 'add' && !ttcLectures(yk(ch.year), ch.group, ch.section, ch.period).some((l) => ttNorm(l.subject) === ttNorm(ch.subject))) {
-        $('tcErr').textContent = 'There is no ' + ch.subject + ' class for ' + ch.group + ' in Period ' + ch.period + '. Pick one from the list, or choose “Add an extra class”.'; return;
-      }
-      const b = $('tcSave'); b.disabled = true; b.textContent = 'Saving…';
-      try { const j = await attApi('ttChangeSave', { change: ch }); setTTC(j.changes); toast('Saved ✓ timetable change is now in use'); $('ttcForm').style.display = 'none'; ttcPaintList(false); }
-      catch (e) { $('tcErr').textContent = e.offline ? 'You need internet.' : e.message; }
-      b.disabled = false; b.textContent = '💾 Save change';
+    $(pre + 'Year').onchange = () => { v = {}; fillG(); }; $(pre + 'Group').onchange = () => { v.section = ''; fillS(); }; $(pre + 'Sec').onchange = fillSub; $(pre + 'Per').onchange = fillSub;
+    $(pre + 'Subj').onchange = () => { if (onChange) onChange(ttcLectures(y(), $(pre + 'Group').value, $(pre + 'Sec').value, $(pre + 'Per').value)); };
+    fillG();
+    return () => ({ year: $(pre + 'Year').value, group: $(pre + 'Group').value, section: $(pre + 'Sec').value, period: $(pre + 'Per').value, subject: $(pre + 'Subj').value });
+  }
+  document.getElementById('ttcTasks').addEventListener('click', (e) => { const b = e.target.closest('button[data-task]'); if (!b) return; document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.toggle('on', x === b)); ttcTask(b.dataset.task); });
+  function ttcTask(task, preset) {
+    const F = $('ttcForm'); F.style.display = 'block';
+    const close = () => { F.style.display = 'none'; document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.remove('on')); };
+    const from = () => $('tcFrom').value, note = () => $('tcNote').value.trim();
+    if (task === 'left') {
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">👤 A teacher has left / is on long leave</p>' +
+        fld('Teacher who left', inp('tlFrom', preset || '', 'Start typing a name', ' list="tlStaff"') + staffList('tlStaff')) +
+        '<div id="tlClasses" class="note">Choose the teacher to see all their classes.</div>' +
+        '<div class="field-row">' + fld('Give all these classes to', inp('tlTo', '', 'Teacher, or CTI if nobody yet', ' list="tlStaff2"') + staffList('tlStaff2', true)) + fld('For', yearSel('tlYear', 'all', true)) + '</div>' +
+        fromNote() + saveRow('Give all classes') +
+        '<p class="note">To share the classes among several teachers, use “Give to…” next to each class instead.</p>';
+      const paint = () => {
+        const n = $('tlFrom').value.trim(); if (!nameKey(n)) { $('tlClasses').innerHTML = 'Choose the teacher to see all their classes.'; return; }
+        const L = scanClasses((t) => ttHasName(t, n));
+        $('tlClasses').innerHTML = L.length ? '<b>' + L.length + ' class' + (L.length > 1 ? 'es' : '') + ' now taught by ' + esc(n) + ':</b>' + L.map((x, k) => '<div class="ttc-cls"><div>' + esc(yearLabel(yk(x.year))) + ' · ' + esc(x.group + (x.section !== 'All' ? ' (' + x.section + ')' : '')) + ' · Period ' + esc(x.period) + ' · ' + esc(x.subject) + (x.room ? '<small>📍 ' + esc(x.room) + '</small>' : '') + '</div><button class="mini-btn" data-one="' + k + '">Give to…</button></div>').join('')
+          : 'No classes found for “' + esc(n) + '” in the timetables.';
+        $('tlClasses').onclick = (e) => { const b = e.target.closest('[data-one]'); if (!b) return; const x = L[Number(b.dataset.one)]; ttcTask('teacher', x); };
+      };
+      $('tlFrom').oninput = paint; paint();
+      $('tcClose').onclick = close;
+      $('tcSave').onclick = () => {
+        const fromT = $('tlFrom').value.trim(), to = $('tlTo').value.trim();
+        if (!fromT) { $('tcErr').textContent = 'Choose the teacher who has left.'; return; }
+        if (!to) { $('tcErr').textContent = 'Choose who takes the classes — or type CTI if nobody yet.'; return; }
+        ttcSave([{ action: 'replace', year: $('tlYear').value, fromTeacher: fromT, teacher: to, from: from(), note: note() }], 'Saved ✓ all classes of ' + fromT + ' → ' + to);
+      };
+      return;
+    }
+    if (task === 'vacant') {
+      const L = scanClasses(isVacant), byK = {};
+      L.forEach((x) => { const k = x.year + '|' + x.period + '|' + x.subject + '|' + x.room; (byK[k] = byK[k] || { year: x.year, period: x.period, subject: x.subject, room: x.room, parts: [] }).parts.push([x.group, x.section]); });
+      const G = Object.keys(byK).map((k) => byK[k]).sort((a, b) => String(a.year).localeCompare(String(b.year)) || periodIndex(a.period) - periodIndex(b.period));
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">🪑 Vacant classes (CTI) — ' + G.length + '</p>' + staffList('vcStaff') +
+        (G.length ? G.map((x, k) => '<div class="ttc-cls"><div><b>' + esc(yearLabel(yk(x.year))) + ' · Period ' + esc(x.period) + ' · ' + esc(x.subject) + '</b><small>' + esc(x.parts.map((p) => p[0] + (p[1] !== 'All' ? ' (' + p[1] + ')' : '')).join(' + ')) + (x.room ? ' · 📍 ' + esc(x.room) : '') + '</small>' +
+          '<div style="display:flex;gap:6px;margin-top:6px"><input id="vc' + k + '" list="vcStaff" placeholder="New teacher" style="flex:1"><button class="mini-btn" data-vc="' + k + '">Assign</button></div></div></div>').join('') : '<div class="empty">No vacant classes — every class has a teacher. 🎉</div>') +
+        '<div class="btn-row"><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
+      $('tcClose').onclick = close;
+      F.onclick = (e) => {
+        const b = e.target.closest('[data-vc]'); if (!b) return;
+        const x = G[Number(b.dataset.vc)], t = $('vc' + b.dataset.vc).value.trim();
+        if (!t) { $('tcErr').textContent = 'Type the new teacher’s name first.'; return; }
+        ttcSave([{ action: 'teacher', year: x.year, parts: x.parts.map((p) => p[0] + '|' + p[1]).join(';'), period: x.period, subject: x.subject, teacher: t, room: x.room, from: todayISO(), note: '' }], 'Assigned ✓ ' + x.subject + ' → ' + t);
+      };
+      return;
+    }
+    if (task === 'merge') {
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">🔗 Merge classes</p><p class="note" style="margin-top:0">Tick the sections or groups that will sit together for this subject in this period. One teacher takes the whole merged class, and it opens as one class in Mark Attendance and Marks.</p>' +
+        '<div class="field-row">' + fld('Class', yearSel('mgcYear', mgYearSel || '1')) + fld('Period', perSel('mgcPer', 'I')) + '</div>' + fld('Subject', '<select id="mgcSubj"></select>') + '<div id="mgcParts"></div>' +
+        '<div class="field-row">' + fld('Teacher of the merged class', inp('tcTeacher', '', 'Start typing a name', ' list="mgcStaff"') + staffList('mgcStaff', true)) + fld('Room (optional)', inp('tcRoom', '', '')) + '</div>' + fromNote() + saveRow('Merge');
+      let cand = [];
+      const fillSub = () => {
+        const y = $('mgcYear').value, per = $('mgcPer').value;
+        const all = scanClasses(() => true).filter((x) => x.year === String(yk(y)) && x.period === per);
+        const subs = []; all.forEach((x) => { if (subs.indexOf(x.subject) < 0) subs.push(x.subject); });
+        $('mgcSubj').innerHTML = subs.length ? subs.map((s) => '<option>' + esc(s) + '</option>').join('') : '<option value="">(no classes in this period)</option>';
+        fillParts();
+      };
+      const fillParts = () => {
+        const y = $('mgcYear').value, per = $('mgcPer').value, sub = $('mgcSubj').value;
+        const all = scanClasses(() => true).filter((x) => x.year === String(yk(y)) && x.period === per && x.subject === sub);
+        const seen = {}; cand = all.filter((x) => { const k = x.group + '|' + x.section; if (seen[k]) return false; seen[k] = 1; return true; });
+        $('mgcParts').innerHTML = cand.length ? cand.map((x, k) => '<label class="ttc-chk"><input type="checkbox" data-k="' + k + '"><span><b>' + esc(x.group + (x.section !== 'All' ? ' (' + x.section + ')' : '')) + '</b> — ' + esc(x.teacher || 'no teacher') + (x.room ? ' · 📍 ' + esc(x.room) : '') + '</span></label>').join('') : '<p class="note">No classes of this subject in this period.</p>';
+        if (cand.length && !$('tcTeacher').value) $('tcTeacher').value = isVacant(cand[0].teacher) ? '' : cand[0].teacher.split('+')[0].trim();
+      };
+      $('mgcYear').onchange = fillSub; $('mgcPer').onchange = fillSub; $('mgcSubj').onchange = fillParts; fillSub();
+      $('tcClose').onclick = close;
+      $('tcSave').onclick = () => {
+        const picked = Array.prototype.slice.call(document.querySelectorAll('#mgcParts input:checked')).map((i) => cand[Number(i.dataset.k)]);
+        if (picked.length < 2) { $('tcErr').textContent = 'Tick at least two sections or groups.'; return; }
+        const t = $('tcTeacher').value.trim(); if (!t) { $('tcErr').textContent = 'Choose the teacher of the merged class.'; return; }
+        ttcSave([{ action: 'merge', year: $('mgcYear').value, parts: picked.map((x) => x.group + '|' + x.section).join(';'), period: $('mgcPer').value, subject: $('mgcSubj').value, teacher: t, room: $('tcRoom').value.trim(), from: from(), note: note() }], 'Merged ✓ ' + picked.map((x) => x.group + (x.section !== 'All' ? ' ' + x.section : '')).join(' + '));
+      };
+      return;
+    }
+    if (task === 'swap') {
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">🔀 Swap two classes</p><p class="note" style="margin-top:0">The two classes of this group exchange their periods (each keeps its own teacher).</p>' +
+        '<div class="field-row">' + fld('Class', yearSel('swYear', mgYearSel || '1')) + fld('Group', '<select id="swGroup"></select>') + '</div>' + fld('Section', '<select id="swSec"></select>') +
+        '<div class="field-row">' + fld('First class — period', perSel('swP1', 'II')) + fld('Subject', '<select id="swS1"></select>') + '</div>' +
+        '<div class="field-row">' + fld('Second class — period', perSel('swP2', 'IV')) + fld('Subject', '<select id="swS2"></select>') + '</div>' + fromNote() + saveRow('Swap');
+      const y = () => yk($('swYear').value);
+      const fillS = () => { ['1', '2'].forEach((n) => { const L = ttcLectures(y(), $('swGroup').value, $('swSec').value, $('swP' + n).value); $('swS' + n).innerHTML = L.length ? L.map((l) => '<option value="' + esc(l.subject) + '">' + esc(l.subject + ' — ' + (l.teacher || '')) + '</option>').join('') : '<option value="">(no class)</option>'; }); };
+      const fillSec = () => { $('swSec').innerHTML = ttcSections(y(), $('swGroup').value).map((s) => '<option>' + esc(s) + '</option>').join(''); fillS(); };
+      const fillG = () => { $('swGroup').innerHTML = mgGroups(y()).map((g) => '<option>' + esc(g) + '</option>').join(''); fillSec(); };
+      $('swYear').onchange = fillG; $('swGroup').onchange = fillSec; $('swSec').onchange = fillS; $('swP1').onchange = fillS; $('swP2').onchange = fillS; fillG();
+      $('tcClose').onclick = close;
+      $('tcSave').onclick = () => {
+        const g = $('swGroup').value, sec = $('swSec').value, p1 = $('swP1').value, p2 = $('swP2').value, s1 = $('swS1').value, s2 = $('swS2').value;
+        if (!s1 || !s2 || p1 === p2) { $('tcErr').textContent = 'Choose two classes in two different periods.'; return; }
+        const base = { action: 'move', year: $('swYear').value, group: g, section: sec, from: from(), note: note() };
+        ttcSave([Object.assign({}, base, { period: p1, subject: s1, toPeriod: p2 }), Object.assign({}, base, { period: p2, subject: s2, toPeriod: p1 })], 'Swapped ✓ ' + s1 + ' ↔ ' + s2);
+      };
+      return;
+    }
+    // single-class tasks: teacher, move, add, cancel
+    const T = { teacher: '🔄 Change the teacher of a class', move: '⏱️ Move a class to another period', add: '➕ Add an extra class', cancel: '❌ Cancel a class' }[task];
+    F.innerHTML = '<p class="screen-title" style="margin-top:0">' + T + '</p>' + classPicker('tp', preset) +
+      (task === 'add' ? fld('New subject', inp('tcNewSubj', '', 'e.g. Remedial English')) : '') +
+      (task === 'move' ? '<div class="field-row">' + fld('Move to period', perSel('tcTo', 'IV')) + fld('Days (optional)', inp('tcDays', '', 'e.g. 1-5 = Mon–Fri')) + '</div>' : '') +
+      (task === 'cancel' ? '' : '<div class="field-row">' + fld(task === 'move' ? 'Teacher (leave empty to keep)' : 'Teacher', inp('tcTeacher', '', 'Start typing a name', ' list="tpStaff"') + staffList('tpStaff', true)) + fld('Room (optional)', inp('tcRoom', '', '')) + '</div>') +
+      (task === 'add' ? fld('Days (optional)', inp('tcDays', '', 'e.g. 3-4 = Wed & Thu')) : '') + fromNote() + saveRow(task === 'cancel' ? 'Cancel this class' : 'Save');
+    const get = wirePicker('tp', preset, null, task === 'add');
+    if (task === 'add') { const sync = () => { $('tcNewSubj').closest('.field').style.display = $('tpSubj').value === '__new' ? 'block' : 'none'; }; $('tpSubj').addEventListener('change', sync); sync(); }
+    $('tcClose').onclick = close;
+    $('tcSave').onclick = () => {
+      const v = get(); const subject = v.subject === '__new' ? $('tcNewSubj').value.trim() : v.subject;
+      if (!subject) { $('tcErr').textContent = task === 'add' ? 'Choose or type the subject.' : 'There is no class in this period — choose another period.'; return; }
+      const ch = { action: task, year: v.year, group: v.group, section: v.section, period: v.period, subject, from: from(), note: note() };
+      if (task !== 'cancel') { ch.teacher = $('tcTeacher').value.trim(); ch.room = $('tcRoom').value.trim(); }
+      if ($('tcDays')) ch.days = $('tcDays').value.trim();
+      if (task === 'move') ch.toPeriod = $('tcTo').value;
+      if ((task === 'teacher' || task === 'add') && !ch.teacher) { $('tcErr').textContent = 'Choose the teacher.'; return; }
+      if (task === 'move' && ch.toPeriod === ch.period) { $('tcErr').textContent = 'Choose a different period.'; return; }
+      ttcSave([ch]);
     };
-    $('ttcForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    F.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /* ---------- start ---------- */
