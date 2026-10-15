@@ -241,6 +241,16 @@
   .seg button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
   .field-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
   .stu-head { display: flex; align-items: center; gap: 14px; }
+  /* v12 Manage tab */
+  .mg-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .mg-row:last-child { border-bottom: none; } .mg-row .roll { font-weight: 800; color: var(--accent); width: 46px; flex-shrink: 0; }
+  .mg-row .nm { flex: 1; min-width: 0; } .mg-row .nm b { display: block; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .mg-row .nm small { color: var(--muted); font-size: .74rem; }
+  .mg-ph { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; } .mg-ph img { width: 72px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--chip-bg); }
+  .mg-danger { background: #b42318 !important; color: #fff !important; border-color: #b42318 !important; }
+  .ttc-item { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: .85rem; } .ttc-item:last-child { border-bottom: none; }
+  .ttc-item .t { font-weight: 800; } .ttc-item .s { color: var(--muted); font-size: .76rem; margin-top: 2px; } .ttc-item .b { display: flex; gap: 8px; margin-top: 6px; }
+  .ttc-tag { display: inline-block; font-size: .7rem; font-weight: 800; border-radius: 10px; padding: 1px 8px; margin-right: 6px; background: var(--chip-bg); }
+  .ttc-tag.add { background: #dff3e6; color: #17603a; } .ttc-tag.cancel { background: #fde4e1; color: #9b1c1c; } .ttc-tag.teacher { background: #e3ecfb; color: #1d4c9a; }
   /* v11.8 student photos */
   img.sp { width: 38px; height: 50px; object-fit: cover; border-radius: 7px; flex-shrink: 0; background: var(--chip-bg); cursor: zoom-in; }
   .stu-photo { width: 72px; height: 96px; object-fit: cover; border-radius: 10px; flex-shrink: 0; background: var(--chip-bg); cursor: zoom-in; }
@@ -728,6 +738,11 @@
       <span><div class="q-title">Staff PIN slips</div><div class="q-sub">Admins · sign-in name &amp; PIN for every teacher, print or send</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
+    <button class="mark-btn mark-btn-3" id="manageBtn" data-go="/manage" style="display:none">
+      <span style="font-size:1.4rem">🛠️</span>
+      <span><div class="q-title">Manage students &amp; timetable</div><div class="q-sub">Admins · admissions, students leaving, roll numbers, photos, teacher changes</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
     <button class="quick" id="quickRoll">
       <span class="q-emoji">⚡</span>
       <span><div class="q-title" id="quickRollTitle"></div><div class="q-sub">Open your saved time table</div></span>
@@ -765,6 +780,41 @@
         <p class="note" id="pnSum"></p>
       </div>
       <div class="pin-grid" id="pnGrid"></div>
+    </div>
+  </section>
+
+  <!-- MANAGE (v12, admins) -->
+  <section class="view" id="view-manage">
+    <div class="card pad" id="mgNotAdmin" style="display:none"><p style="margin:0">Only the Principal and admins can open this page. Sign in with an admin PIN first.</p></div>
+    <div id="mgMain">
+      <div class="seg" id="mgTabs"><button data-t="stu" class="on">👥 Students</button><button data-t="tt">🗓️ Timetable changes</button></div>
+      <div id="mgStu">
+        <div class="card pad">
+          <div class="field-row">
+            <div class="field"><label for="mgYear">Class</label><select id="mgYear"></select></div>
+            <div class="field"><label for="mgSearch">Search</label><input id="mgSearch" placeholder="Roll no. or name"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="mgGroup">Group</label><select id="mgGroup"><option value="">All groups</option></select></div>
+            <div class="field" style="display:flex;align-items:flex-end"><button class="btn-primary" id="mgAdd" style="margin:0">＋ Add a student</button></div>
+          </div>
+          <div class="tt-error" id="mgErr"></div>
+          <p class="note" id="mgSum" style="margin-bottom:0"></p>
+        </div>
+        <div class="card pad" id="mgForm" style="display:none"></div>
+        <div class="card" id="mgList"></div>
+      </div>
+      <div id="mgTT" style="display:none">
+        <div class="card pad">
+          <p class="screen-title" style="margin-top:0">Change who teaches a class, add an extra class, or cancel one.</p>
+          <p class="note" style="margin-top:0">Changes show at once in student timetables, teachers’ classes (attendance &amp; marks) and Faculty Profiles. The printed timetable is not changed — delete a change to go back to it.</p>
+          <button class="btn-primary" id="ttcNew">＋ New timetable change</button>
+          <div class="tt-error" id="ttcErr"></div>
+        </div>
+        <div class="card pad" id="ttcForm" style="display:none"></div>
+        <div class="section-title">Changes in use</div>
+        <div class="card" id="ttcList"></div>
+      </div>
     </div>
   </section>
 
@@ -1277,6 +1327,7 @@
     board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     signin:        { view: 'view-signin',        title: () => 'Staff sign-in',      parent: '/' },
     pins:          { view: 'view-pins',          title: () => 'Staff PIN slips',    parent: '/' },
+    manage:        { view: 'view-manage',        title: () => 'Manage',             parent: '/' },
     staff:         { view: 'view-staff',         title: () => (STAFF_SECTIONS[currentStaff] || {}).title || 'Staff area', parent: '/' }
   };
 
@@ -1347,6 +1398,7 @@
     if (r.key === 'board') renderBoard();
     if (r.key === 'signin') renderSignin();
     if (r.key === 'pins') renderPins();
+    if (r.key === 'manage') renderManage();
     if (r.key === 'my') renderMy();
     if (!ok) return;
 
@@ -1399,6 +1451,7 @@
     const signedIn = !!attAuth;
     $('staffArea').style.display = signedIn ? 'block' : 'none';
     $('pinsBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
+    $('manageBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('staffSigninRow').style.display = signedIn || !DATA.attendanceApi ? 'none' : 'block';
     $('staffSignoutRow').style.display = signedIn ? 'block' : 'none';
     if (signedIn) { $('staffSignedAs').textContent = '👤 ' + attAuth.name + (isAdminUser() ? ' (admin)' : ''); $('staffWhoChip').textContent = isAdminUser() ? 'admin · full access' : 'signed in'; }
@@ -1427,6 +1480,100 @@
   /* ---------- faculty: full staff list + profile with workload (from the timetables) ---------- */
   const DESIG_ORDER = ['Principal', 'Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer', 'Librarian'];
   const PERIOD_TIMES = { I: '8:30–9:15', II: '9:15–10:00', III: '10:00–10:45', IV: '10:45–11:30', V: '11:30–12:15', VI: '12:15–1:00', VII: '1:00–1:45' };
+  /* ---------- v12: timetable changes made by admins (Manage → Timetable changes) ----------
+     Kept in the 'Timetable Changes' sheet; the app applies them on top of the printed timetables. */
+  let TTC = []; try { TTC = JSON.parse(store.get('ttc') || '[]') || []; } catch (e) { TTC = []; }
+  const TT_PRISTINE = {
+    star: typeof STAR_TT !== 'undefined' ? JSON.parse(JSON.stringify(STAR_TT)) : null,
+    six: typeof SIX7 !== 'undefined' ? JSON.parse(JSON.stringify(SIX7)) : null,
+    bs: typeof BS_TT !== 'undefined' ? JSON.parse(JSON.stringify(BS_TT)) : null };
+  const ttNorm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const isSixP = (p) => /^VI/.test(String(p || ''));
+  function ttcActive() { const t = todayISO(); return TTC.filter((x) => !x.from || x.from <= t); }
+  function ttcSecHas(sec, roll, code, y) {
+    if (!sec || sec === 'All') return true;
+    if (sec === 'Odd') return roll % 2 === 1;
+    if (sec === 'Even') return roll % 2 === 0;
+    const m = /^Urdu Batch ([123])$/.exec(sec); if (m) return (roll % 3 === 0 ? 3 : roll % 3) === Number(m[1]);
+    if (code === 'STAR' && typeof starSecHas === 'function') return starSecHas(sec, starComboOf(roll, y));
+    return true;
+  }
+  /** periods I–V of a 1st / 2nd Year student (Bright Star and Periods VI–VII are changed in their own lists) */
+  function ttcApplyRows(res, roll, y) {
+    if (!res || !res.code || res.code === 'STAR' || !TTC.length) return res;
+    const list = ttcActive().filter((x) => String(x.year) === String(y) && x.group === res.code && !isSixP(x.period) && ttcSecHas(x.section, roll, res.code, y));
+    if (!list.length) return res;
+    let rows = (res.rows || []).slice();
+    list.forEach((x) => {
+      const hit = (w) => w.period === x.period && ttNorm(w.subject) === ttNorm(x.subject);
+      if (x.action === 'cancel') rows = rows.filter((w) => !hit(w));
+      else if (x.action === 'add') { rows = rows.filter((w) => !hit(w)); rows.push({ period: x.period, subject: x.subject, teacher: x.teacher, room: x.room || '', note: x.note || 'Timetable change' }); }
+      else rows = rows.map((w) => (hit(w) ? Object.assign({}, w, { teacher: x.teacher, room: x.room || w.room, note: x.note || 'Timetable change' }) : w));
+    });
+    rows.sort((a, b) => periodIndex(a.period) - periodIndex(b.period));
+    return Object.assign({}, res, { rows });
+  }
+  if (typeof buildSchedule === 'function') { const ttcB1 = buildSchedule; buildSchedule = function (r) { return ttcApplyRows(ttcB1(r), Number(r), 1); }; }
+  if (typeof buildSchedule2 === 'function') { const ttcB2 = buildSchedule2; buildSchedule2 = function (r) { return ttcApplyRows(ttcB2(r), Number(r), 2); }; }
+  /** Bright Star, Periods VI–VII and BS: rebuilt from the printed lists, then the changes are applied */
+  function ttcApplyData() {
+    const act = ttcActive(), clone = (o) => JSON.parse(JSON.stringify(o));
+    if (TT_PRISTINE.star) [1, 2].forEach((y) => {
+      let base = clone(TT_PRISTINE.star[y] || []);
+      act.filter((x) => String(x.year) === String(y) && x.group === 'STAR' && !isSixP(x.period)).forEach((x) => {
+        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (!x.section || x.section === 'All' || e.sec === x.section);
+        if (x.action === 'cancel') base = base.filter((e) => !hit(e));
+        else if (x.action === 'add') base.push({ period: x.period, subject: x.subject, room: x.room || '', teacher: x.teacher, sec: x.section || 'All', note: x.note || '' });
+        else base.forEach((e) => { if (hit(e)) { e.teacher = x.teacher; if (x.room) e.room = x.room; } });
+      });
+      STAR_TT[y].length = 0; base.forEach((e) => STAR_TT[y].push(e));
+    });
+    if (TT_PRISTINE.six) [1, 2].forEach((y) => {
+      let base = clone(TT_PRISTINE.six[y] || []);
+      act.filter((x) => String(x.year) === String(y) && isSixP(x.period)).forEach((x) => {
+        const mine = (p) => p[0] === x.group && (!x.section || x.section === 'All' || p[1] === x.section || p[1] === 'All');
+        const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (e.cls ? e.cls[0] === x.group : e.parts.some(mine));
+        if (x.action === 'add') { base.push({ period: x.period, days: x.days || '1-6', subject: x.subject, with: x.group + (x.section && x.section !== 'All' ? ' (' + x.section + ')' : ''), room: x.room || '', teacher: x.teacher, parts: [[x.group, x.section || 'All']] }); return; }
+        const next = [];
+        base.forEach((e) => {
+          if (!hit(e)) { next.push(e); return; }
+          const keep = e.cls ? [] : e.parts.filter((p) => !mine(p)), moved = e.cls ? null : e.parts.filter(mine);
+          if (x.action === 'cancel') { if (keep.length) next.push(Object.assign({}, e, { parts: keep })); return; }
+          if (e.cls || !keep.length) { next.push(Object.assign({}, e, { teacher: x.teacher, room: x.room || e.room })); return; }
+          next.push(Object.assign({}, e, { parts: keep }));
+          next.push(Object.assign({}, e, { parts: moved, teacher: x.teacher, room: x.room || e.room, with: x.group + (x.section && x.section !== 'All' ? ' (' + x.section + ')' : '') }));
+        });
+        base = next;
+      });
+      SIX7[y].length = 0; base.forEach((e) => SIX7[y].push(e));
+    });
+    if (TT_PRISTINE.bs) {
+      let base = clone(TT_PRISTINE.bs);
+      act.filter((x) => /^B\d$/.test(String(x.year))).forEach((x) => {
+        const sem = Number(String(x.year).slice(1)), prog = BS_PROG[x.group] || x.group;
+        const hit = (r) => r.sem === sem && r.program === prog && r.period === x.period && ttNorm(r.course) === ttNorm(x.subject);
+        if (x.action === 'cancel') base = base.filter((r) => !hit(r));
+        else if (x.action === 'add') base.push({ sem, program: prog, period: x.period, course: x.subject, code: '', teacher: x.teacher, room: x.room || '', note: x.note || '', days: x.days || '' });
+        else base.forEach((r) => { if (hit(r)) { r.teacher = x.teacher; if (x.room) r.room = x.room; } });
+      });
+      BS_TT.length = 0; base.forEach((r) => BS_TT.push(r));
+    }
+    wlIndex = null; myClassesCache = {}; Object.keys(bsLecCache).forEach((k) => { delete bsLecCache[k]; });
+  }
+  let ttcAt = 0;
+  async function refreshTTC(force) {
+    if (!DATA.attendanceApi || !navigator.onLine) return false;
+    if (!force && Date.now() - ttcAt < 5 * 60000) return false;
+    ttcAt = Date.now();
+    try {
+      const res = await fetch(DATA.attendanceApi, { method: 'POST', body: JSON.stringify({ action: 'ttChanges' }) });
+      const j = await res.json(); if (!j.ok || !Array.isArray(j.changes)) return false;
+      if (JSON.stringify(j.changes) === JSON.stringify(TTC)) return false;
+      setTTC(j.changes); return true;
+    } catch (e) { return false; }
+  }
+  function setTTC(list) { TTC = list || []; store.set('ttc', JSON.stringify(TTC)); ttcApplyData(); }
+
   let wlIndex = null;
   /** {teacherName: [{year, period, klass, subject, room, rotating}]} built from the 1st and 2nd Year timetables */
   function workloadIndex() {
@@ -2619,9 +2766,9 @@
   }
   function subjOk(group, subj, y) {
     if (group === 'STAR') return true;
-    const t = myTeachesBase(y);
+    if (!myTeachesBase(y).length) return true;
+    const t = myTeaches(y);   // v12: includes classes given by a timetable change
     const mine = t.filter((x) => x.group === group);
-    if (!t.length) return true;
     return mine.some((x) => normSubj(x.subject).toLowerCase() === normSubj(subj).toLowerCase());
   }
   function isMe(teacherField, subj, group, y) {
@@ -2861,6 +3008,7 @@
   }
 
   function renderAttendance() {
+    refreshTTC();
     renderPending();
     refreshAllCounts(false);
     const signed = !!attAuth;
@@ -3180,8 +3328,10 @@
   }
   /** subjects the teacher may enter marks for: Teachers sheet / BS timetable + their Bright Star lectures */
   function myTeaches(y) {
-    const base = myTeachesBase(y);
     const me = nameKey(attAuth && attAuth.name);
+    // v12: classes given by an admin's timetable change
+    const base = myTeachesBase(y).concat(!me ? [] : ttcActive().filter((x) => x.action !== 'cancel' && String(x.year) === String(yk(y)) && String(x.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }))
+      .map((x) => ({ group: x.group, subject: x.subject }))).filter((t, i, a) => a.findIndex((u) => u.group === t.group && u.subject === t.subject) === i);
     if (!me || isBS(y)) return base;
     const star = [];
     starLectures(y).forEach((l) => { if (String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && !star.some((x) => x.subject === l.subject)) star.push({ group: 'STAR', subject: l.subject }); });
@@ -3221,6 +3371,7 @@
   const mkSubjectVal = () => ($('mkSubject').value === '__other' ? $('mkOther').value.trim() : $('mkSubject').value);
 
   async function renderMarks() {
+    refreshTTC();
     renderPending();
     refreshAllCounts(false);
     const signed = !!attAuth;
@@ -4265,13 +4416,270 @@
     });
   }
 
+  /* ---------- v12: Manage (admins) — students and timetable changes ---------- */
+  const MG_YEARS = () => [['1', '1st Year'], ['2', '2nd Year']].concat(BS_READY.map((b) => [b, yearLabel(b)]));
+  let mgData = null, mgYearSel = '1', mgEdit = null, mgPhotoNew = null, mgRemoveArm = 0, mgTab = 'stu', ttcEditId = null;
+  const mgYk = () => yk($('mgYear').value || '1');
+  function mgGroups(y) {
+    if (isBS(y)) return BS_CODES.slice();
+    const g = yrCfg(y).ranges.map((x) => x[0]);
+    return g.concat(['STAR']);
+  }
+  function mgAutoGroup(roll, y) {
+    if (isBS(y) || !roll) return '';
+    if (Number(y) === 2 && typeof codeForRoll2 === 'function') return codeForRoll2(roll) || '';
+    if (typeof codeForRoll === 'function') return codeForRoll(roll) || '';
+    return '';
+  }
+  function mgSubjectGroupFor(g, y) {
+    const c = {}; ((mgData && mgData.students) || []).forEach((s) => { if (s.group === g && s.subjectGroup) c[s.subjectGroup] = (c[s.subjectGroup] || 0) + 1; });
+    const best = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
+    if (best) return best;
+    if (isBS(y)) return 'BS ' + (BS_PROG[g] || g);
+    return String(yrCfg(y).names[g] || '').replace(/ \(.*$/, '');
+  }
+  function renderManage() {
+    const admin = isAdminUser();
+    $('mgNotAdmin').style.display = admin ? 'none' : 'block';
+    $('mgMain').style.display = admin ? 'block' : 'none';
+    if (!admin) return;
+    if (!$('mgYear').options.length) $('mgYear').innerHTML = MG_YEARS().map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('');
+    $('mgYear').value = mgYearSel;
+    mgShowTab(mgTab);
+  }
+  function mgShowTab(t) {
+    mgTab = t;
+    document.querySelectorAll('#mgTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    $('mgStu').style.display = t === 'stu' ? 'block' : 'none';
+    $('mgTT').style.display = t === 'tt' ? 'block' : 'none';
+    if (t === 'stu') mgLoad(false); else ttcPaintList(true);
+  }
+  $('mgTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) mgShowTab(b.dataset.t); });
+  async function mgLoad(force) {
+    const y = mgYk();
+    if (mgData && mgData.y === y && !force) { mgPaint(); return; }
+    $('mgErr').textContent = ''; $('mgList').innerHTML = '<div class="empty">Loading students…</div>';
+    try { const j = await attApi('stuList', { year: y }); mgData = { y, students: j.students, religion: j.religionColumn }; mgFillGroups(); mgPaint(); }
+    catch (e) { $('mgList').innerHTML = ''; $('mgErr').textContent = e.offline ? 'You need internet.' : e.message; if (/PIN|sign in/i.test(e.message)) { recSignOut(); render(); } }
+  }
+  function mgFillGroups() {
+    const y = mgYk(), cur = $('mgGroup').value;
+    const present = {}; (mgData.students || []).forEach((s) => { present[s.group] = (present[s.group] || 0) + 1; });
+    const gs = mgGroups(y).filter((g) => present[g]).concat(Object.keys(present).filter((g) => mgGroups(y).indexOf(g) < 0));
+    $('mgGroup').innerHTML = '<option value="">All groups</option>' + gs.map((g) => '<option value="' + esc(g) + '">' + esc(g) + ' (' + present[g] + ')</option>').join('');
+    if (gs.indexOf(cur) >= 0) $('mgGroup').value = cur;
+  }
+  function mgPaint() {
+    if (!mgData) return;
+    const q = $('mgSearch').value.trim().toLowerCase(), g = $('mgGroup').value;
+    const rows = mgData.students.filter((s) => (!g || s.group === g) && (!q || String(s.roll) === q || String(s.roll).indexOf(q) === 0 || s.name.toLowerCase().indexOf(q) >= 0));
+    $('mgSum').textContent = mgData.students.length + ' students in ' + yearLabel(mgData.y) + (g || q ? ' · showing ' + rows.length : '') + ' · ' + mgData.students.filter((s) => s.photo).length + ' with photos. Tap a student to edit, change roll number or photo, or remove.';
+    const show = rows.slice(0, 150);
+    $('mgList').innerHTML = show.length ? show.map((s) => '<div class="mg-row" data-roll="' + s.roll + '"><span class="roll">' + s.roll + '</span>' + avatar(s.roll) +
+      '<span class="nm"><b>' + esc(s.name) + '</b><small>' + esc(s.group) + (s.father ? ' · ' + esc(s.father) : '') + (s.photo ? '' : ' · no photo') + '</small></span><span class="chev">&rsaquo;</span></div>').join('') +
+      (rows.length > show.length ? '<div class="empty">Showing the first 150 — search to narrow down.</div>' : '') : '<div class="empty">No students match.</div>';
+    fillPhotos($('mgList'), mgData.y);
+  }
+  $('mgYear').addEventListener('change', () => { mgYearSel = $('mgYear').value; $('mgGroup').value = ''; $('mgForm').style.display = 'none'; mgLoad(true); });
+  $('mgGroup').addEventListener('change', mgPaint);
+  $('mgSearch').addEventListener('input', mgPaint);
+  $('mgList').addEventListener('click', (e) => {
+    if (e.target.closest('img.sp')) return;
+    const row = e.target.closest('.mg-row'); if (!row) return;
+    const s = mgData.students.find((x) => x.roll === Number(row.dataset.roll)); if (s) mgOpenForm(s);
+  });
+  $('mgAdd').addEventListener('click', () => mgOpenForm(null));
+  function mgOpenForm(s) {
+    const y = mgYk(), bs = isBS(y), isNew = !s;
+    mgEdit = s; mgPhotoNew = null; mgRemoveArm = 0;
+    const v = s || { roll: '', name: '', father: '', group: '', subjectGroup: '', mobile: '', bform: '', dob: '', address: '', religion: '' };
+    const groups = mgGroups(y);
+    const f = (id, label, val, attrs) => '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" value="' + esc(val || '') + '"' + (attrs || '') + '></div>';
+    const cur = s ? phGet(y, s.roll) : '';
+    $('mgForm').innerHTML = '<p class="screen-title" style="margin-top:0">' + (isNew ? '＋ New student · ' + esc(yearLabel(y)) : '✏️ ' + esc(v.name) + ' · Roll ' + v.roll) + '</p>' +
+      '<div class="mg-ph"><img id="mgPhImg" src="' + (cur || PH_BLANK) + '" alt=""><div><button class="btn-secondary" id="mgPhBtn" type="button">📷 ' + (s && s.photo ? 'Change photo' : 'Add photo') + '</button><input type="file" id="mgPhIn" accept="image/*" style="display:none"><p class="note" id="mgPhMsg" style="margin:6px 0 0">Passport-size photo. Take it with the camera or choose from the gallery.</p></div></div>' +
+      '<div class="field-row">' + f('mgRoll', 'College roll no.' + (isNew ? '' : ' (change to give a new roll number)'), v.roll, ' type="number" inputmode="numeric"') +
+      '<div class="field"><label for="mgGrp">Group</label><select id="mgGrp">' + groups.map((g) => '<option value="' + esc(g) + '"' + (g === v.group ? ' selected' : '') + '>' + esc(g + (yrCfg(y).names && yrCfg(y).names[g] ? ' — ' + yrCfg(y).names[g] : '')) + '</option>').join('') +
+      (v.group && groups.indexOf(v.group) < 0 ? '<option selected>' + esc(v.group) + '</option>' : '') + '</select></div></div>' +
+      f('mgName', 'Student name', v.name) + f('mgFather', 'Father’s name', v.father) + f('mgSG', 'Subject group (as on the admission form)', v.subjectGroup) +
+      '<div class="field-row">' + f('mgMob', 'Mobile no.', v.mobile, ' inputmode="tel"') + f('mgBform', bs ? 'CNIC / B-Form no. (students use its last 4 digits)' : 'B-Form / CNIC no.', v.bform) + '</div>' +
+      '<div class="field-row">' + f('mgDob', 'Date of birth' + (bs ? '' : ' (students use it to see their record)'), v.dob, ' type="date"') +
+      (mgData && mgData.religion ? '<div class="field"><label for="mgRel">Religion</label><select id="mgRel">' + ['', 'Muslim', 'Non-Muslim'].map((o) => '<option' + (ttNorm(o) === ttNorm(v.religion) || (o === 'Non-Muslim' && /non/i.test(v.religion)) || (o === 'Muslim' && /^muslim/i.test(v.religion)) ? ' selected' : '') + ' value="' + o + '">' + (o || '—') + '</option>').join('') + '</select></div>' : '') + '</div>' +
+      f('mgAddr', 'Address', v.address) +
+      '<div class="btn-row"><button class="btn-primary" id="mgSave">💾 ' + (isNew ? 'Add student' : 'Save changes') + '</button><button class="btn-secondary" id="mgCancel">Close</button></div>' +
+      (isNew ? '' : '<button class="btn-secondary mg-danger" id="mgRemove" style="margin-top:10px;width:100%">🗑 Remove from the list (left / admission cancelled)</button>') +
+      '<div class="tt-error" id="mgFErr"></div>' +
+      (isNew ? '' : '<p class="note">A new roll number moves the student’s attendance, marks and photo with them.</p>');
+    $('mgForm').style.display = 'block';
+    if (isNew) {
+      const auto = () => { const r = Number($('mgRoll').value), g = mgAutoGroup(r, y); if (g) $('mgGrp').value = g; if (!$('mgSG').dataset.typed) $('mgSG').value = mgSubjectGroupFor($('mgGrp').value, y); };
+      $('mgRoll').addEventListener('input', auto); $('mgGrp').addEventListener('change', () => { if (!$('mgSG').dataset.typed) $('mgSG').value = mgSubjectGroupFor($('mgGrp').value, y); });
+      $('mgSG').addEventListener('input', () => { $('mgSG').dataset.typed = '1'; });
+      if (bs) $('mgSG').value = mgSubjectGroupFor($('mgGrp').value, y);
+    }
+    $('mgPhBtn').onclick = () => $('mgPhIn').click();
+    $('mgPhIn').onchange = async () => {
+      const file = $('mgPhIn').files && $('mgPhIn').files[0]; if (!file) return;
+      try { mgPhotoNew = await shrinkPassport(file); $('mgPhImg').src = mgPhotoNew; $('mgPhMsg').textContent = 'New photo ready — it is saved when you press Save.'; }
+      catch (e) { $('mgPhMsg').textContent = 'Could not read that picture. Try another one.'; }
+    };
+    $('mgCancel').onclick = () => { $('mgForm').style.display = 'none'; };
+    $('mgSave').onclick = mgSave;
+    if ($('mgRemove')) $('mgRemove').onclick = mgRemove;
+    $('mgForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  /** a picture → 120×160 JPEG (passport shape), as a data URL */
+  function shrinkPassport(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const W = 120, H = 160, ar = W / H; let sw = img.width, sh = img.height, sx = 0, sy = 0;
+        if (sw / sh > ar) { sw = sh * ar; sx = (img.width - sw) / 2; } else { sh = sw / ar; sy = (img.height - sh) * 0.4; }
+        const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+        URL.revokeObjectURL(url); resolve(cv.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+      img.src = url;
+    });
+  }
+  async function mgSave() {
+    const y = mgYk(), bs = isBS(y), isNew = !mgEdit;
+    const roll = parseInt($('mgRoll').value, 10), name = $('mgName').value.trim().replace(/\s+/g, ' ');
+    $('mgFErr').textContent = '';
+    if (!roll || roll < 1) { $('mgFErr').textContent = 'Enter the college roll number.'; return; }
+    if (!name) { $('mgFErr').textContent = 'Enter the student’s name.'; return; }
+    const taken = mgData.students.find((s) => s.roll === roll && (!mgEdit || s.roll !== mgEdit.roll));
+    if (taken) { $('mgFErr').textContent = 'Roll ' + roll + ' is already used by ' + taken.name + '.'; return; }
+    const group = $('mgGrp').value;
+    const rec = { name, father: $('mgFather').value.trim(), group, subjectGroup: $('mgSG').value.trim(), mobile: $('mgMob').value.trim(), bform: $('mgBform').value.trim(),
+      dob: $('mgDob').value, address: $('mgAddr').value.trim(), section: bs || group === 'STAR' ? 'All' : (roll % 2 ? 'Odd' : 'Even') };
+    if ($('mgRel')) rec.religion = $('mgRel').value;
+    const btn = $('mgSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (isNew) await attApi('rosterPatch', { year: y, add: [Object.assign({ roll }, rec)] });
+      else await attApi('rosterPatch', { year: y, update: [Object.assign({ roll: mgEdit.roll }, rec, roll !== mgEdit.roll ? { newRoll: roll } : {})] });
+      if (mgPhotoNew) { await attApi('stuPhotoImport', { year: y, photos: [{ roll, data: mgPhotoNew }] }); phSet(y, roll, mgPhotoNew); }
+      if (!isNew && roll !== mgEdit.roll) { const old = phGet(y, mgEdit.roll); if (old && !mgPhotoNew) phSet(y, roll, old); phSet(y, mgEdit.roll, ''); }
+      toast(isNew ? 'Added ✓ ' + name + ' (roll ' + roll + ')' : 'Saved ✓' + (roll !== mgEdit.roll ? ' Roll ' + mgEdit.roll + ' → ' + roll + ' (attendance, marks and photo moved)' : ''));
+      $('mgForm').style.display = 'none'; mgClassCountsStale(y);
+      await mgLoad(true);
+    } catch (e) { $('mgFErr').textContent = e.offline ? 'You need internet.' : e.message; }
+    btn.disabled = false; btn.textContent = isNew ? '💾 Add student' : '💾 Save changes';
+  }
+  async function mgRemove() {
+    const y = mgYk(), s = mgEdit, b = $('mgRemove');
+    if (Date.now() - mgRemoveArm > 6000) { mgRemoveArm = Date.now(); b.textContent = 'Tap again to remove ' + s.name + ' (roll ' + s.roll + ')'; return; }
+    b.disabled = true; b.textContent = 'Removing…';
+    try {
+      await attApi('rosterPatch', { year: y, remove: [s.roll] });
+      toast('Removed ✓ ' + s.name + ' (roll ' + s.roll + '). Their attendance already saved stays in the Log.');
+      $('mgForm').style.display = 'none'; mgClassCountsStale(y); await mgLoad(true);
+    } catch (e) { $('mgFErr').textContent = e.offline ? 'You need internet.' : e.message; b.disabled = false; b.textContent = '🗑 Remove from the list (left / admission cancelled)'; }
+  }
+  /** class lists and counts kept on phones are refreshed after a change */
+  function mgClassCountsStale(y) { try { if (CC[yk(y)]) { CC[yk(y)].at = 0; store.set('classCounts', JSON.stringify(CC)); } } catch (e) {} store.set('rosters', ''); myClassesCache = {}; }
+
+  /* ----- timetable changes ----- */
+  const ACT_LABEL = { teacher: 'Teacher changed', add: 'Extra class', cancel: 'Class cancelled' };
+  async function ttcPaintList(fetchFirst) {
+    if (fetchFirst) { $('ttcList').innerHTML = '<div class="empty">Loading…</div>'; await refreshTTC(true); }
+    const t = todayISO();
+    const list = TTC.slice().sort((a, b) => String(a.year).localeCompare(String(b.year)) || a.group.localeCompare(b.group) || periodIndex(a.period) - periodIndex(b.period));
+    $('ttcList').innerHTML = list.length ? list.map((x) => '<div class="ttc-item"><div class="t"><span class="ttc-tag ' + esc(x.action) + '">' + esc(ACT_LABEL[x.action] || x.action) + '</span>' +
+      esc(yearLabel(yk(x.year))) + ' · ' + esc(x.group) + (x.section && x.section !== 'All' ? ' (' + esc(x.section) + ')' : '') + ' · Period ' + esc(x.period) + ' · ' + esc(x.subject) + '</div>' +
+      '<div class="s">' + (x.action === 'cancel' ? 'Not held' : '👤 ' + esc(x.teacher) + (x.room ? ' · 📍 ' + esc(x.room) : '') + (x.days ? ' · days ' + esc(x.days) : '')) +
+      (x.from ? ' · from ' + esc(fmtDate(x.from)) + (x.from > t ? ' (not started yet)' : '') : '') + (x.note ? ' · ' + esc(x.note) : '') + '</div>' +
+      '<div class="b"><button class="mini-btn" data-ed="' + esc(x.id) + '">✏️ Edit</button><button class="mini-btn" data-del="' + esc(x.id) + '">🗑 Delete</button></div></div>').join('')
+      : '<div class="empty">No changes — everyone follows the printed timetable.</div>';
+  }
+  let ttcDelArm = {};
+  $('ttcList').addEventListener('click', async (e) => {
+    const ed = e.target.closest('[data-ed]'), del = e.target.closest('[data-del]');
+    if (ed) { const x = TTC.find((z) => z.id === ed.dataset.ed); if (x) ttcOpenForm(x); return; }
+    if (!del) return;
+    const id = del.dataset.del;
+    if (Date.now() - (ttcDelArm[id] || 0) > 6000) { ttcDelArm[id] = Date.now(); del.textContent = 'Tap again to delete'; return; }
+    del.disabled = true;
+    try { const j = await attApi('ttChangeDelete', { id }); setTTC(j.changes); toast('Deleted ✓ back to the printed timetable for that class'); ttcPaintList(false); }
+    catch (err) { $('ttcErr').textContent = err.offline ? 'You need internet.' : err.message; del.disabled = false; }
+  });
+  $('ttcNew').addEventListener('click', () => ttcOpenForm(null));
+  const STAFF_NAMES = () => (typeof STAFF !== 'undefined' ? STAFF.map((s) => s.name) : []).concat(['CTI']).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => nameKey(a).localeCompare(nameKey(b)));
+  function ttcSections(y, g) {
+    if (isBS(y)) return ['All'];
+    if (g === 'STAR') return starSectionsFor(y);
+    const out = ['All', 'Odd', 'Even'];
+    if (Number(y) === 1 && ['C1', 'C2', 'C3', 'G', 'H'].indexOf(g) >= 0) out.push('Urdu Batch 1', 'Urdu Batch 2', 'Urdu Batch 3');
+    return out;
+  }
+  function ttcLectures(y, g, sec, period) {
+    let L = [];
+    try {
+      if (isBS(y)) L = bsLectures(y).filter((l) => l.group === g);
+      else if (g === 'STAR') L = starLectures(y).filter((l) => sec === 'All' || l.section === sec || l.section === 'All').concat(sixLectures(y).filter((l) => l.group === 'STAR'));
+      else L = lecturesFor(g, sec || 'All', y);
+    } catch (e) { L = []; }
+    const seen = {};
+    return L.filter((l) => l.period === period && !seen[l.subject] && (seen[l.subject] = 1));
+  }
+  function ttcOpenForm(x) {
+    ttcEditId = x ? x.id : null;
+    const v = x || { year: mgYearSel || '1', group: '', section: 'All', period: 'I', subject: '', action: 'teacher', teacher: '', room: '', days: '', from: todayISO(), note: '' };
+    $('ttcForm').innerHTML = '<p class="screen-title" style="margin-top:0">' + (x ? '✏️ Edit timetable change' : '＋ New timetable change') + '</p>' +
+      '<div class="field-row"><div class="field"><label for="tcYear">Class</label><select id="tcYear">' + MG_YEARS().map((o) => '<option value="' + o[0] + '"' + (String(v.year) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="tcAct">What</label><select id="tcAct"><option value="teacher">Change the teacher</option><option value="add">Add an extra class</option><option value="cancel">Cancel a class</option></select></div></div>' +
+      '<div class="field-row"><div class="field"><label for="tcGroup">Group</label><select id="tcGroup"></select></div><div class="field"><label for="tcSec">Section</label><select id="tcSec"></select></div></div>' +
+      '<div class="field-row"><div class="field"><label for="tcPer">Period</label><select id="tcPer">' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].map((p) => '<option' + (p === v.period ? ' selected' : '') + '>' + p + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="tcSubj">Subject</label><input id="tcSubj" list="tcSubjList" value="' + esc(v.subject) + '" placeholder="Choose or type"><datalist id="tcSubjList"></datalist></div></div>' +
+      '<p class="note" id="tcNow" style="margin-top:0"></p>' +
+      '<div id="tcTeachRow"><div class="field"><label for="tcTeacher">Teacher</label><input id="tcTeacher" list="tcStaffList" value="' + esc(v.teacher) + '" placeholder="Start typing a name"><datalist id="tcStaffList">' + STAFF_NAMES().map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist></div>' +
+      '<div class="field-row"><div class="field"><label for="tcRoom">Room (optional)</label><input id="tcRoom" value="' + esc(v.room) + '"></div><div class="field"><label for="tcDays">Days (optional)</label><input id="tcDays" value="' + esc(v.days) + '" placeholder="e.g. 1-5 = Mon–Fri"></div></div></div>' +
+      '<div class="field-row"><div class="field"><label for="tcFrom">From date</label><input id="tcFrom" type="date" value="' + esc(v.from || '') + '"></div><div class="field"><label for="tcNote">Note (optional)</label><input id="tcNote" value="' + esc(v.note) + '" placeholder="e.g. on leave, new teacher"></div></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="tcSave">💾 Save change</button><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
+    $('ttcForm').style.display = 'block';
+    $('tcAct').value = v.action;
+    const fillGroups = () => { const y = yk($('tcYear').value), gs = mgGroups(y); $('tcGroup').innerHTML = gs.map((g) => '<option value="' + esc(g) + '">' + esc(g + (yrCfg(y).names && yrCfg(y).names[g] ? ' — ' + yrCfg(y).names[g] : '')) + '</option>').join(''); if (gs.indexOf(v.group) >= 0) $('tcGroup').value = v.group; fillSecs(); };
+    const fillSecs = () => { const y = yk($('tcYear').value), ss = ttcSections(y, $('tcGroup').value); $('tcSec').innerHTML = ss.map((s) => '<option>' + esc(s) + '</option>').join(''); if (ss.indexOf(v.section) >= 0) $('tcSec').value = v.section; fillSubj(); };
+    const fillSubj = () => {
+      const y = yk($('tcYear').value), L = ttcLectures(y, $('tcGroup').value, $('tcSec').value, $('tcPer').value);
+      $('tcSubjList').innerHTML = L.map((l) => '<option value="' + esc(l.subject) + '">').join('');
+      if (!$('tcSubj').value && L.length && $('tcAct').value !== 'add') $('tcSubj').value = L[0].subject;
+      const cur = L.filter((l) => ttNorm(l.subject) === ttNorm($('tcSubj').value));
+      $('tcNow').textContent = L.length ? 'Now in this period: ' + L.map((l) => l.subject + ' — ' + (l.teacher || 'no teacher')).join(' · ') : 'No class in this period now.';
+      if (cur.length && !$('tcRoom').value && cur[0].room) $('tcRoom').placeholder = cur[0].room;
+    };
+    const paintAct = () => { $('tcTeachRow').style.display = $('tcAct').value === 'cancel' ? 'none' : 'block'; };
+    $('tcYear').onchange = () => { v.group = ''; fillGroups(); }; $('tcGroup').onchange = fillSecs; $('tcSec').onchange = fillSubj; $('tcPer').onchange = () => { $('tcSubj').value = ''; fillSubj(); };
+    $('tcSubj').oninput = fillSubj; $('tcAct').onchange = paintAct;
+    fillGroups(); paintAct();
+    $('tcClose').onclick = () => { $('ttcForm').style.display = 'none'; };
+    $('tcSave').onclick = async () => {
+      const ch = { id: ttcEditId || '', year: $('tcYear').value, group: $('tcGroup').value, section: $('tcSec').value, period: $('tcPer').value, subject: $('tcSubj').value.trim(),
+        action: $('tcAct').value, teacher: $('tcTeacher').value.trim(), room: $('tcRoom').value.trim(), days: $('tcDays').value.trim(), from: $('tcFrom').value, note: $('tcNote').value.trim() };
+      $('tcErr').textContent = '';
+      if (!ch.subject) { $('tcErr').textContent = 'Choose or type the subject.'; return; }
+      if (ch.action !== 'cancel' && !ch.teacher) { $('tcErr').textContent = 'Choose the teacher.'; return; }
+      if (ch.action !== 'add' && !ttcLectures(yk(ch.year), ch.group, ch.section, ch.period).some((l) => ttNorm(l.subject) === ttNorm(ch.subject))) {
+        $('tcErr').textContent = 'There is no ' + ch.subject + ' class for ' + ch.group + ' in Period ' + ch.period + '. Pick one from the list, or choose “Add an extra class”.'; return;
+      }
+      const b = $('tcSave'); b.disabled = true; b.textContent = 'Saving…';
+      try { const j = await attApi('ttChangeSave', { change: ch }); setTTC(j.changes); toast('Saved ✓ timetable change is now in use'); $('ttcForm').style.display = 'none'; ttcPaintList(false); }
+      catch (e) { $('tcErr').textContent = e.offline ? 'You need internet.' : e.message; }
+      b.disabled = false; b.textContent = '💾 Save change';
+    };
+    $('ttcForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   /* ---------- start ---------- */
   netStatus();
   if (!history.state) history.replaceState({ depth: 0 }, '', location.hash || '#/');
   loadData().then(() => {
+    try { ttcApplyData(); } catch (e) { console.warn('timetable changes', e); }
     applyChrome();
     render();
     fetchLiveNotices();
+    refreshTTC(true).then((changed) => { if (changed && ['tt-bs', 'tt-star', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
 </script>
