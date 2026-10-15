@@ -2250,7 +2250,7 @@
       if (!rs.length) { if (!shared) h += '<tr class="bs-free"><td class="period">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td><td colspan="3">—</td></tr>'; return; }
       rs.forEach((r, i) => {
         h += '<tr>' + (i ? '<td></td>' : '<td class="period" rowspan="1">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td>') +
-          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (r.days ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(r.days)) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
+          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (bsRowDaysStr(r) ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(bsRowDaysStr(r))) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
           '<td>' + esc(r.teacher || '—') + '</td><td>' + esc(r.room || '—') + '</td></tr>';
       });
     });
@@ -2551,6 +2551,8 @@
   /** "2-5" → [2,3,4,5] (1 = Mon … 6 = Sat); '' → null (every day) */
   function bsDays(v) { const m = /^(\d)\s*-\s*(\d)$/.exec(String(v || '')); if (!m) return null; const a = []; for (let d = Number(m[1]); d <= Number(m[2]); d++) a.push(d); return a; }
   const BS_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  /** v12.2: a BS row's days — the days column, or the "(3-4)" written in the course name (3 = Wed, 4 = Thu) */
+  const bsRowDaysStr = (r) => (bsDays(r.days) ? r.days : ((/\(([1-6]-[1-6])\)/.exec(r.course || '') || [])[1] || ''));
   function bsDayLabel(v) { const d = bsDays(v); if (!d) return ''; return d.length === 1 ? BS_DAY[d[0]] : d.length === 6 ? 'Mon – Sat' : BS_DAY[d[0]] + ' – ' + BS_DAY[d[d.length - 1]]; }
   function bsLectures(y) {
     if (bsLecCache[y]) return bsLecCache[y];
@@ -2558,7 +2560,7 @@
     if (typeof BS_TT !== 'undefined') BS_TT.forEach((r) => {
       if (r.sem !== sem) return; const g = BS_CODE_OF[r.program]; if (!g || !r.course) return;
       const k = g + '|' + r.period + '|' + r.course; if (seen[k]) return; seen[k] = 1;
-      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '', days: bsDays(r.days) });
+      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '', days: bsDays(bsRowDaysStr(r)) });
     });
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group));
     bsLecCache[y] = out;
@@ -2831,7 +2833,7 @@
       if (!String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, meKey); })) return;
       const ck = l.group + '|' + l.section;
       const c = out[ck] || (out[ck] = { group: l.group, section: l.section, lectures: [] });
-      if (!c.lectures.some((x) => x.period === l.period && x.subject === l.subject)) c.lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days });
+      if (!c.lectures.some((x) => x.period === l.period && x.subject === l.subject && String(x.days || '') === String(l.days || ''))) c.lectures.push({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days });
     });
     starLectures(y).forEach((l) => {
       if (!isMe(l.teacher, l.subject, 'STAR', y)) return;
@@ -3083,13 +3085,15 @@
   $('attDate').addEventListener('change', () => { if (attAuth && $('attGroup').options.length) { fillSubjects(); fillAttCombos(); } paintTimeNote(); });
 
   /* ---------- v10.3: whole class = every group of a combined lecture at once ---------- */
-  var attMode = store.get('attMode') || 'whole', attMulti = null, attCombos = [];
+  // v12.2: 'One group' is remembered only for the same day — every new day starts with the whole class
+  var attMode = (store.get('attModeDay') === new Date().toDateString() && store.get('attMode')) || 'whole', attMulti = null, attCombos = [];
   /** the teacher's lectures in this class, each with all its groups: [{period, subject, parts:[{group, section}]}] */
   function myCombos(y) {
     const map = {};
     myClasses(y).forEach((c) => c.lectures.forEach((l) => {
       if (l.rotating) return;
-      const k = l.period + '|' + normSubj(l.subject).toLowerCase();
+      // v12.2: the same subject on different days (e.g. Tarjuma-tul-Quran Wed for one class, Thu for another) is a separate class
+      const k = l.period + '|' + normSubj(l.subject).toLowerCase() + '|' + (l.days && l.days.length ? l.days.join(',') : '');
       const e = map[k] || (map[k] = { period: l.period, subject: l.subject, parts: [], days: l.days || null });
       if (!e.parts.some((p) => p.group === c.group && p.section === c.section)) e.parts.push({ group: c.group, section: c.section });
     }));
@@ -3102,14 +3106,19 @@
   function fillAttCombos() {
     const y = attYear();
     const wd = weekdayOf($('attDate').value);
-    attCombos = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y).filter((c) => onDay(c, wd)) : [];
+    // v12.2: the day's classes first, then the teacher's other classes (marked with their timetable days) for a class held on another day
+    const allC = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y) : [];
+    attCombos = allC.filter((c) => onDay(c, wd)).concat(allC.filter((c) => !onDay(c, wd)).map((c) => Object.assign({}, c, { otherDay: true })));
     const show = attCombos.length > 0;
     $('attModeSeg').style.display = show ? 'flex' : 'none';
     const prev = $('attCombo').value;
-    $('attCombo').innerHTML = attCombos.map((c, i) => '<option value="' + i + '">' + esc(c.period) + ' · ' + esc(c.subject) + ' · ' + esc(compactGroups(c.parts, y)) + (c.parts.length > 1 ? ' (' + c.parts.length + ' groups)' : '') + '</option>').join('');
+    const dl = (c) => (c.days && c.days.length ? c.days.map((d) => BS_DAY[d]).join(' & ') : '');
+    $('attCombo').innerHTML = attCombos.map((c, i) => (c.otherDay && !(i && attCombos[i - 1].otherDay) ? '<optgroup label="Other days in the timetable">' : '') +
+      '<option value="' + i + '">' + esc(c.period) + ' · ' + esc(c.subject) + ' · ' + esc(compactGroups(c.parts, y)) + (c.parts.length > 1 ? ' (' + c.parts.length + ' groups)' : '') + (c.otherDay && dl(c) ? ' · ' + esc(dl(c)) : '') + '</option>' +
+      (c.otherDay && i === attCombos.length - 1 ? '</optgroup>' : '')).join('');
     if (prev && attCombos[Number(prev)]) $('attCombo').value = prev;
     if (BELL && $('attDate').value === todayISO()) {
-      const n = nowMinLocal(); attCombos.forEach((c, i) => { const w = periodWin(c.period, todayISO()); if (w && n >= w[0] && n < w[1]) $('attCombo').value = String(i); });
+      const n = nowMinLocal(); attCombos.forEach((c, i) => { const w = periodWin(c.period, todayISO()); if (!c.otherDay && w && n >= w[0] && n < w[1]) $('attCombo').value = String(i); });
     }
     applyAttMode();
   }
@@ -3121,7 +3130,7 @@
     $('attSummaryBtn').style.display = whole ? 'none' : 'block';
     paintTimeNote();
   }
-  $('attModeSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; attMode = b.dataset.m; store.set('attMode', attMode); $('attListWrap').style.display = 'none'; applyAttMode(); });
+  $('attModeSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; attMode = b.dataset.m; store.set('attMode', attMode); store.set('attModeDay', new Date().toDateString()); $('attListWrap').style.display = 'none'; applyAttMode(); });
   $('attCombo').addEventListener('change', () => { $('attListWrap').style.display = 'none'; paintTimeNote(); });
 
   async function loadMulti(lec, date) {
