@@ -246,6 +246,8 @@
   .mg-row:last-child { border-bottom: none; } .mg-row .roll { font-weight: 800; color: var(--accent); width: 46px; flex-shrink: 0; }
   .mg-row .nm { flex: 1; min-width: 0; } .mg-row .nm b { display: block; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .mg-row .nm small { color: var(--muted); font-size: .74rem; }
   .mg-ph { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; } .mg-ph img { width: 72px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--chip-bg); }
+  .mg-row.off { opacity: .6; } .mg-off { display: inline-block; font-size: .68rem; font-weight: 800; border-radius: 10px; padding: 1px 7px; background: #fdeedb; color: #8a4b00; margin-left: 4px; }
+  .mg-act { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
   .mg-danger { background: #b42318 !important; color: #fff !important; border-color: #b42318 !important; }
   .ttc-item { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: .85rem; } .ttc-item:last-child { border-bottom: none; }
   .ttc-item .t { font-weight: 800; } .ttc-item .s { color: var(--muted); font-size: .76rem; margin-top: 2px; } .ttc-item .b { display: flex; gap: 8px; margin-top: 6px; }
@@ -796,8 +798,9 @@
           </div>
           <div class="field-row">
             <div class="field"><label for="mgGroup">Group</label><select id="mgGroup"><option value="">All groups</option></select></div>
-            <div class="field" style="display:flex;align-items:flex-end"><button class="btn-primary" id="mgAdd" style="margin:0">＋ Add a student</button></div>
+            <div class="field"><label for="mgShow">Show</label><select id="mgShow"><option value="">All students</option><option value="active">Active only</option><option value="inactive">⏸ Inactive only</option></select></div>
           </div>
+          <button class="btn-primary" id="mgAdd">＋ Add a student</button>
           <div class="tt-error" id="mgErr"></div>
           <p class="note" id="mgSum" style="margin-bottom:0"></p>
         </div>
@@ -4471,17 +4474,19 @@
   }
   function mgPaint() {
     if (!mgData) return;
-    const q = $('mgSearch').value.trim().toLowerCase(), g = $('mgGroup').value;
-    const rows = mgData.students.filter((s) => (!g || s.group === g) && (!q || String(s.roll) === q || String(s.roll).indexOf(q) === 0 || s.name.toLowerCase().indexOf(q) >= 0));
-    $('mgSum').textContent = mgData.students.length + ' students in ' + yearLabel(mgData.y) + (g || q ? ' · showing ' + rows.length : '') + ' · ' + mgData.students.filter((s) => s.photo).length + ' with photos. Tap a student to edit, change roll number or photo, or remove.';
+    const q = $('mgSearch').value.trim().toLowerCase(), g = $('mgGroup').value, sh = $('mgShow').value;
+    const rows = mgData.students.filter((s) => (!g || s.group === g) && (!sh || (sh === 'inactive') === !!s.inactive) && (!q || String(s.roll) === q || String(s.roll).indexOf(q) === 0 || s.name.toLowerCase().indexOf(q) >= 0));
+    const off = mgData.students.filter((s) => s.inactive).length;
+    $('mgSum').textContent = mgData.students.length + ' students in ' + yearLabel(mgData.y) + (off ? ' (' + off + ' inactive)' : '') + (g || q || sh ? ' · showing ' + rows.length : '') + ' · ' + mgData.students.filter((s) => s.photo).length + ' with photos. Tap a student to edit, change roll number or photo, make inactive, or remove.';
     const show = rows.slice(0, 150);
-    $('mgList').innerHTML = show.length ? show.map((s) => '<div class="mg-row" data-roll="' + s.roll + '"><span class="roll">' + s.roll + '</span>' + avatar(s.roll) +
-      '<span class="nm"><b>' + esc(s.name) + '</b><small>' + esc(s.group) + (s.father ? ' · ' + esc(s.father) : '') + (s.photo ? '' : ' · no photo') + '</small></span><span class="chev">&rsaquo;</span></div>').join('') +
+    $('mgList').innerHTML = show.length ? show.map((s) => '<div class="mg-row' + (s.inactive ? ' off' : '') + '" data-roll="' + s.roll + '"><span class="roll">' + s.roll + '</span>' + avatar(s.roll) +
+      '<span class="nm"><b>' + esc(s.name) + (s.inactive ? '<span class="mg-off">⏸ inactive</span>' : '') + '</b><small>' + esc(s.group) + (s.father ? ' · ' + esc(s.father) : '') + (s.photo ? '' : ' · no photo') + (s.inactive ? ' · ' + esc(String(s.status).replace(/^inactive\s*[—-]?\s*/i, '')) : '') + '</small></span><span class="chev">&rsaquo;</span></div>').join('') +
       (rows.length > show.length ? '<div class="empty">Showing the first 150 — search to narrow down.</div>' : '') : '<div class="empty">No students match.</div>';
     fillPhotos($('mgList'), mgData.y);
   }
   $('mgYear').addEventListener('change', () => { mgYearSel = $('mgYear').value; $('mgGroup').value = ''; $('mgForm').style.display = 'none'; mgLoad(true); });
   $('mgGroup').addEventListener('change', mgPaint);
+  $('mgShow').addEventListener('change', mgPaint);
   $('mgSearch').addEventListener('input', mgPaint);
   $('mgList').addEventListener('click', (e) => {
     if (e.target.closest('img.sp')) return;
@@ -4507,6 +4512,10 @@
       (mgData && mgData.religion ? '<div class="field"><label for="mgRel">Religion</label><select id="mgRel">' + ['', 'Muslim', 'Non-Muslim'].map((o) => '<option' + (ttNorm(o) === ttNorm(v.religion) || (o === 'Non-Muslim' && /non/i.test(v.religion)) || (o === 'Muslim' && /^muslim/i.test(v.religion)) ? ' selected' : '') + ' value="' + o + '">' + (o || '—') + '</option>').join('') + '</select></div>' : '') + '</div>' +
       f('mgAddr', 'Address', v.address) +
       '<div class="btn-row"><button class="btn-primary" id="mgSave">💾 ' + (isNew ? 'Add student' : 'Save changes') + '</button><button class="btn-secondary" id="mgCancel">Close</button></div>' +
+      (isNew ? '' : s.inactive
+        ? '<div class="mg-act"><b>⏸ Inactive</b> — ' + esc(String(s.status).replace(/^inactive\s*[—-]?\s*/i, '') || 'no reason given') + '<p class="note" style="margin:4px 0 8px">Not shown in teachers’ attendance and marks lists. Records are kept.</p><button class="btn-primary" id="mgActivate" style="margin:0">▶ Make active again</button></div>'
+        : '<div class="mg-act"><b>⏸ Make inactive for now</b><p class="note" style="margin:4px 0 8px">For a student who has stopped coming (e.g. long absence). They leave teachers’ attendance and marks lists until you make them active again. Their records are kept and they can still see their own record.</p>' +
+          '<div class="field" style="margin-bottom:8px"><label for="mgOffWhy">Reason (optional)</label><input id="mgOffWhy" placeholder="e.g. continuously absent since 1 Oct"></div><button class="btn-secondary" id="mgDeactivate" style="margin:0">⏸ Make inactive</button></div>') +
       (isNew ? '' : '<button class="btn-secondary mg-danger" id="mgRemove" style="margin-top:10px;width:100%">🗑 Remove from the list (left / admission cancelled)</button>') +
       '<div class="tt-error" id="mgFErr"></div>' +
       (isNew ? '' : '<p class="note">A new roll number moves the student’s attendance, marks and photo with them.</p>');
@@ -4526,6 +4535,8 @@
     $('mgCancel').onclick = () => { $('mgForm').style.display = 'none'; };
     $('mgSave').onclick = mgSave;
     if ($('mgRemove')) $('mgRemove').onclick = mgRemove;
+    if ($('mgDeactivate')) $('mgDeactivate').onclick = () => mgSetActive(false);
+    if ($('mgActivate')) $('mgActivate').onclick = () => mgSetActive(true);
     $('mgForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   /** a picture → 120×160 JPEG (passport shape), as a data URL */
@@ -4566,6 +4577,17 @@
       await mgLoad(true);
     } catch (e) { $('mgFErr').textContent = e.offline ? 'You need internet.' : e.message; }
     btn.disabled = false; btn.textContent = isNew ? '💾 Add student' : '💾 Save changes';
+  }
+  async function mgSetActive(on) {
+    const y = mgYk(), s = mgEdit, b = $(on ? 'mgActivate' : 'mgDeactivate');
+    const why = !on && $('mgOffWhy') ? $('mgOffWhy').value.trim() : '';
+    const status = on ? 'Active' : 'Inactive — ' + (why ? why + ' ' : '') + '(since ' + fmtDate(todayISO()) + ', by ' + (attAuth ? attAuth.name : 'admin') + ')';
+    b.disabled = true; b.textContent = 'Saving…';
+    try {
+      await attApi('rosterPatch', { year: y, update: [{ roll: s.roll, status }] });
+      toast(on ? '▶ ' + s.name + ' is active again — back in the class lists' : '⏸ ' + s.name + ' is inactive — left out of attendance and marks lists');
+      $('mgForm').style.display = 'none'; mgClassCountsStale(y); await mgLoad(true);
+    } catch (e) { $('mgFErr').textContent = e.offline ? 'You need internet.' : e.message; b.disabled = false; b.textContent = on ? '▶ Make active again' : '⏸ Make inactive'; }
   }
   async function mgRemove() {
     const y = mgYk(), s = mgEdit, b = $('mgRemove');
