@@ -910,7 +910,7 @@
   <section class="view" id="view-staff">
     <div class="card pad" style="margin-bottom:14px">
       <p class="screen-title" style="margin:0" id="staffIntro"></p>
-      <p class="note" style="margin-top:8px">🔒 These records are kept in private Google Sheets. Only teachers whose Google account has been given access can open them — others will see Google's "You need access" page.</p>
+      <p class="note" style="margin-top:8px">🔒 The college’s Google Sheets are private. Their links are shown only to admins signed in with an admin PIN, and only Google accounts the owner has shared a sheet with can open it.</p>
     </div>
     <div class="card" id="staffList"></div>
     <p class="note" style="text-align:center" id="staffOffline">Opening a record needs an internet connection.</p>
@@ -1154,7 +1154,7 @@
       <div id="recAtt" style="display:none"></div>
       <div id="recRes" style="display:none"></div>
     </div>
-    <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Other records in Google Sheets (2nd Year, BS)</button>
+    <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Google Sheets of all classes (admin)</button>
   </section>
 
   <!-- FACULTY (private: own profile, or all for admins) -->
@@ -2670,22 +2670,31 @@
     attendance: { title: 'Attendance Record', intro: 'Class-wise attendance record. Choose a class:' }
   };
   let currentStaff = null;
-  function renderStaff(key) {
+  /* v12.5: the Google Sheets links are no longer in the public data file — admins fetch them after signing in */
+  let staffSheets = null;
+  async function renderStaff(key) {
     currentStaff = key;
     const sec = STAFF_SECTIONS[key];
     $('staffIntro').textContent = sec.intro;
-    const items = ((DATA.staffLinks || {})[key]) || [];
     const recRow = (DATA.attendanceApi && (key === 'records' || key === 'attendance'))
-      ? '<a class="res-row" href="#/records" data-go="/records"><span><div class="r-title">📊 1st Year student records — attendance &amp; results</div>' +
+      ? '<a class="res-row" href="#/records" data-go="/records"><span><div class="r-title">📊 Student records — attendance &amp; results</div>' +
         '<div class="r-desc">Search by roll number, charts, class-wise (admin: all students). Sign in with your PIN.</div></span><span class="chev">&rsaquo;</span></a>'
       : '';
-    $('staffList').innerHTML = recRow + (items.length ? items.map((it) => {
-      const ok = /^https:\/\//i.test(it.url || '');
-      return '<a class="res-row' + (ok ? '' : ' disabled') + '" href="' + (ok ? esc(it.url) : '#') + '" target="_blank" rel="noopener">' +
-        '<span><div class="r-title">' + esc(it.label) + '</div>' +
-        '<div class="r-desc">' + (ok ? esc(it.note || 'Google Sheet · staff sign-in required') : 'Not linked yet — add the link in admin.html → Staff links') + '</div></span>' +
-        '<span class="chev">' + (ok ? '🔒 &#8599;' : '') + '</span></a>';
-    }).join('') : (recRow ? '' : '<div class="empty">Nothing set up yet. Add links in admin.html → Staff links.</div>'));
+    if (!isAdminUser()) {
+      $('staffList').innerHTML = recRow + '<div class="empty">🔒 The Google Sheets are for admins only. Sign in at <b>Student Records</b> with an admin PIN, then come back here.</div>';
+      return;
+    }
+    const kind = { records: /^Student Records/, results: /^Results/, attendance: /^Attendance Record/ }[key];
+    const paint = () => {
+      const items = (staffSheets || []).filter((f) => kind.test(f.label) && /^https:\/\//.test(f.url || ''));
+      $('staffList').innerHTML = recRow + (items.length ? items.map((it) =>
+        '<a class="res-row" href="' + esc(it.url) + '" target="_blank" rel="noopener"><span><div class="r-title">' + esc(it.label.replace(kind, '').replace(/^\s*–\s*/, '')) + '</div>' +
+        '<div class="r-desc">Google Sheet · opens only for Google accounts it is shared with</div></span><span class="chev">🔒 &#8599;</span></a>').join('') : '<div class="empty">No sheets found.</div>');
+    };
+    if (staffSheets) { paint(); return; }
+    $('staffList').innerHTML = recRow + '<div class="empty">Loading the sheet links…</div>';
+    try { const j = await attApi('dataHealth', {}); staffSheets = (j.files || []).filter((f) => f.url); if (currentStaff === key) paint(); }
+    catch (e) { $('staffList').innerHTML = recRow + '<div class="empty">' + esc(e.offline ? 'You need internet to load the sheet links.' : e.message) + '</div>'; if (/PIN|sign in/i.test(e.message)) { recSignOut(); } }
   }
 
   /* ---------- mark attendance (talks to the Google Apps Script service) ---------- */
@@ -3738,7 +3747,7 @@
     return true;
   };
   function recSignOut() {
-    attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); myClassesCache = {}; recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); myClassesCache = {}; staffSheets = null; recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
     atData = null; rsData = null; rsEdit = null; $('recAtt').innerHTML = ''; $('recRes').innerHTML = '';
     pnData = null; pnNew = {}; if ($('pnGrid')) $('pnGrid').innerHTML = '';
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = '';

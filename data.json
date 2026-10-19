@@ -246,50 +246,5 @@
       "description": "Punjab University, Lahore: admissions, date sheets, roll number slips and results for BS / ADP students"
     }
   ],
-  "staffLinks": {
-    "records": [
-      {
-        "label": "1st Year (2026-28)",
-        "url": "https://docs.google.com/spreadsheets/d/1W4evJBtyn24w-UlsAlDnKXzlaMvh1fcm4GNFVKuhIAw/edit",
-        "note": "353 students · Google Sheet · staff sign-in required"
-      },
-      {
-        "label": "2nd Year",
-        "url": "https://docs.google.com/spreadsheets/d/1kPw5lRwSweXMfWhZAubYm1ZypcmE5rC4WDDC1kj3vXQ/edit"
-      },
-      {
-        "label": "BS",
-        "url": "https://docs.google.com/spreadsheets/d/1Gi8gY9Ibn8dSGG4ZinLepU46VMDzRnUCltIIYkwhd6o/edit"
-      }
-    ],
-    "results": [
-      {
-        "label": "1st Year",
-        "url": "https://docs.google.com/spreadsheets/d/1i17BeXx_dd4RVceJGv9XVYYUdGTIPJkaIJ7OnBdsvCc/edit"
-      },
-      {
-        "label": "2nd Year",
-        "url": "https://docs.google.com/spreadsheets/d/19ZkpEawJIhXaz_sib3fF9ZAGfuLhlEmHUoMavsSkm2o/edit"
-      },
-      {
-        "label": "BS",
-        "url": "https://docs.google.com/spreadsheets/d/10JwHVfBZwOh-7q8QMD-sv4mC2ySymS_X6_TqH5BF2R8/edit"
-      }
-    ],
-    "attendance": [
-      {
-        "label": "1st Year",
-        "url": "https://docs.google.com/spreadsheets/d/1k-mzpJ18dcIMe_YzfQreSiZXGgclojQDtD6BYadvH5I/edit"
-      },
-      {
-        "label": "2nd Year",
-        "url": "https://docs.google.com/spreadsheets/d/1nnj0oh70XljEUe00D6yTnMc7L1Hjs410ujxSa2llkHk/edit"
-      },
-      {
-        "label": "BS",
-        "url": "https://docs.google.com/spreadsheets/d/126qZoYMCBcH4yNA1zCsa2HW3MXJsMWDop-kvpoEeiMY/edit"
-      }
-    ]
-  },
   "attendanceApi": "https://script.google.com/macros/s/AKfycbwJaHeWGXadRXS795nZ7pAtDghM-pY_2Xc6xqscH5-hW_XsVM3rMk8-cshBB9GXTsIy1Q/exec"
 }
