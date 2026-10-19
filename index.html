@@ -261,6 +261,7 @@
   .dh-row small { color: var(--muted); font-size: .78rem; } .dh-ok { color: var(--green); } .dh-mid { color: #b26a00; } .dh-bad { color: var(--red); }
   .sc-box { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; } .sc-box p { margin: 0 0 6px; } .sc-box.ok { border-color: var(--green); } .sc-box ul { margin: 4px 0 8px; padding-left: 20px; }
   #recTabs { flex-wrap: wrap; overflow: visible; }
+  table.tch-tbl tr.tch-head td { background: var(--chip-bg); white-space: normal; }
   .tab-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .grade-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: -4px 0 12px; font-size: .82rem; font-weight: 700; }
   .ctrl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -2149,7 +2150,7 @@
       app, absent: rows.filter((r) => r.mAbsent).length, notEntered: rows.filter((r) => !r.mark).length,
       avg: app.length ? Math.round(10 * app.reduce((x, r) => x + r.mPct, 0) / app.length) / 10 : null,
       top: app[0] || null, bottom: app.length ? app[app.length - 1] : null,
-      pass: app.filter((r) => r.mPct >= 33).length, grades, paperTotal
+      pass: app.filter((r) => r.mPct >= PASS).length, grades, paperTotal
     };
   }
   function paintRegister(ctx, j) {
@@ -2197,17 +2198,17 @@
       else {
         h += '<div class="stat-grid reg-stats g4">' +
           '<div class="stat"><b>' + c.app.length + '</b><span>Appeared</span></div><div class="stat"><b class="' + (c.absent ? 'low' : '') + '">' + c.absent + '</b><span>Absent</span></div>' +
-          '<div class="stat"><b>' + pc(c.top && c.top.mPct) + '</b><span>Highest</span></div><div class="stat"><b class="' + lowCls(c.bottom && c.bottom.mPct, 33) + '">' + pc(c.bottom && c.bottom.mPct) + '</b><span>Lowest</span></div></div>';
+          '<div class="stat"><b>' + pc(c.top && c.top.mPct) + '</b><span>Highest</span></div><div class="stat"><b class="' + lowCls(c.bottom && c.bottom.mPct, PASS) + '">' + pc(c.bottom && c.bottom.mPct) + '</b><span>Lowest</span></div></div>';
         h += '<div class="reg-grades">' + ['A+', 'A', 'B', 'C', 'D', 'E', 'F'].map((g) => '<span class="g' + (g === 'F' ? ' gf' : '') + '"><b>' + g + '</b>' + (c.grades[g] || 0) + '</span>').join('') +
           '<span class="g gp"><b>Pass</b>' + c.pass + ' / ' + c.app.length + '</span></div>';
         const byRoll = c.rows.slice().sort((a, b) => a.roll - b.roll);
         h += '<div class="card"><div class="overflow-x"><table class="wl sum reg-marks"><thead><tr><th>#</th><th>Roll</th><th>Name</th><th class="num">Marks</th><th class="num">%</th><th class="num">Grade</th><th class="num">Position</th><th class="num">Month att.</th></tr></thead><tbody>' +
           byRoll.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + r.roll + '</td><td>' + regNm(ctx, r) + '</td>' +
-            (r.mPct !== null ? '<td class="num">' + r.mark.obt + ' / ' + r.mark.total + '</td><td class="num' + lowCls(r.mPct, 33) + '">' + r.mPct + '%</td><td class="num' + (r.mPct < 33 ? ' low' : '') + '"><span class="grade">' + gradeOf(r.mPct) + '</span></td><td class="num">' + r.rank + '</td>'
+            (r.mPct !== null ? '<td class="num">' + r.mark.obt + ' / ' + r.mark.total + '</td><td class="num' + lowCls(r.mPct, PASS) + '">' + r.mPct + '%</td><td class="num' + (r.mPct < PASS ? ' low' : '') + '"><span class="grade">' + gradeOf(r.mPct) + '</span></td><td class="num">' + r.rank + '</td>'
               : r.mAbsent ? '<td class="num low" colspan="4">Absent</td>' : '<td class="num muted" colspan="4">not entered</td>') +
             '<td class="num' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td></tr>').join('') +
           '</tbody></table></div></div>';
-        h += '<p class="note">Class average ' + pc(c.avg) + ' (students who appeared). Pass = 33% or more. Grades: A+ 80%+, A 70%+, B 60%+, C 50%+, D 40%+, E 33%+, F below 33%.' + (c.notEntered ? ' ' + c.notEntered + ' student' + (c.notEntered === 1 ? '' : 's') + ' without marks.' : '') + '</p>';
+        h += '<p class="note">Class average ' + pc(c.avg) + ' (students who appeared). Pass = 40% or more in each subject. Grades: A+ 80%+, A 70%+, B 60%+, C 50%+, D 40%+; E (33–39%) and F (below 33%) are below the pass mark.' + (c.notEntered ? ' ' + c.notEntered + ' student' + (c.notEntered === 1 ? '' : 's') + ' without marks.' : '') + '</p>';
         if (c.top) h += '<p class="note">🏆 Top: <b>' + esc(c.app.filter((r) => r.rank === 1).map((r) => r.name + ' (' + r.roll + ')').join(', ')) + '</b> — ' + c.top.mPct + '%</p>';
       }
     }
@@ -2233,7 +2234,7 @@
       return { roll: s.roll, name: s.name, p, a, l, marked: p + a + l, pct: pct1(p, p + a + l), mp, tp, avg };
     });
     const monthly = months.map((mo, i) => { let p = 0, t = 0; rows.forEach((r) => { const c = r.mp[i].c; p += c[0]; t += c[0] + c[1] + c[2]; }); return { month: mo.month, held: mo.held, pct: pct1(p, t) }; });
-    const testAvg = tests.map((t, i) => { const g = rows.map((r) => r.tp[i]).filter((x) => x.st === 'ok'); return { test: t, n: g.length, avg: g.length ? Math.round(10 * g.reduce((v, x) => v + x.pct, 0) / g.length) / 10 : null, pass: g.filter((x) => x.pct >= 33).length }; });
+    const testAvg = tests.map((t, i) => { const g = rows.map((r) => r.tp[i]).filter((x) => x.st === 'ok'); return { test: t, n: g.length, avg: g.length ? Math.round(10 * g.reduce((v, x) => v + x.pct, 0) / g.length) / 10 : null, pass: g.filter((x) => x.pct >= PASS).length }; });
     const counted = rows.filter((r) => r.pct !== null);
     const tp = rows.reduce((v, r) => v + r.p, 0), tm = rows.reduce((v, r) => v + r.marked, 0);
     const withAvg = rows.filter((r) => r.avg !== null);
@@ -2254,13 +2255,13 @@
       '<div class="stat"><b class="' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</b><span>Class attendance</span></div>' +
       '<div class="stat"><b class="' + (c.low.length ? 'low' : '') + '">' + c.low.length + '</b><span>Below 75%</span></div>' +
       '<div class="stat"><b>' + c.tests.length + '</b><span>Tests held</span></div>' +
-      '<div class="stat"><b class="' + lowCls(c.resAvg, 33) + '">' + pc(c.resAvg) + '</b><span>Average result</span></div></div>';
+      '<div class="stat"><b class="' + lowCls(c.resAvg, PASS) + '">' + pc(c.resAvg) + '</b><span>Average result</span></div></div>';
     // month-wise
     h += '<div class="section-title">📅 Month by month</div>';
     if (!c.months.length) h += '<div class="card"><div class="empty">No attendance has been marked for this class yet.</div></div>';
     else h += '<div class="reg-months">' + c.monthly.map((m) => '<button class="reg-mon no-print-btn" data-mon="' + m.month + '"><b>' + esc(monthLabel(m.month)) + '</b><span class="bar"><i style="width:' + (m.pct || 0) + '%" class="' + (m.pct !== null && m.pct < 75 ? 'lowbar' : '') + '"></i></span><small>' + m.held + ' lecture' + (m.held === 1 ? '' : 's') + ' · <b class="' + lowCls(m.pct, 75) + '">' + pc(m.pct) + '</b></small></button>').join('') + '</div>' +
       '<p class="note no-print">Tap a month for its day-by-day attendance register.</p>';
-    if (c.testAvg.length) h += '<div class="reg-months">' + c.testAvg.map((t) => '<div class="reg-mon test"><b>' + esc(t.test) + '</b><small>' + t.n + ' appeared · avg <b class="' + lowCls(t.avg, 33) + '">' + pc(t.avg) + '</b> · pass ' + t.pass + '/' + t.n + '</small></div>').join('') + '</div>';
+    if (c.testAvg.length) h += '<div class="reg-months">' + c.testAvg.map((t) => '<div class="reg-mon test"><b>' + esc(t.test) + '</b><small>' + t.n + ' appeared · avg <b class="' + lowCls(t.avg, PASS) + '">' + pc(t.avg) + '</b> · pass ' + t.pass + '/' + t.n + '</small></div>').join('') + '</div>';
     // student table
     if (c.months.length || c.tests.length) {
       h += '<div class="section-title">👥 Student-wise record</div><div class="card reg-card"><div class="overflow-x"><table class="reg-tbl sess"><thead><tr><th class="rs1">#</th><th class="rs2">Roll</th><th class="rs3">Name</th>' +
@@ -2271,12 +2272,12 @@
         c.rows.map((r, i) => '<tr><td class="rs1">' + (i + 1) + '</td><td class="rs2">' + r.roll + '</td><td class="rs3">' + regNm(ctx, r) + '</td>' +
           r.mp.map((x) => '<td class="rc mp' + lowCls(x.pct, 75) + '">' + (x.pct === null ? '<span class="rn">·</span>' : Math.round(x.pct) + '%') + '</td>').join('') +
           '<td class="rt">' + r.p + '</td><td class="rt' + (r.a ? ' ra-t' : '') + '">' + r.a + '</td><td class="rt">' + r.l + '</td><td class="rt b' + lowCls(r.pct, 75) + '">' + pc(r.pct) + '</td>' +
-          r.tp.map((x) => '<td class="rc tcol' + (x.st === 'ok' ? lowCls(x.pct, 33) : x.st === 'Ab' ? ' low' : '') + '" title="' + (x.st === 'ok' ? x.x.obt + ' / ' + x.x.total : '') + '">' + (x.st === 'ok' ? Math.round(x.pct) + '%' : x.st === 'Ab' ? 'Ab' : '<span class="rn">—</span>') + '</td>').join('') +
-          (c.tests.length ? '<td class="rt b' + lowCls(r.avg, 33) + '">' + pc(r.avg) + '</td><td class="rt">' + (r.avg === null ? '—' : '<span class="grade">' + gradeOf(r.avg) + '</span>') + '</td>' : '') + '</tr>').join('') +
+          r.tp.map((x) => '<td class="rc tcol' + (x.st === 'ok' ? lowCls(x.pct, PASS) : x.st === 'Ab' ? ' low' : '') + '" title="' + (x.st === 'ok' ? x.x.obt + ' / ' + x.x.total : '') + '">' + (x.st === 'ok' ? Math.round(x.pct) + '%' : x.st === 'Ab' ? 'Ab' : '<span class="rn">—</span>') + '</td>').join('') +
+          (c.tests.length ? '<td class="rt b' + lowCls(r.avg, PASS) + '">' + pc(r.avg) + '</td><td class="rt">' + (r.avg === null ? '—' : '<span class="grade">' + gradeOf(r.avg) + '</span>') + '</td>' : '') + '</tr>').join('') +
         '</tbody><tfoot><tr><td class="rs1"></td><td class="rs2"></td><td class="rs3">Class</td>' + c.monthly.map((m) => '<td class="rc' + lowCls(m.pct, 75) + '">' + (m.pct === null ? '' : Math.round(m.pct) + '%') + '</td>').join('') +
-        '<td class="rt" colspan="3"></td><td class="rt b' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</td>' + c.testAvg.map((t) => '<td class="rc tcol' + lowCls(t.avg, 33) + '">' + (t.avg === null ? '' : Math.round(t.avg) + '%') + '</td>').join('') +
+        '<td class="rt" colspan="3"></td><td class="rt b' + lowCls(c.classPct, 75) + '">' + pc(c.classPct) + '</td>' + c.testAvg.map((t) => '<td class="rc tcol' + lowCls(t.avg, PASS) + '">' + (t.avg === null ? '' : Math.round(t.avg) + '%') + '</td>').join('') +
         (c.tests.length ? '<td class="rt b">' + pc(c.resAvg) + '</td><td class="rt"></td>' : '') + '</tr></tfoot></table></div></div>';
-      h += '<p class="note">Month columns = attendance % in that month (present ÷ lectures marked). Total % = the whole session. Test columns = marks % (Ab = absent, — = not entered); hover/tap-hold a cell to see the marks. Avg % = average of the tests the student appeared in. Below 75% attendance or 33% marks in red.</p>';
+      h += '<p class="note">Month columns = attendance % in that month (present ÷ lectures marked). Total % = the whole session. Test columns = marks % (Ab = absent, — = not entered); hover/tap-hold a cell to see the marks. Avg % = average of the tests the student appeared in. Below 75% attendance or 40% marks in red.</p>';
     }
     if (c.low.length) h += '<div class="section-title">⚠️ Short attendance — whole session (below 75%) · ' + c.low.length + '</div><div class="card pad reg-low">' +
       c.low.map((r) => '<span><b>' + r.roll + '</b> ' + esc(r.name) + ' — <em>' + r.pct + '%</em> (' + r.p + '/' + r.marked + ')</span>').join('') + '</div>';
@@ -3849,6 +3850,7 @@
   /* ---------- results helpers & charts ---------- */
   let recMode = 'att', recTest = null, recStuTest = null;
   const shortTest = (t) => String(t).replace(' Test', '').replace('September', 'Sep').replace('October', 'Oct').replace('November', 'Nov').replace('December', 'Dec').replace('January', 'Jan').replace('February', 'Feb');
+  const PASS = 40;   // v12.6: pass mark in each subject (and overall) is 40%
   const gradeOf = (p) => (p >= 80 ? 'A+' : p >= 70 ? 'A' : p >= 60 ? 'B' : p >= 50 ? 'C' : p >= 40 ? 'D' : p >= 33 ? 'E' : 'F');
   const gradeChip = (p) => { if (p === null || p === undefined || p === '') return '<span style="color:var(--muted)">—</span>'; const g = gradeOf(p); return '<span class="grade g-' + (g === 'A+' ? 'Ap' : g) + '">' + g + '</span>'; };
   const r1 = (x) => Math.round(x * 10) / 10;
@@ -3877,7 +3879,7 @@
     const y = (v) => T + ih - (v / 100) * ih;
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Overall percentage by test">';
     [0, 50, 100].forEach((v) => { s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
-    s += '<line class="pass" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(33) + '" y2="' + y(33) + '"/><text x="' + (W - R) + '" y="' + (y(33) - 4) + '" text-anchor="end">pass 33%</text>';
+    s += '<line class="pass" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(PASS) + '" y2="' + y(PASS) + '"/><text x="' + (W - R) + '" y="' + (y(PASS) - 4) + '" text-anchor="end">pass 40%</text>';
     labels.forEach((l, i) => { s += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(l) + '</text>'; });
     const pts = values.map((v, i) => (v === null ? null : [x(i), y(v), v, i])).filter(Boolean);
     if (pts.length > 1) s += '<polyline class="line" points="' + pts.map((p) => p[0] + ',' + p[1]).join(' ') + '"/>';
@@ -3887,9 +3889,9 @@
     });
     return s + '</svg>';
   }
-  /** horizontal bars (one per subject); ref = dashed line (33% pass mark or 75% attendance) — bars below it are red */
+  /** horizontal bars (one per subject); ref = dashed line (40% pass mark or 75% attendance) — bars below it are red */
   function barSvg(items, ref) {
-    ref = ref || 33;
+    ref = ref || PASS;
     const W = 340, rowH = 30, L = 118, R = 44, T = 4, H = T + items.length * rowH + 18, iw = W - L - R;
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Subject-wise percentage">';
     [0, 50, 100].forEach((v) => { const xx = L + (v / 100) * iw; s += '<line class="grid" x1="' + xx + '" x2="' + xx + '" y1="' + T + '" y2="' + (H - 16) + '"/><text x="' + xx + '" y="' + (H - 3) + '" text-anchor="middle">' + v + '</text>'; });
@@ -3970,7 +3972,7 @@
       const x = R.tests[t], pc = vals[i];
       if (pc === null) return { label: shortTest(t), pct: null, tip: t + ': no marks entered' };
       const sp = Object.keys(x.subjects || {}).map((kk) => { const m = x.subjects[kk]; return m.status === 'Absent' || !m.total ? null : [kk, r1(100 * m.obt / m.total)]; }).filter(Boolean).sort((p2, q) => q[1] - p2[1]);
-      return { label: shortTest(t), pct: pc, sub: gradeOf(pc), low: pc < 33, sel: t === selT,
+      return { label: shortTest(t), pct: pc, sub: gradeOf(pc), low: pc < PASS, sel: t === selT,
         tip: t + ': ' + x.obt + ' / ' + x.total + ' = ' + pc + '% · Grade ' + gradeOf(pc) + (sp.length > 1 ? ' · Best: ' + sp[0][0] + ' ' + sp[0][1] + '% · Weakest: ' + sp[sp.length - 1][0] + ' ' + sp[sp.length - 1][1] + '%' : '') };
     });
   }
@@ -4009,9 +4011,9 @@
       '<div class="stat"><b>' + r1(vals.filter((v) => v !== null).reduce((a, b) => a + b, 0) / has.length) + '%</b><span>Average (' + has.length + ' test' + (has.length > 1 ? 's' : '') + ')</span></div></div>';
     const tItems = testColItems(R, tests, recStuTest);
     const selTip = (tItems.find((x) => x.sel) || tItems[tItems.length - 1]).tip;
-    h += '<div class="card chart-card"><h3>Test results month by month</h3><div class="sub">All subjects combined · dashed line = 33% pass mark · grade under each month</div>' + colSvg(tItems, 33, 'Test percentage by month') + chartTipBox(selTip) + '</div>';
+    h += '<div class="card chart-card"><h3>Test results month by month</h3><div class="sub">All subjects combined · dashed line = 40% pass mark · grade under each month</div>' + colSvg(tItems, PASS, 'Test percentage by month') + chartTipBox(selTip) + '</div>';
     const subs = Object.keys(cur.subjects).sort();
-    h += '<div class="card chart-card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><h3>Subject-wise %</h3><div class="sub">Red = below 33%</div></div>' +
+    h += '<div class="card chart-card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><h3>Subject-wise %</h3><div class="sub">Red = below 40%</div></div>' +
       '<select class="mini-sel" id="' + (pre || 'rec') + 'StuTest" aria-label="Test">' + has.map((t) => '<option value="' + esc(t) + '"' + (t === recStuTest ? ' selected' : '') + '>' + esc(shortTest(t)) + '</option>').join('') + '</select></div>' +
       barSvg(testSubjItems(cur)) + chartTipBox() + '</div>';
     const allSubs = {}; has.forEach((t) => Object.keys(R.tests[t].subjects).forEach((k) => { allSubs[k] = 1; }));
@@ -4021,7 +4023,7 @@
         if (!x) return '<td class="num" style="color:var(--muted)">—</td>';
         if (x.status === 'Absent') return '<td class="num low">Abs</td>';
         const p = r1(100 * x.obt / x.total);
-        return '<td class="num' + (p < 33 ? ' low' : '') + '">' + x.obt + '/' + x.total + '<span class="ttnote">' + p + '%</span></td>';
+        return '<td class="num' + (p < PASS ? ' low' : '') + '">' + x.obt + '/' + x.total + '<span class="ttnote">' + p + '%</span></td>';
       }).join('') + '</tr>').join('') +
       '<tr><td><b>Total</b></td>' + has.map((t) => { const x = R.tests[t], p = r1(100 * x.obt / x.total); return '<td class="num"><b>' + x.obt + '/' + x.total + '</b><span class="ttnote">' + p + '% · ' + gradeOf(p) + '</span></td>'; }).join('') + '</tr>' +
       '</tbody></table></div></div>';
@@ -4049,9 +4051,9 @@
     if (!has.length) h += '<p class="tr-none">No test marks have been entered yet.</p>';
     else {
       h += '<table class="tr-t"><thead><tr><th>Subject</th>' + has.map((x) => '<th>' + esc(shortTest(x)) + '</th>').join('') + '</tr></thead><tbody>' +
-        Object.keys(subs).sort().map((k) => '<tr><td>' + esc(k) + '</td>' + has.map((x) => { const m = R.tests[x].subjects[k]; if (!m) return '<td>—</td>'; if (m.status === 'Absent') return '<td class="lo">Absent</td>'; const pc = r1(100 * m.obt / m.total); return '<td' + (pc < 33 ? ' class="lo"' : '') + '>' + m.obt + '/' + m.total + '</td>'; }).join('') + '</tr>').join('') +
+        Object.keys(subs).sort().map((k) => '<tr><td>' + esc(k) + '</td>' + has.map((x) => { const m = R.tests[x].subjects[k]; if (!m) return '<td>—</td>'; if (m.status === 'Absent') return '<td class="lo">Absent</td>'; const pc = r1(100 * m.obt / m.total); return '<td' + (pc < PASS ? ' class="lo"' : '') + '>' + m.obt + '/' + m.total + '</td>'; }).join('') + '</tr>').join('') +
         '<tr class="tot"><td>Total</td>' + has.map((x) => '<td>' + R.tests[x].obt + '/' + R.tests[x].total + '</td>').join('') + '</tr>' +
-        '<tr class="tot"><td>% · Grade</td>' + has.map((x) => { const pc = r1(100 * R.tests[x].obt / R.tests[x].total); return '<td' + (pc < 33 ? ' class="lo"' : '') + '>' + pc + '% · ' + gradeOf(pc) + '</td>'; }).join('') + '</tr></tbody></table>';
+        '<tr class="tot"><td>% · Grade</td>' + has.map((x) => { const pc = r1(100 * R.tests[x].obt / R.tests[x].total); return '<td' + (pc < PASS ? ' class="lo"' : '') + '>' + pc + '% · ' + gradeOf(pc) + '</td>'; }).join('') + '</tr></tbody></table>';
     }
     // 2) attendance tables: month-wise | subject-wise
     const mon = attMonthItems(j), sub = attSubjItems(j);
@@ -4072,11 +4074,11 @@
     // 3) graphs (2 × 2)
     const figs = [];
     if (mon.length) figs.push(['Attendance by month (%) · dashed = 75%', colSvg(plain(mon), 75, 'Attendance by month')]);
-    if (has.length) figs.push(['Test results by month (%) · dashed = 33% pass', colSvg(plain(testColItems(R, tests, null)), 33, 'Test results by month')]);
+    if (has.length) figs.push(['Test results by month (%) · dashed = 40% pass', colSvg(plain(testColItems(R, tests, null)), PASS, 'Test results by month')]);
     if (sub.length) figs.push(['Attendance by subject (%) · dashed = 75%', barSvg(sub, 75), 'h']);
-    if (has.length) figs.push(['Subjects in the ' + shortTest(has[has.length - 1]) + ' test (%) · dashed = 33%', barSvg(testSubjItems(R.tests[has[has.length - 1]])), 'h']);
+    if (has.length) figs.push(['Subjects in the ' + shortTest(has[has.length - 1]) + ' test (%) · dashed = 40%', barSvg(testSubjItems(R.tests[has[has.length - 1]])), 'h']);
     if (figs.length) h += '<div class="tr-h">Progress graphs</div><div class="tr-figs">' + figs.map((f) => '<div class="tr-fig ' + (f[2] || '') + '"><div class="tr-fig-h">' + esc(f[0]) + '</div>' + f[1] + '</div>').join('') + '</div>';
-    h += '<div class="tr-sign"><div>Class Incharge</div><div>Principal</div></div><div class="tr-foot">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. Attendance and marks as entered by the teachers up to this date. Red = below 75% attendance or below 33% marks.</div></div>';
+    h += '<div class="tr-sign"><div>Class Incharge</div><div>Principal</div></div><div class="tr-foot">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. Attendance and marks as entered by the teachers up to this date. Red = below 75% attendance or below 40% marks.</div></div>';
     let box = $('trPrint'); if (!box) { box = document.createElement('div'); box.id = 'trPrint'; document.body.appendChild(box); }
     box.innerHTML = h;
     // fit everything on ONE A4 page (portrait, 10 mm margins → 190 × 277 mm)
@@ -4179,7 +4181,7 @@
         (rows.length ? rows.map((r) => {
           const p = r.res && typeof r.res[recTest] === 'number' ? r.res[recTest] : null, a = resAvg(r);
           return '<tr class="click" data-roll="' + r.roll + '"><td class="period">' + r.roll + '</td><td>' + esc(r.name) + '</td>' + (opts && opts.group ? '<td>' + esc(r.group) + '</td>' : '') +
-            '<td class="num' + (p !== null && p < 33 ? ' low' : '') + '">' + (p === null ? '—' : p + '%') + '</td><td class="num">' + gradeChip(p) + '</td><td class="num">' + (a === null ? '—' : a + '%') + '</td></tr>';
+            '<td class="num' + (p !== null && p < PASS ? ' low' : '') + '">' + (p === null ? '—' : p + '%') + '</td><td class="num">' + gradeChip(p) + '</td><td class="num">' + (a === null ? '—' : a + '%') + '</td></tr>';
         }).join('') : '<tr><td colspan="6" class="empty">No students match.</td></tr>') + '</tbody></table></div></div>';
     }
     return '<div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Roll</th><th>Name</th>' + (opts && opts.group ? '<th>Group</th>' : '') +
@@ -4192,9 +4194,9 @@
   function statCards(rows) {
     if (recMode === 'res') {
       const ps = rows.map((r) => r.res && r.res[recTest]).filter((x) => typeof x === 'number');
-      const avg = ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null, fail = ps.filter((x) => x < 33).length;
+      const avg = ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null, fail = ps.filter((x) => x < PASS).length;
       return '<div class="stat-grid"><div class="stat"><b>' + ps.length + '<small style="font-size:.7rem;color:var(--muted)">/' + rows.length + '</small></b><span>With marks</span></div><div class="stat"><b>' + (avg === null ? '—' : avg + '%') + '</b><span>Average</span></div>' +
-        '<div class="stat"><b style="color:' + (fail ? 'var(--red)' : 'var(--accent)') + '">' + fail + '</b><span>Below 33%</span></div></div>';
+        '<div class="stat"><b style="color:' + (fail ? 'var(--red)' : 'var(--accent)') + '">' + fail + '</b><span>Below 40%</span></div></div>';
     }
     const marked = rows.filter((r) => r.total);
     const avg = marked.length ? Math.round(marked.reduce((a, r) => a + 100 * r.present / r.total, 0) / marked.length) : null;
@@ -4230,7 +4232,7 @@
     const mb = modeBar(j.rows);
     $('recClassWrap').innerHTML = mb + '<div class="tbl-tools"><div class="section-title">' + esc(title) + '</div><button class="mini-btn" id="recClassCsv">⬇ CSV</button></div>' +
       statCards(j.rows) + studentTable(j.rows, { mine: true }) +
-      (recMode === 'res' ? '<p class="note">% = all subjects in that test. Tap a student for charts and subject-wise marks. Below 33% in red.</p>'
+      (recMode === 'res' ? '<p class="note">% = all subjects in that test. Tap a student for charts and subject-wise marks. Below 40% in red.</p>'
         : '<p class="note">% = all subjects marked for the student. <b>My %</b> = only your own lectures. Tap a student for day-by-day detail. Below 75% in red.</p>');
     $('recClassCsv').addEventListener('click', () => csvDownload((recMode === 'res' ? 'Results_' : 'Attendance_') + group + '_' + section.replace(/\s+/g, '') + '.csv', rowsCsv(j.rows, true)));
   }
@@ -4265,11 +4267,11 @@
       const by = {};
       all.filter((r) => secOf(r.roll, sec)).forEach((r) => { (by[r.group] = by[r.group] || []).push(r); });
       const order = ATT_GROUPS.filter((x) => by[x]).concat(Object.keys(by).filter((x) => ATT_GROUPS.indexOf(x) < 0));
-      h += '<div class="section-title">Group-wise · ' + esc(recTest) + (sec !== 'All' ? ' · ' + esc(sec) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">With marks</th><th class="num">Avg %</th><th class="num">Below 33%</th></tr></thead><tbody>' +
+      h += '<div class="section-title">Group-wise · ' + esc(recTest) + (sec !== 'All' ? ' · ' + esc(sec) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">With marks</th><th class="num">Avg %</th><th class="num">Below 40%</th></tr></thead><tbody>' +
         order.map((x) => {
           const ps = by[x].map((r) => r.res && r.res[recTest]).filter((v) => typeof v === 'number');
-          const avg = ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null, fail = ps.filter((v) => v < 33).length;
-          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + ps.length + '/' + by[x].length + '</td><td class="num' + (avg !== null && avg < 33 ? ' low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</td><td class="num' + (fail ? ' low' : '') + '">' + fail + '</td></tr>';
+          const avg = ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null, fail = ps.filter((v) => v < PASS).length;
+          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + ps.length + '/' + by[x].length + '</td><td class="num' + (avg !== null && avg < PASS ? ' low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</td><td class="num' + (fail ? ' low' : '') + '">' + fail + '</td></tr>';
         }).join('') + '</tbody></table></div></div>';
     } else if (!g && !q) {
       const by = {};
@@ -4284,7 +4286,7 @@
         }).join('') + '</tbody></table></div></div>';
     }
     h += '<div class="tbl-tools"><div class="section-title">' + (g ? esc(groupLabel(g)) : 'All students') + (sec !== 'All' ? ' · ' + esc(sec) : '') + '</div><button class="mini-btn" id="recAllCsv">⬇ CSV</button></div>' +
-      statCards(rows) + studentTable(rows, { group: !g }) + '<p class="note">' + (recMode === 'res' ? 'Tap a student for charts and subject-wise marks. Below 33% in red.' : 'Tap a student for subject-wise and day-by-day detail. Below 75% in red.') + '</p>';
+      statCards(rows) + studentTable(rows, { group: !g }) + '<p class="note">' + (recMode === 'res' ? 'Tap a student for charts and subject-wise marks. Below 40% in red.' : 'Tap a student for subject-wise and day-by-day detail. Below 75% in red.') + '</p>';
     $('recAllOut').innerHTML = h;
     $('recAllCsv').addEventListener('click', () => csvDownload((recMode === 'res' ? 'Results_' : 'Attendance_') + (g || 'All') + (sec !== 'All' ? '_' + sec.replace(/\s+/g, '') : '') + '.csv', rowsCsv(rows, false)));
   }
@@ -4308,10 +4310,10 @@
     const gs = groupOrder([...new Set(d.rows.map((r) => r[2]))]);
     const f = (id) => { const e = $(pre + id); return e ? e.value : ''; };
     return '<div class="card pad"><div class="field-row">' +
-      '<div class="field"><label for="' + pre + 'G">Group</label><select id="' + pre + 'G">' + selOpts([['', 'All groups']].concat(gs.map((g) => [g, groupLabel(g)])), f('G')) + '</select></div>' +
+      '<div class="field"><label for="' + pre + 'G">' + (isBS(recYear) ? 'Department' : 'Group') + '</label><select id="' + pre + 'G">' + selOpts([['', isBS(recYear) ? 'All departments' : 'All groups']].concat(gs.map((g) => [g, groupLabel(g)])), f('G')) + '</select></div>' +
       (isBS(recYear) ? '' : '<div class="field"><label for="' + pre + 'S">Section</label><select id="' + pre + 'S">' + selOpts(SECS, f('S') || 'All') + '</select></div>') + '</div>' +
       extra + '<div class="field-row"><div class="field"><label for="' + pre + 'Q">Search</label><input id="' + pre + 'Q" type="search" placeholder="Name or roll no." value="' + esc(f('Q')) + '"></div>' +
-      '<div class="field"><label for="' + pre + 'O">Sort by</label><select id="' + pre + 'O">' + selOpts([['roll', 'Roll number'], ['lo', '% (lowest first)'], ['hi', '% (highest first)']], f('O') || 'roll') + '</select></div></div>' +
+      '<div class="field"><label for="' + pre + 'O">Sort by</label><select id="' + pre + 'O">' + selOpts([['roll', 'Roll number'], ['lo', '% (lowest first)'], ['hi', '% (highest first)']].concat(pre === 'rs' ? [['fail', 'Failed subjects (most first)']] : []), f('O') || 'roll') + '</select></div></div>' +
       '<div class="tab-btns"><button class="mini-btn" id="' + pre + 'R">↻ Refresh</button><button class="mini-btn" id="' + pre + 'C">⬇ CSV</button><button class="mini-btn" id="' + pre + 'P">🖨 Print</button>' + (pre === 'rs' ? '<button class="mini-btn" id="rsL">🕘 Changes</button>' : '') + '</div>' +
       '<div class="tt-error" id="' + pre + 'E"></div></div>';
   }
@@ -4322,7 +4324,7 @@
   function sortRows(rows, key, pre) { const o = $(pre + 'O').value; if (o === 'lo') rows.sort((a, b) => (key(a) === null ? 999 : key(a)) - (key(b) === null ? 999 : key(b)) || a[0] - b[0]); else if (o === 'hi') rows.sort((a, b) => (key(b) === null ? -1 : key(b)) - (key(a) === null ? -1 : key(a)) || a[0] - b[0]); else rows.sort((a, b) => a[0] - b[0]); return rows; }
   const nameCell = (r) => '<td>' + esc(r[1]) + (r[4] ? ' <span class="ttnote" style="display:inline">⏸ inactive</span>' : '') + '</td>';
   function wireTab(pre, paint, load) {
-    ['G', 'S', 'O', 'M', 'U', 'T'].forEach((k) => { const e = $(pre + k); if (e) e.onchange = paint; });
+    ['G', 'S', 'O', 'M', 'U', 'T', 'V', 'W'].forEach((k) => { const e = $(pre + k); if (e) e.onchange = paint; });
     $(pre + 'Q').oninput = paint; $(pre + 'R').onclick = () => load(true);
     $(pre + 'P').onclick = () => printLandscape();
   }
@@ -4401,7 +4403,10 @@
     if (!$('rsG') || rebuild === true) {
       const curU = $('rsU') && $('rsU').value !== '' ? $('rsU').options[$('rsU').selectedIndex].text : '';
       const lastT = $('rsT') ? $('rsT').value : (withMarks[withMarks.length - 1] || d.tests[0]);
-      $('recRes').innerHTML = tabFilters('rs', d, '<div class="field-row"><div class="field"><label for="rsT">Test</label><select id="rsT">' + selOpts([['*', 'All tests (month-wise)']].concat(d.tests.map((t) => [t, t + (withMarks.indexOf(t) < 0 ? ' (no marks yet)' : '')])), lastT) + '</select></div>' +
+      const curV = $('rsV') ? $('rsV').value : 'stu', curW = $('rsW') && $('rsW').value !== '' ? $('rsW').options[$('rsW').selectedIndex].text : '';
+      $('recRes').innerHTML = tabFilters('rs', d, '<div class="field-row"><div class="field"><label for="rsV">Show</label><select id="rsV">' + selOpts([['stu', 'Student-wise'], ['tch', 'Teacher-wise']], curV) + '</select></div>' +
+        '<div class="field" id="rsWf"><label for="rsW">Teacher</label><select id="rsW">' + selOpts([['', 'All teachers']].concat((d.teachers || []).map((t, i) => [String(i), t])), String((d.teachers || []).indexOf(curW))) + '</select></div></div>' +
+        '<div class="field-row"><div class="field"><label for="rsT">Test</label><select id="rsT">' + selOpts([['*', 'All tests (month-wise)']].concat(d.tests.map((t) => [t, t + (withMarks.indexOf(t) < 0 ? ' (no marks yet)' : '')])), lastT) + '</select></div>' +
         '<div class="field"><label for="rsU">Subject</label><select id="rsU">' + selOpts([['', 'All subjects']].concat(d.subjects.map((s, i) => [String(i), s])), String(d.subjects.indexOf(curU))) + '</select></div></div>') +
         '<div id="rsLog" style="display:' + (rsLogOpen ? 'block' : 'none') + '"></div><div id="rsEd"></div><div id="rsOut"></div>';
       wireTab('rs', paintResTab, loadResTab);
@@ -4409,51 +4414,107 @@
       $('rsL').onclick = () => toggleResLog();
     }
     const tSel = $('rsT').value, uSel = $('rsU').value, g = $('rsG').value, q = $('rsQ').value.trim(), all = tSel === '*', ti = d.tests.indexOf(tSel);
-    const base = filtRows('rs', d);
+    const base = filtRows('rs', d), view = $('rsV').value;
+    $('rsWf').style.display = view === 'tch' ? '' : 'none';
+    if (view === 'tch') { paintTeacherRes(d, base, tSel, all, uSel); $('rsEd').innerHTML = ''; rsEdit = null; return; }
+    const grpWord = isBS(recYear) ? 'Department' : 'Group';
+    /** [passed, failed] subjects of one student in one test (absent = failed) */
+    const pfOf = (cells, list) => { let pp = 0, ff = 0; list.forEach((si) => { const c = cells[si]; if (!c) return; if (c.absent || 100 * c.obt / c.total < PASS) ff++; else pp++; }); return [pp, ff]; };
     let h = '';
     if (all) {
-      const per = base.map((r) => { const ps = d.tests.map((t, i) => { const x = rsSum(rsCells(r, i), uSel); return x ? x.pct : null; }); const v = ps.filter((p) => p !== null); return { r, ps, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null }; });
+      const allSi = d.subjects.map((x, k) => k).filter((k) => uSel === '' || k === Number(uSel));
+      const per = base.map((r) => { let fails = 0; const ps = d.tests.map((t, i) => { const cells = rsCells(r, i), x = rsSum(cells, uSel); fails += pfOf(cells, allSi)[1]; return x ? x.pct : null; }); const v = ps.filter((p) => p !== null); return { r, ps, fails, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null }; });
       const shownT = d.tests.map((t, i) => i).filter((i) => per.some((x) => x.ps[i] !== null));
-      const cls = shownT.map((i) => { const v = per.map((x) => x.ps[i]).filter((p) => p !== null); return { i, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null, n: v.length, pass: v.filter((p) => p >= 33).length }; });
-      if (cls.length) h += '<div class="card chart-card"><h3>Class average month by month</h3><div class="sub">' + esc((g ? groupLabel(g) : 'All groups') + (uSel !== '' ? ' · ' + d.subjects[Number(uSel)] : ' · all subjects')) + ' · dashed line = 33% pass</div>' +
-        colSvg(cls.map((c, k) => ({ label: shortTest(d.tests[c.i]), pct: c.avg, sub: gradeOf(c.avg), low: c.avg < 33, sel: k === cls.length - 1, tip: d.tests[c.i] + ': class average ' + c.avg + '% · ' + c.n + ' students with marks · passed ' + c.pass + ' · below 33%: ' + (c.n - c.pass) })), 33, 'Class average by test') + chartTipBox(d.tests[cls[cls.length - 1].i] + ': class average ' + cls[cls.length - 1].avg + '% · ' + cls[cls.length - 1].n + ' students with marks') + '</div>';
+      const cls = shownT.map((i) => { const v = per.map((x) => x.ps[i]).filter((p) => p !== null); return { i, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null, n: v.length, pass: v.filter((p) => p >= PASS).length }; });
+      if (cls.length) h += '<div class="card chart-card"><h3>Class average month by month</h3><div class="sub">' + esc((g ? groupLabel(g) : 'All groups') + (uSel !== '' ? ' · ' + d.subjects[Number(uSel)] : ' · all subjects')) + ' · dashed line = 40% pass</div>' +
+        colSvg(cls.map((c, k) => ({ label: shortTest(d.tests[c.i]), pct: c.avg, sub: gradeOf(c.avg), low: c.avg < PASS, sel: k === cls.length - 1, tip: d.tests[c.i] + ': class average ' + c.avg + '% · ' + c.n + ' students with marks · passed ' + c.pass + ' · below 40%: ' + (c.n - c.pass) })), PASS, 'Class average by test') + chartTipBox(d.tests[cls[cls.length - 1].i] + ': class average ' + cls[cls.length - 1].avg + '% · ' + cls[cls.length - 1].n + ' students with marks') + '</div>';
       const sorted = sortRows(per.map((x) => Object.assign(x.r, { _x: x })), (r) => r._x.avg, 'rs').map((r) => r._x);
-      h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + ' · month-wise %' + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') + shownT.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Avg</th><th class="num">Grade</th></tr></thead><tbody>' +
-        (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') + shownT.map((i) => pctTd(x.ps[i], 33)).join('') + pctTd(x.avg, 33) + '<td class="num">' + gradeChip(x.avg) + '</td></tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
-        '</tbody></table></div></div><p class="note">Choose one test above to see subject marks' + (d.canEdit ? ' and to change, add or delete marks' : '') + '. Tap a student for the full record and transcript.</p>';
+      if ($('rsO').value === 'fail') sorted.sort((a, b) => b.fails - a.fails || (a.avg ?? 999) - (b.avg ?? 999) || a.r[0] - b.r[0]);
+      h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + ' · month-wise %' + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') + shownT.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Avg</th><th class="num">Grade</th><th class="num">Failed papers</th></tr></thead><tbody>' +
+        (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') + shownT.map((i) => pctTd(x.ps[i], PASS)).join('') + pctTd(x.avg, PASS) + '<td class="num">' + gradeChip(x.avg) + '</td><td class="num' + (x.fails ? ' low' : '') + '">' + x.fails + '</td></tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
+        '</tbody></table></div></div><p class="note">Failed papers = subject papers below 40% (or absent) across all tests. Choose one test above to see subject marks' + (d.canEdit ? ' and to change, add or delete marks' : '') + '. Tap a student for the full record and transcript.</p>';
       $('rsOut').innerHTML = h; $('rsEd').innerHTML = ''; return;
     }
     // one test
     const subjIn = {}; base.forEach((r) => r[5].forEach((c) => { if (c[0] === ti) subjIn[c[1]] = 1; }));
     const subs = Object.keys(subjIn).map(Number).filter((si) => uSel === '' || si === Number(uSel)).sort((a, b) => d.subjects[a].localeCompare(d.subjects[b]));
-    let per = base.map((r) => { const cells = rsCells(r, ti); return { r, cells, sum: rsSum(cells, uSel) }; });
+    let per = base.map((r) => { const cells = rsCells(r, ti); return { r, cells, sum: rsSum(cells, uSel), pf: pfOf(cells, subs) }; });
     const ranked = per.filter((x) => x.sum).sort((a, b) => b.sum.pct - a.sum.pct); let pos = 0, lastP = null;
     ranked.forEach((x, k) => { if (x.sum.pct !== lastP) { pos = k + 1; lastP = x.sum.pct; } x.pos = pos; });
-    const vals = ranked.map((x) => x.sum.pct), avg = vals.length ? r1(vals.reduce((a, b) => a + b, 0) / vals.length) : null, pass = vals.filter((v) => v >= 33).length;
+    const vals = ranked.map((x) => x.sum.pct), avg = vals.length ? r1(vals.reduce((a, b) => a + b, 0) / vals.length) : null, pass = ranked.filter((x) => !x.pf[1]).length;
     const gd = {}; vals.forEach((v) => { const k = gradeOf(v); gd[k] = (gd[k] || 0) + 1; });
-    h += '<div class="stat-grid g4"><div class="stat"><b>' + vals.length + '/' + base.length + '</b><span>With marks</span></div><div class="stat"><b class="' + (avg !== null && avg < 33 ? 'low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</b><span>Class average</span></div><div class="stat"><b>' + pass + '</b><span>Passed</span></div><div class="stat"><b class="' + (vals.length - pass ? 'low' : '') + '">' + (vals.length - pass) + '</b><span>Below 33%</span></div></div>' +
+    h += '<div class="stat-grid g4"><div class="stat"><b>' + vals.length + '/' + base.length + '</b><span>With marks</span></div><div class="stat"><b class="' + (avg !== null && avg < PASS ? 'low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</b><span>Class average</span></div><div class="stat"><b>' + pass + '</b><span>Passed (all subjects)</span></div><div class="stat"><b class="' + (vals.length - pass ? 'low' : '') + '">' + (vals.length - pass) + '</b><span>Failed (1+ subject)</span></div></div>' +
       (vals.length ? '<div class="grade-row">' + ['A+', 'A', 'B', 'C', 'D', 'E', 'F'].map((k) => '<span>' + gradeChip(k === 'A+' ? 85 : k === 'A' ? 75 : k === 'B' ? 65 : k === 'C' ? 55 : k === 'D' ? 45 : k === 'E' ? 35 : 10) + ' ' + (gd[k] || 0) + '</span>').join('') + '</div>' : '');
     if (vals.length && uSel === '') {
       const sa = subs.map((si) => { let o = 0, t = 0, n = 0, ab = 0; per.forEach((x) => { const c = x.cells[si]; if (!c) return; if (c.absent) { ab++; return; } o += c.obt; t += c.total; n++; }); return { label: d.subjects[si], pct: t ? r1(100 * o / t) : 0, absent: !t, detail: n + ' students', tip: d.subjects[si] + ': average ' + (t ? r1(100 * o / t) + '%' : '—') + ' · ' + n + ' with marks' + (ab ? ' · ' + ab + ' absent' : '') }; });
-      if (sa.length) h += '<div class="card chart-card"><h3>Subject averages · ' + esc(tSel) + '</h3><div class="sub">' + esc(g ? groupLabel(g) : 'All groups') + ' · dashed line = 33% · red = below 33%</div>' + barSvg(sa) + chartTipBox() + '</div>';
+      if (sa.length) h += '<div class="card chart-card"><h3>Subject averages · ' + esc(tSel) + '</h3><div class="sub">' + esc(g ? groupLabel(g) : 'All groups') + ' · dashed line = 40% · red = below 40%</div>' + barSvg(sa) + chartTipBox() + '</div>';
     }
     if (!g && !q && vals.length) {
       const by = {}; per.forEach((x) => { (by[x.r[2]] = by[x.r[2]] || []).push(x); });
-      h += '<div class="section-title">Group-wise · ' + esc(tSel) + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">With marks</th><th class="num">Avg %</th><th class="num">Below 33%</th><th>Top</th></tr></thead><tbody>' +
-        groupOrder(Object.keys(by)).map((x) => { const m = by[x].filter((y) => y.sum).sort((a, b) => b.sum.pct - a.sum.pct), av = m.length ? r1(m.reduce((a, y) => a + y.sum.pct, 0) / m.length) : null, lw = m.filter((y) => y.sum.pct < 33).length;
-          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + m.length + '/' + by[x].length + '</td>' + pctTd(av, 33) + '<td class="num' + (lw ? ' low' : '') + '">' + lw + '</td><td>' + (m[0] ? esc(m[0].r[1]) + ' <span class="ttnote" style="display:inline">' + m[0].sum.pct + '%</span>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+      h += '<div class="section-title">' + grpWord + '-wise · ' + esc(tSel) + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>' + grpWord + '</th><th class="num">With marks</th><th class="num">Avg %</th><th class="num">Passed</th><th class="num">Failed</th><th>Top</th></tr></thead><tbody>' +
+        groupOrder(Object.keys(by)).map((x) => { const m = by[x].filter((y) => y.sum).sort((a, b) => b.sum.pct - a.sum.pct), av = m.length ? r1(m.reduce((a, y) => a + y.sum.pct, 0) / m.length) : null, lw = m.filter((y) => y.pf[1]).length;
+          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + m.length + '/' + by[x].length + '</td>' + pctTd(av, PASS) + '<td class="num">' + (m.length - lw) + '</td><td class="num' + (lw ? ' low' : '') + '">' + lw + '</td><td>' + (m[0] ? esc(m[0].r[1]) + ' <span class="ttnote" style="display:inline">' + m[0].sum.pct + '%</span>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
     }
     const sorted = sortRows(per.map((x) => Object.assign(x.r, { _x: x })), (r) => (r._x.sum ? r._x.sum.pct : null), 'rs').map((r) => r._x);
+    if ($('rsO').value === 'fail') sorted.sort((a, b) => b.pf[1] - a.pf[1] || (a.sum ? a.sum.pct : 999) - (b.sum ? b.sum.pct : 999) || a.r[0] - b.r[0]);
     const edit = d.canEdit;
     h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + ' · ' + esc(tSel) + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') +
-      subs.map((si) => '<th class="num">' + esc(d.subjects[si]) + '</th>').join('') + (uSel === '' ? '<th class="num">Total</th>' : '') + '<th class="num">%</th><th class="num">Grade</th><th class="num">Pos.</th>' + (edit ? '<th></th>' : '') + '</tr></thead><tbody>' +
+      subs.map((si) => '<th class="num">' + esc(d.subjects[si]) + '</th>').join('') + (uSel === '' ? '<th class="num">Total</th>' : '') + '<th class="num">%</th><th class="num">Grade</th>' + (uSel === '' ? '<th class="num">Passed subj.</th><th class="num">Failed subj.</th>' : '') + '<th class="num">Pos.</th>' + (edit ? '<th></th>' : '') + '</tr></thead><tbody>' +
       (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') +
-        subs.map((si) => { const c = x.cells[si]; if (!c) return '<td class="num" style="color:var(--muted)">—</td>'; if (c.absent) return '<td class="num low">Abs</td>'; const p = r1(100 * c.obt / c.total); return '<td class="num' + (p < 33 ? ' low' : '') + '">' + c.obt + '/' + c.total + '</td>'; }).join('') +
-        (uSel === '' ? '<td class="num">' + (x.sum ? x.sum.obt + '/' + x.sum.total : '—') + '</td>' : '') + pctTd(x.sum ? x.sum.pct : null, 33) + '<td class="num">' + (x.sum ? gradeChip(x.sum.pct) : '—') + '</td><td class="num">' + (x.pos || '—') + '</td>' +
+        subs.map((si) => { const c = x.cells[si]; if (!c) return '<td class="num" style="color:var(--muted)">—</td>'; if (c.absent) return '<td class="num low">Abs</td>'; const p = r1(100 * c.obt / c.total); return '<td class="num' + (p < PASS ? ' low' : '') + '">' + c.obt + '/' + c.total + '</td>'; }).join('') +
+        (uSel === '' ? '<td class="num">' + (x.sum ? x.sum.obt + '/' + x.sum.total : '—') + '</td>' : '') + pctTd(x.sum ? x.sum.pct : null, PASS) + '<td class="num">' + (x.sum ? gradeChip(x.sum.pct) : '—') + '</td>' + (uSel === '' ? '<td class="num">' + (x.sum ? x.pf[0] : '—') + '</td><td class="num' + (x.pf[1] ? ' low' : '') + '">' + (x.sum ? x.pf[1] : '—') + '</td>' : '') + '<td class="num">' + (x.pos || '—') + '</td>' +
         (edit ? '<td><button class="mini-btn rs-ed" data-roll="' + x.r[0] + '" aria-label="Change marks of roll ' + x.r[0] + '">✏️</button></td>' : '') + '</tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
-      '</tbody></table></div></div><p class="note">' + (edit ? 'Tap ✏️ to change, add or delete a student’s marks in this test (every change is logged). ' : '') + 'Tap a student for the full record and transcript. Below 33% in red. Position is within the students shown.</p>';
+      '</tbody></table></div></div><p class="note">' + (edit ? 'Tap ✏️ to change, add or delete a student’s marks in this test (every change is logged). ' : '') + 'Tap a student for the full record and transcript. Pass mark 40% in each subject (absent = failed); below 40% in red. Position is within the students shown.</p>';
     $('rsOut').innerHTML = h;
     if (rsEdit && (rsEdit.test !== tSel)) { rsEdit = null; $('rsEd').innerHTML = ''; }
+  }
+  /** v12.6: teacher-wise results — every class (group · section · subject) each teacher entered marks for */
+  let rsTch = null;
+  function paintTeacherRes(d, base, tSel, all, uSel) {
+    const wSel = $('rsW').value, T = d.teachers || [], tis = all ? d.tests.map((t, i) => i) : [d.tests.indexOf(tSel)], K = {};
+    base.forEach((r) => r[5].forEach((c) => {
+      if (tis.indexOf(c[0]) < 0 || (uSel !== '' && c[1] !== Number(uSel)) || (wSel !== '' && c[5] !== Number(wSel))) return;
+      const sec = (d.secs || [])[c[6]] || 'All', k = c[5] + '|' + r[2] + '|' + sec + '|' + c[1];
+      const e = K[k] || (K[k] = { tj: c[5], g: r[2], sec, si: c[1], by: {} });
+      const b = e.by[c[0]] || (e.by[c[0]] = { ps: [], ab: 0 });
+      if (c[4]) b.ab++; else b.ps.push(100 * c[2] / c[3]);
+    }));
+    const st = (b) => { if (!b) return null; const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return { n, app: b.ps.length, avg: b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : null, pass: ok, fail: n - ok, pp: n ? Math.round(100 * ok / n) : null, hi: b.ps.length ? r1(Math.max(...b.ps)) : null, lo: b.ps.length ? r1(Math.min(...b.ps)) : null }; };
+    const merge = (list) => { const m = { ps: [], ab: 0 }; list.forEach((b) => { if (b) { m.ps.push(...b.ps); m.ab += b.ab; } }); return m; };
+    const go = groupOrder([...new Set(Object.values(K).map((e) => e.g))]);
+    const rows = Object.values(K).sort((a, b) => T[a.tj].localeCompare(T[b.tj]) || go.indexOf(a.g) - go.indexOf(b.g) || a.sec.localeCompare(b.sec) || d.subjects[a.si].localeCompare(d.subjects[b.si]));
+    const cls = (e) => e.g + (e.sec && e.sec !== 'All' ? ' · ' + e.sec : '');
+    const shownT = tis.filter((i) => rows.some((e) => e.by[i]));
+    rsTch = { rows, shownT, all, tSel };
+    const whole = st(merge(rows.map((e) => merge(Object.values(e.by)))));
+    const nT = new Set(rows.map((e) => e.tj)).size;
+    let h = '<div class="stat-grid g4"><div class="stat"><b>' + nT + '</b><span>Teachers</span></div><div class="stat"><b>' + rows.length + '</b><span>Classes</span></div><div class="stat"><b class="' + (whole && whole.avg !== null && whole.avg < PASS ? 'low' : '') + '">' + (whole && whole.avg !== null ? whole.avg + '%' : '—') + '</b><span>Average</span></div><div class="stat"><b class="' + (whole && whole.pp !== null && whole.pp < 50 ? 'low' : '') + '">' + (whole && whole.pp !== null ? whole.pp + '%' : '—') + '</b><span>Passed (40%+)</span></div></div>';
+    if (!rows.length) { $('rsOut').innerHTML = h + '<div class="card pad empty">No marks match these choices.</div>'; return; }
+    if (wSel !== '' && !all) h += '<div class="card chart-card"><h3>' + esc(T[Number(wSel)]) + ' · class averages</h3><div class="sub">' + esc(tSel) + ' · dashed line = 40% · red = below 40%</div>' +
+      barSvg(rows.map((e) => { const x = st(e.by[tis[0]]); return { label: cls(e) + ' ' + d.subjects[e.si], pct: x.avg === null ? 0 : x.avg, absent: x.avg === null, tip: cls(e) + ' · ' + d.subjects[e.si] + ': average ' + (x.avg === null ? '—' : x.avg + '%') + ' · passed ' + x.pass + ' of ' + x.n + ' · failed ' + x.fail }; })) + chartTipBox() + '</div>';
+    let lastT = -1;
+    h += '<div class="section-title">Teacher-wise · ' + esc(all ? 'all tests (average %)' : tSel) + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl tch-tbl"><thead><tr><th>Class</th><th>Subject</th>' +
+      (all ? shownT.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Passed</th>' : '<th class="num">Students</th><th class="num">Avg %</th><th class="num">Passed</th><th class="num">Failed</th><th class="num">Pass %</th><th class="num">High</th><th class="num">Low</th>') + '</tr></thead><tbody>';
+    const cols = all ? shownT.length + 3 : 9;
+    rows.forEach((e) => {
+      if (e.tj !== lastT) {
+        lastT = e.tj;
+        const mine = rows.filter((x) => x.tj === e.tj), tot = st(merge(mine.map((x) => merge(Object.values(x.by)))));
+        h += '<tr class="tch-head"><td colspan="' + cols + '"><b>' + esc(T[e.tj]) + '</b> <span class="ttnote" style="display:inline">' + mine.length + ' class' + (mine.length > 1 ? 'es' : '') + ' · average ' + (tot.avg === null ? '—' : tot.avg + '%') + ' · passed ' + tot.pass + ' of ' + tot.n + ' (' + (tot.pp === null ? '—' : tot.pp + '%') + ')</span></td></tr>';
+      }
+      const a = all ? st(merge(Object.values(e.by))) : st(e.by[tis[0]]);
+      h += '<tr class="click" data-tg="' + esc(e.g) + '" data-ts="' + esc(e.sec) + '" data-tsi="' + e.si + '"><td>' + esc(cls(e)) + '</td><td>' + esc(d.subjects[e.si]) + '</td>' +
+        (all ? shownT.map((i) => { const x = st(e.by[i]); return pctTd(x ? x.avg : null, PASS); }).join('') + '<td class="num' + (a.fail ? ' low' : '') + '">' + a.pass + '/' + a.n + '</td>'
+          : '<td class="num">' + a.n + '</td>' + pctTd(a.avg, PASS) + '<td class="num">' + a.pass + '</td><td class="num' + (a.fail ? ' low' : '') + '">' + a.fail + '</td><td class="num' + (a.pp !== null && a.pp < 50 ? ' low' : '') + '">' + (a.pp === null ? '—' : a.pp + '%') + '</td>' + pctTd(a.hi, PASS) + pctTd(a.lo, PASS)) + '</tr>';
+    });
+    h += '</tbody></table></div></div><p class="note">Teacher = who entered the marks. Pass = 40% or more in that subject; absent counts as failed. Tap a class to see its students.</p>';
+    $('rsOut').innerHTML = h;
+  }
+  function teacherCsv() {
+    const d = rsData, X = rsTch; if (!X) return;
+    const T = d.teachers || [], st = (b) => { if (!b) return null; const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return { n, avg: b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : '', pass: ok, fail: n - ok }; };
+    const head = ['Teacher', 'Group', 'Section', 'Subject'].concat(...X.shownT.map((i) => [shortTest(d.tests[i]) + ' students', shortTest(d.tests[i]) + ' avg %', shortTest(d.tests[i]) + ' passed', shortTest(d.tests[i]) + ' failed']));
+    csvDownload('Teacher-wise_results_' + yearLabel(recYear).replace(/\s+/g, '_') + '.csv', [head].concat(X.rows.map((e) => [T[e.tj], e.g, e.sec, d.subjects[e.si]].concat(...X.shownT.map((i) => { const x = st(e.by[i]); return x ? [x.n, x.avg, x.pass, x.fail] : ['', '', '', '']; })))));
   }
   function openResEditor(roll) {
     const d = rsData, tSel = $('rsT').value, ti = d.tests.indexOf(tSel), r = d.rows.find((x) => x[0] === Number(roll)); if (!r || ti < 0) return;
@@ -4509,6 +4570,7 @@
   }
   function resCsv() {
     const d = rsData; if (!d) return;
+    if ($('rsV') && $('rsV').value === 'tch') { teacherCsv(); return; }
     const rows = filtRows('rs', d).sort((a, b) => a[0] - b[0]), uSel = $('rsU').value;
     const tests = d.tests.filter((t, ti) => rows.some((r) => r[5].some((c) => c[0] === ti)));
     const subs = d.subjects.map((s, i) => i).filter((si) => uSel === '' || si === Number(uSel)).filter((si) => rows.some((r) => r[5].some((c) => c[1] === si)));
@@ -4522,6 +4584,9 @@
     const ed = e.target.closest('.rs-ed'); if (ed) { openResEditor(ed.dataset.roll); return; }
     if (e.target.closest('#rsEd')) return;
     const tr = e.target.closest('tr.click'); if (!tr) return;
+    if (tr.dataset.tg) {   // teacher-wise → that class's students
+      $('rsV').value = 'stu'; $('rsG').value = tr.dataset.tg; if ($('rsS')) $('rsS').value = SECS.indexOf(tr.dataset.ts) >= 0 ? tr.dataset.ts : 'All'; $('rsU').value = tr.dataset.tsi; paintResTab(); window.scrollTo(0, 0); return;
+    }
     if (tr.dataset.group) { $('rsG').value = tr.dataset.group; paintResTab(); window.scrollTo(0, 0); } else openStudent(tr.dataset.roll);
   });
 
