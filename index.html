@@ -231,6 +231,11 @@
   .chart-card svg .dot { fill: var(--accent); stroke: var(--card-bg); stroke-width: 2; }
   .chart-card svg .bar { fill: var(--accent); }
   .chart-card svg .bar.fail { fill: var(--red); }
+  .mon-tbl { margin: 2px 0 6px; } .mon-tbl td, .mon-tbl th { padding-top: 6px; padding-bottom: 6px; }
+  .chart-card svg .csub { font-size: 10px; font-weight: 700; } .chart-card svg .csub.low { fill: var(--red); }
+  .chart-card svg .col { cursor: pointer; outline: none; } .chart-card svg .col.sel .bar { stroke: var(--text); stroke-width: 1.5; }
+  .chart-card svg .col.sel text:not(.val):not(.csub) { fill: var(--text); font-weight: 700; }
+  .chart-tip { font-size: .8rem; line-height: 1.35; color: var(--text); background: var(--chip-bg); border-radius: 8px; padding: 7px 10px; margin: 4px 0 6px; }
   .grade { display: inline-block; min-width: 26px; text-align: center; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 20px; background: var(--chip-bg); color: var(--chip-text); }
   .grade.g-F { background: #fdeceb; color: #b3261e; }
   .grade.g-Ap, .grade.g-A { background: #e3f4ea; color: #146c43; }
@@ -248,6 +253,21 @@
   .mg-ph { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; } .mg-ph img { width: 72px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--chip-bg); }
   .mg-row.off { opacity: .6; } .mg-off { display: inline-block; font-size: .68rem; font-weight: 800; border-radius: 10px; padding: 1px 7px; background: #fdeedb; color: #8a4b00; margin-left: 4px; }
   .mg-act { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
+  .sf-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; } .sf-btns .btn-go { width: 100%; padding: 11px 10px; }
+  .sf-state { margin: 0 0 6px; font-weight: 700; } .sf-state.ok { color: var(--green); } .sf-state.warn { color: #b26a00; }
+  .sf-setup { background: var(--chip-bg); border-radius: 10px; padding: 10px 12px; font-size: .88rem; margin-bottom: 6px; } .sf-setup ol { margin: 6px 0 0; padding-left: 20px; } .sf-setup li { margin: 3px 0; }
+  .dh-list { margin-top: 10px; } .dh-row { padding: 9px 0; border-top: 1px solid var(--border); } .dh-top { display: flex; justify-content: space-between; gap: 10px; font-size: .86rem; } .dh-top a { color: var(--text); overflow-wrap: anywhere; }
+  .dh-bar { display: block; height: 8px; background: var(--chip-bg); border-radius: 4px; overflow: hidden; margin: 5px 0 3px; } .dh-bar i { display: block; height: 100%; background: var(--green); } .dh-bar i.mid { background: #d99a00; } .dh-bar i.bad { background: var(--red); }
+  .dh-row small { color: var(--muted); font-size: .78rem; } .dh-ok { color: var(--green); } .dh-mid { color: #b26a00; } .dh-bad { color: var(--red); }
+  .sc-box { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; } .sc-box p { margin: 0 0 6px; } .sc-box.ok { border-color: var(--green); } .sc-box ul { margin: 4px 0 8px; padding-left: 20px; }
+  #recTabs { flex-wrap: wrap; overflow: visible; }
+  .tab-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .grade-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: -4px 0 12px; font-size: .82rem; font-weight: 700; }
+  .ctrl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  table.tab-tbl td, table.tab-tbl th { white-space: nowrap; } table.tab-tbl td:nth-child(2) { white-space: normal; min-width: 120px; }
+  table.rs-et { font-size: .86rem; } table.rs-et td, table.rs-et th { padding-left: 4px; padding-right: 4px; } table.rs-et input[type=number] { width: 54px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); font: inherit; text-align: right; }
+  table.rs-et input.rs-n { width: 104px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); font: inherit; }
+  table.rs-et input[type=checkbox] { width: 20px; height: 20px; }
   .mg-danger { background: #b42318 !important; color: #fff !important; border-color: #b42318 !important; }
   .ms-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; } .ms-bar .field { margin: 0; flex: 1; min-width: 130px; }
   table.ms { border-collapse: collapse; font-size: .72rem; min-width: 760px; width: 100%; }
@@ -297,6 +317,23 @@
   .tr-sum { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 10pt; } .tr-sum span { border: 1px solid #999; border-radius: 4px; padding: 3px 8px; }
   .tr-sign { display: flex; justify-content: space-between; margin-top: 46px; font-size: 10pt; } .tr-sign div { border-top: 1px solid #000; width: 38%; text-align: center; padding-top: 3px; }
   .tr-foot { margin-top: 14px; font-size: 8pt; color: #555; text-align: center; }
+  /* v12.4: one-page transcript with tables + graphs */
+  .tr1 .tr-head img { width: 54px; height: 54px; } .tr1 .tr-head .c b { font-size: 15pt; } .tr1 .tr-head .c span { font-size: 9.5pt; }
+  .tr1 .tr-info { margin: 8px 0 6px; gap: 12px; } .tr1 .tr-info table { font-size: 9pt; } .tr1 .tr-info td { padding: 2.5px 5px; } .tr1 .tr-info td:first-child, .tr1 .tr-info td:nth-child(3) { width: auto; color: #333; font-weight: bold; white-space: nowrap; }
+  .tr1 .tr-info .ph { width: 72px; height: 96px; }
+  .tr1 .tr-kpi { margin: 4px 0 0; font-size: 9pt; gap: 6px; } .tr1 .tr-kpi span { padding: 2px 7px; }
+  .tr1 .tr-h { font-size: 10.5pt; margin: 9px 0 4px; }
+  .tr1 table.tr-t { font-size: 8.5pt; } .tr1 table.tr-t th, .tr1 table.tr-t td { padding: 2px 4px; } .tr1 table.tr-t td.lo { color: #b3261e; font-weight: bold; }
+  .tr-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
+  .tr-none { font-size: 8.5pt; margin: 3px 0; color: #444; }
+  .tr-figs { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 5mm; }
+  .tr-fig { border: 1px solid #bbb; border-radius: 4px; padding: 3px 5px 2px; break-inside: avoid; }
+  .tr-fig-h { font: bold 8pt Arial, sans-serif; color: #0b4429; margin-bottom: 1px; }
+  .tr-fig svg { display: block; width: 100%; height: 43mm; } .tr-fig.h svg { height: auto; max-height: 62mm; }
+  .tr-fig svg text { font-family: Arial, sans-serif; fill: #333; font-size: 11px; } .tr-fig svg .val { fill: #000; font-weight: 700; }
+  .tr-fig svg .grid { stroke: #d5d5d5; stroke-width: 1; } .tr-fig svg .pass { stroke: #b3261e; stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .tr-fig svg .bar { fill: #0b4429; } .tr-fig svg .bar.fail { fill: #b3261e; } .tr-fig svg .csub { font-size: 10px; font-weight: 700; } .tr-fig svg .csub.low { fill: #b3261e; }
+  .tr1 .tr-sign { margin-top: 26px; font-size: 9.5pt; } .tr1 .tr-foot { margin-top: 8px; font-size: 7.5pt; }
   .stu-head .pct-ring { width: 68px; height: 68px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; background: conic-gradient(var(--ring) calc(var(--p) * 1%), var(--chip-bg) 0); position: relative; }
   .stu-head .pct-ring::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--card-bg); }
   .stu-head .pct-ring span { position: relative; }
@@ -804,7 +841,7 @@
   <section class="view" id="view-manage">
     <div class="card pad" id="mgNotAdmin" style="display:none"><p style="margin:0">Only the Principal and admins can open this page. Sign in with an admin PIN first.</p></div>
     <div id="mgMain">
-      <div class="seg" id="mgTabs"><button data-t="stu" class="on">👥 Students</button><button data-t="tt">🗓️ Timetable changes</button></div>
+      <div class="seg" id="mgTabs"><button data-t="stu" class="on">👥 Students</button><button data-t="tt">🗓️ Timetable</button><button data-t="safe">🛡️ Backups</button></div>
       <div id="mgStu">
         <div class="card pad">
           <div class="field-row">
@@ -842,6 +879,29 @@
         <div class="card pad" id="ttcForm" style="display:none"></div>
         <div class="section-title">Changes in use</div>
         <div class="card" id="ttcList"></div>
+      </div>
+      <div id="mgSafe" style="display:none">
+        <div class="card pad">
+          <p class="screen-title" style="margin-top:0">💾 Weekly backup</p>
+          <div id="bkStatus"><div class="empty">Loading…</div></div>
+          <div class="sf-btns"><button class="btn-go" id="bkNow">Back up now</button><button class="btn-go alt" id="bkToggle">Refresh</button></div>
+          <p class="note" style="margin-bottom:0">A full copy of every app spreadsheet (student lists and photos, attendance, marks, teachers and PINs, staff profiles, notices) goes into the folder <b>GCS RWP Backups</b> in your Google Drive. The newest 8 backups are kept; older ones go to the Drive bin, where Google keeps them for 30 days. Keep this folder private — don’t share it.</p>
+          <div class="tt-error" id="bkErr"></div>
+        </div>
+        <div class="card pad">
+          <p class="screen-title" style="margin-top:0">📊 Storage check</p>
+          <p class="note" style="margin-top:0">Google allows 10 million cells in each spreadsheet. Below 50% is fine. When a file passes 80%, close that class’s session (below) so it starts a fresh log.</p>
+          <button class="btn-go alt" id="dhCheck" style="width:100%;padding:11px">Check storage</button>
+          <div id="dhOut"></div>
+        </div>
+        <div class="card pad">
+          <p class="screen-title" style="margin-top:0">📦 Close a session</p>
+          <p class="note" style="margin-top:0">Use this at the end of a session or BS semester. The class’s three spreadsheets are copied in full into <b>GCS RWP Session Archives</b> in your Drive. The app checks the copy, then empties that class’s attendance, lectures, totals and marks so it starts fresh.<br><b>Not touched:</b> the student list and photos, teachers and PINs, timetable changes, staff profiles, notices, and every other class.</p>
+          <div class="field"><label for="scYear">Class</label><select id="scYear"></select></div>
+          <button class="btn-go alt" id="scCheck" style="width:100%;padding:11px">Check what will be archived</button>
+          <div id="scOut"></div>
+          <div class="tt-error" id="scErr"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -1045,6 +1105,8 @@
         <button data-tab="find" class="on">🔎 Find student</button>
         <button data-tab="classes" id="recTabClasses">👥 My classes</button>
         <button data-tab="all" id="recTabAll" style="display:none">🏫 All students</button>
+        <button data-tab="att" id="recTabAtt" style="display:none">📅 Attendance</button>
+        <button data-tab="res" id="recTabRes" style="display:none">📝 Results</button>
       </div>
 
       <!-- find a student -->
@@ -1088,6 +1150,9 @@
         </div>
         <div id="recAllOut" style="margin-top:6px"></div>
       </div>
+      <!-- v12.4: admin — attendance of every student, month-wise; admin + Controller — results -->
+      <div id="recAtt" style="display:none"></div>
+      <div id="recRes" style="display:none"></div>
     </div>
     <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Other records in Google Sheets (2nd Year, BS)</button>
   </section>
@@ -1112,8 +1177,10 @@
       <div class="fac-pin-tools">
         <button class="btn-go" id="facNewT">🆕 New teacher — sign-in &amp; PIN</button>
         <button class="btn-go alt" id="facPins">🔑 PIN slips (all staff)</button>
+        <button class="btn-go alt" id="facCtrl" style="grid-column:1/-1">🎓 Controller of Examinations</button>
       </div>
       <div class="card pad" id="facNewForm" style="display:none"></div>
+      <div class="card pad" id="facCtrlForm" style="display:none"></div>
       <div class="tt-error" id="facErr"></div>
       <div id="nameList"><div class="card pad empty">Loading staff…</div></div>
     </div>
@@ -3652,11 +3719,12 @@
 
   /* ---------- attendance records: student-wise, class-wise, all students ---------- */
   let recScope = null, recTab = 'find', recAllRows = null, recClassData = null, recHistAll = false, recLastStudent = null, recYear = 1;
+  let atData = null, rsData = null, rsEdit = null, rsLogOpen = false;   // v12.4 Attendance / Results tabs
   $('recYearSeg').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b || yk(b.dataset.y) === recYear) return;
     recYear = yk(b.dataset.y);
     document.querySelectorAll('#recYearSeg button').forEach((x) => x.classList.toggle('on', x === b));
-    recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    recScope = null; recAllRows = null; recClassData = null; recLastStudent = null; atData = null; rsData = null; rsEdit = null; $('recAtt').innerHTML = ''; $('recRes').innerHTML = '';
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = ''; $('recRollErr').textContent = '';
     renderRecords();
   });
@@ -3671,6 +3739,7 @@
   };
   function recSignOut() {
     attAuth = null; store.set('attAuth', ''); store.set('rosters', ''); myClassesCache = {}; recScope = null; recAllRows = null; recClassData = null; recLastStudent = null;
+    atData = null; rsData = null; rsEdit = null; $('recAtt').innerHTML = ''; $('recRes').innerHTML = '';
     pnData = null; pnNew = {}; if ($('pnGrid')) $('pnGrid').innerHTML = '';
     $('recStudent').style.display = 'none'; $('recClassWrap').style.display = 'none'; $('recAllOut').innerHTML = '';
   }
@@ -3689,13 +3758,13 @@
     $('recMain').style.display = signed ? 'block' : 'none';
     if (!signed) { $('recName').value = store.get('attLastName') || ''; return; }
     $('recWho').textContent = attAuth.name;
-    $('recRole').textContent = attAuth.role === 'Admin' ? 'Admin' : 'Teacher';
+    $('recRole').textContent = attAuth.role === 'Admin' ? 'Admin' : attAuth.role === 'Controller' ? 'Controller of Exams' : 'Teacher';
     applyRole();
     if (!recScope) {
       try {
         recScope = await attApi('scope', { year: recYear });
         attAuth.role = recScope.role; attAuth.teaches = recScope.teaches || attAuth.teaches; store.set('attAuth', JSON.stringify(attAuth));
-        $('recRole').textContent = recScope.role; applyRole();
+        $('recRole').textContent = recScope.role === 'Controller' ? 'Controller of Exams' : recScope.role; applyRole();
       } catch (e) {
         if (recAuthFail(e)) return;
         $('recRollErr').textContent = e.offline ? 'You need internet to see attendance records.' : e.message;
@@ -3709,10 +3778,14 @@
     $('recSheetsLink').style.display = admin ? 'block' : 'none';
     $('recTabAll').style.display = admin ? '' : 'none';
     $('recTabClasses').style.display = admin ? 'none' : '';
+    const ctrl = attAuth && attAuth.role === 'Controller';
+    $('recTabAtt').style.display = admin ? '' : 'none';
+    $('recTabRes').style.display = admin || ctrl ? '' : 'none';
     if (admin && recTab === 'classes') recTab = 'all';
-    if (!admin && recTab === 'all') recTab = 'classes';
-    $('recFindNote').textContent = admin
-      ? 'As admin you can open any ' + yearLabel(recYear) + ' student.'
+    if (!admin && (recTab === 'all' || recTab === 'att')) recTab = ctrl ? 'res' : 'classes';
+    if (!admin && !ctrl && recTab === 'res') recTab = 'classes';
+    $('recFindNote').textContent = admin || ctrl
+      ? 'As ' + (admin ? 'admin' : 'Controller of Examinations') + ' you can open any ' + yearLabel(recYear) + ' student.'
       : 'You can open students from the classes (group & section) you have marked attendance for.';
   }
 
@@ -3722,8 +3795,12 @@
     $('recFind').style.display = tab === 'find' ? 'block' : 'none';
     $('recClasses').style.display = tab === 'classes' ? 'block' : 'none';
     $('recAll').style.display = tab === 'all' ? 'block' : 'none';
+    $('recAtt').style.display = tab === 'att' ? 'block' : 'none';
+    $('recRes').style.display = tab === 'res' ? 'block' : 'none';
     if (tab === 'classes') paintClassList();
     if (tab === 'all') loadAll(false);
+    if (tab === 'att') loadAttTab(false);
+    if (tab === 'res') loadResTab(false);
   }
   $('recTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showRecTab(b.dataset.tab); });
 
@@ -3801,24 +3878,115 @@
     });
     return s + '</svg>';
   }
-  function barSvg(items) {
+  /** horizontal bars (one per subject); ref = dashed line (33% pass mark or 75% attendance) — bars below it are red */
+  function barSvg(items, ref) {
+    ref = ref || 33;
     const W = 340, rowH = 30, L = 118, R = 44, T = 4, H = T + items.length * rowH + 18, iw = W - L - R;
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Subject-wise percentage">';
-    [0, 33, 50, 100].forEach((v) => { const xx = L + (v / 100) * iw; s += '<line class="' + (v === 33 ? 'pass' : 'grid') + '" x1="' + xx + '" x2="' + xx + '" y1="' + T + '" y2="' + (H - 16) + '"/><text x="' + xx + '" y="' + (H - 3) + '" text-anchor="middle">' + v + '</text>'; });
+    [0, 50, 100].forEach((v) => { const xx = L + (v / 100) * iw; s += '<line class="grid" x1="' + xx + '" x2="' + xx + '" y1="' + T + '" y2="' + (H - 16) + '"/><text x="' + xx + '" y="' + (H - 3) + '" text-anchor="middle">' + v + '</text>'; });
+    const rx = L + (ref / 100) * iw; s += '<line class="pass" x1="' + rx + '" x2="' + rx + '" y1="' + T + '" y2="' + (H - 16) + '"/>' + (Math.abs(ref - 50) > 8 ? '<text x="' + rx + '" y="' + (H - 3) + '" text-anchor="middle">' + ref + '</text>' : '');
     items.forEach((it, i) => {
       const yy = T + i * rowH + 6, bh = rowH - 12, name = it.label.length > 18 ? it.label.slice(0, 17) + '…' : it.label;
-      s += '<g><title>' + esc(it.label) + ': ' + (it.absent ? 'Absent' : it.pct + '% (' + it.detail + ')') + '</title>';
+      const tip = it.tip || (it.label + ': ' + (it.absent ? 'Absent' : it.pct + '% (' + it.detail + ')'));
+      s += '<g class="col" tabindex="0" data-tip="' + esc(tip) + '"><title>' + esc(tip) + '</title><rect x="0" y="' + (yy - 6) + '" width="' + W + '" height="' + rowH + '" fill="transparent"/>';
       s += '<text x="' + (L - 8) + '" y="' + (yy + bh / 2 + 4) + '" text-anchor="end">' + esc(name) + '</text>';
       if (it.absent) s += '<text class="val" x="' + (L + 4) + '" y="' + (yy + bh / 2 + 4) + '">Absent</text>';
       else {
         const w = Math.max(2, (it.pct / 100) * iw);
-        s += '<rect class="bar' + (it.pct < 33 ? ' fail' : '') + '" x="' + L + '" y="' + yy + '" width="' + w + '" height="' + bh + '" rx="4"/>';
+        s += '<rect class="bar' + (it.pct < ref ? ' fail' : '') + '" x="' + L + '" y="' + yy + '" width="' + w + '" height="' + bh + '" rx="4"/>';
         s += '<text class="val" x="' + (L + w + 5) + '" y="' + (yy + bh / 2 + 4) + '">' + it.pct + '%</text>';
       }
       s += '</g>';
     });
     return s + '</svg>';
   }
+  /** v12.4: vertical columns (one per month / test), % scale 0–100, dashed reference line; tap a column for details */
+  const roundTop = (x, y, w, h, r) => { r = Math.max(0, Math.min(r, h, w / 2)); return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z'; };
+  function colSvg(items, ref, aria) {
+    const hasSub = items.some((it) => it.sub), W = 340, H = hasSub ? 210 : 196, L = 30, R = 6, T = 20, B = hasSub ? 40 : 26, iw = W - L - R, ih = H - T - B, n = Math.max(1, items.length);
+    const slot = iw / n, bw = Math.min(34, slot * 0.6), y = (v) => T + ih - (v / 100) * ih;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(aria || 'Chart') + '">';
+    [0, 50, 100].forEach((v) => { s += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
+    s += '<line class="pass" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(ref) + '" y2="' + y(ref) + '"/><text x="' + (L - 6) + '" y="' + (y(ref) + 4) + '" text-anchor="end">' + ref + '</text>';
+    items.forEach((it, i) => {
+      const cx = L + slot * (i + 0.5);
+      s += '<g class="col' + (it.sel ? ' sel' : '') + '" tabindex="0" data-tip="' + esc(it.tip) + '"><title>' + esc(it.tip) + '</title><rect x="' + (cx - slot / 2) + '" y="' + T + '" width="' + slot + '" height="' + (H - T) + '" fill="transparent"/>';
+      if (it.pct === null || it.pct === undefined) s += '<text x="' + cx + '" y="' + (T + ih - 6) + '" text-anchor="middle">—</text>';
+      else {
+        const top = y(it.pct);
+        s += '<path class="bar' + (it.low ? ' fail' : '') + '" d="' + roundTop(cx - bw / 2, top, bw, Math.max(1, T + ih - top), 4) + '"/>';
+        s += '<text class="val" x="' + cx + '" y="' + (top - 6) + '" text-anchor="middle">' + it.pct + '%</text>';
+      }
+      s += '<text x="' + cx + '" y="' + (T + ih + 16) + '" text-anchor="middle">' + esc(it.label) + '</text>';
+      if (it.sub) s += '<text class="csub' + (it.low ? ' low' : '') + '" x="' + cx + '" y="' + (T + ih + 31) + '" text-anchor="middle">' + esc(it.sub) + '</text>';
+      s += '</g>';
+    });
+    return s + '</svg>';
+  }
+  const chartTipBox = (text) => '<div class="chart-tip" aria-live="polite">' + esc(text || 'Tap a bar for details.') + '</div>';
+  function chartTip(g) {
+    const card = g.closest('.chart-card'); if (!card) return;
+    card.querySelectorAll('.col.sel').forEach((x) => x.classList.remove('sel')); g.classList.add('sel');
+    const tip = card.querySelector('.chart-tip'); if (tip) tip.textContent = g.dataset.tip;
+  }
+  ['click', 'mouseover', 'focusin'].forEach((ev) => document.addEventListener(ev, (e) => { const g = e.target.closest && e.target.closest('.chart-card [data-tip]'); if (g) chartTip(g); }));
+  const MON_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  /** a student's lectures grouped by month: [{k:'2026-10', p, a, l}] */
+  function attByMonth(hist) {
+    const m = {};
+    (hist || []).forEach((x) => { const k = String(x.date).slice(0, 7); if (!/^\d{4}-\d{2}$/.test(k)) return; const e = m[k] || (m[k] = { k, p: 0, a: 0, l: 0 }); if (x.status === 'Present') e.p++; else if (x.status === 'Absent') e.a++; else if (x.status === 'Leave') e.l++; });
+    return Object.keys(m).sort().map((k) => m[k]);
+  }
+  /** chart items: attendance % per month (from the day-by-day history) */
+  function attMonthItems(j) {
+    const months = attByMonth(j.history);
+    return months.map((e, i) => {
+      const n = e.p + e.a + e.l, pc = pctOf(e.p, n), mi = Number(e.k.slice(5)) - 1;
+      return { k: e.k, p: e.p, a: e.a, l: e.l, n, label: MON_FULL[mi].slice(0, 3), long: MON_FULL[mi].slice(0, 3) + ' ' + e.k.slice(0, 4), pct: pc, low: pc !== null && pc < 75, sel: i === months.length - 1,
+        tip: MON_FULL[mi] + ' ' + e.k.slice(0, 4) + ': ' + pc + '% — present in ' + e.p + ' of ' + n + ' lectures · absent ' + e.a + ' · leave ' + e.l + (pc < 75 ? ' · below 75%' : '') };
+    });
+  }
+  /** chart items: attendance % per subject */
+  function attSubjItems(j) {
+    return (j.subjects || []).filter((x) => x.present + x.absent + x.leave).map((x) => {
+      const n = x.present + x.absent + x.leave, pc = pctOf(x.present, n);
+      return { label: x.subject, pct: pc, detail: x.present + ' of ' + n, tip: x.subject + ': ' + pc + '% — present ' + x.present + ' of ' + n + ' · absent ' + x.absent + ' · leave ' + x.leave };
+    });
+  }
+  /** chart items: overall % per test, up to the last test with marks */
+  function testColItems(R, tests, selT) {
+    const vals = tests.map((t) => (R.tests[t] && R.tests[t].total ? r1(100 * R.tests[t].obt / R.tests[t].total) : null));
+    const lastI = tests.reduce((m, t, i) => (vals[i] !== null ? i : m), 0);
+    return tests.slice(0, lastI + 1).map((t, i) => {
+      const x = R.tests[t], pc = vals[i];
+      if (pc === null) return { label: shortTest(t), pct: null, tip: t + ': no marks entered' };
+      const sp = Object.keys(x.subjects || {}).map((kk) => { const m = x.subjects[kk]; return m.status === 'Absent' || !m.total ? null : [kk, r1(100 * m.obt / m.total)]; }).filter(Boolean).sort((p2, q) => q[1] - p2[1]);
+      return { label: shortTest(t), pct: pc, sub: gradeOf(pc), low: pc < 33, sel: t === selT,
+        tip: t + ': ' + x.obt + ' / ' + x.total + ' = ' + pc + '% · Grade ' + gradeOf(pc) + (sp.length > 1 ? ' · Best: ' + sp[0][0] + ' ' + sp[0][1] + '% · Weakest: ' + sp[sp.length - 1][0] + ' ' + sp[sp.length - 1][1] + '%' : '') };
+    });
+  }
+  /** chart items: subject % in one test */
+  function testSubjItems(cur) {
+    return Object.keys(cur.subjects).sort().map((sName) => { const x = cur.subjects[sName]; return { label: sName, absent: x.status === 'Absent', pct: x.status === 'Absent' ? 0 : r1(100 * x.obt / x.total), detail: x.obt + '/' + x.total }; });
+  }
+  function attChartsHtml(j) {
+    const items = attMonthItems(j), t = j.totals;
+    let h = '';
+    if (items.length) {
+      const shown = items.reduce((a, e) => a + e.n, 0), tot = items.reduce((a, e) => [a[0] + e.p, a[1] + e.a, a[2] + e.l], [0, 0, 0]);
+      h += '<div class="card chart-card"><h3>Attendance month by month</h3><div class="sub">% of lectures present · dashed line = 75% required · red = below 75%</div>' +
+        colSvg(items, 75, 'Attendance percentage by month') + chartTipBox(items[items.length - 1].tip) +
+        '<div class="overflow-x"><table class="wl sum mon-tbl"><thead><tr><th>Month</th><th class="num">Lectures</th><th class="num">P</th><th class="num">A</th><th class="num">L</th><th class="num">%</th></tr></thead><tbody>' +
+        items.map((e) => '<tr><td>' + esc(e.long) + '</td><td class="num">' + e.n + '</td><td class="num">' + e.p + '</td><td class="num">' + e.a + '</td><td class="num">' + e.l + '</td>' + pctCell(e.p, e.n) + '</tr>').join('') +
+        (items.length > 1 ? '<tr><td><b>Total</b></td><td class="num"><b>' + shown + '</b></td><td class="num"><b>' + tot[0] + '</b></td><td class="num"><b>' + tot[1] + '</b></td><td class="num"><b>' + tot[2] + '</b></td>' + pctCell(tot[0], shown).replace('">', '"><b>').replace('</td>', '</b></td>') + '</tr>' : '') +
+        '</tbody></table></div>' +
+        (shown < t.total ? '<p class="note" style="margin:4px 0 6px">Older months were moved to the archive; the totals above still include them.</p>' : '') + '</div>';
+    }
+    const subs = attSubjItems(j);
+    if (subs.length) h += '<div class="card chart-card" style="margin-top:12px"><h3>Attendance by subject</h3><div class="sub">Dashed line = 75% · red = below 75%</div>' + barSvg(subs, 75) + chartTipBox() + '</div>';
+    return h;
+  }
+
   function resultsHtml(j, pre) {
     const R = j.results, tests = j.tests || TESTS_DEF;
     let h = '<div class="section-title">📝 Test results</div>';
@@ -3830,11 +3998,13 @@
     h += '<div class="stat-grid"><div class="stat"><b>' + curP + '%</b><span>' + esc(shortTest(recStuTest)) + ' result</span></div>' +
       '<div class="stat"><b>' + gradeChip(curP) + '</b><span>Grade</span></div>' +
       '<div class="stat"><b>' + r1(vals.filter((v) => v !== null).reduce((a, b) => a + b, 0) / has.length) + '%</b><span>Average (' + has.length + ' test' + (has.length > 1 ? 's' : '') + ')</span></div></div>';
-    h += '<div class="card chart-card"><h3>Overall % by test</h3><div class="sub">All subjects combined · dashed line = 33% pass mark</div>' + lineSvg(tests.map(shortTest), vals) + '</div>';
+    const tItems = testColItems(R, tests, recStuTest);
+    const selTip = (tItems.find((x) => x.sel) || tItems[tItems.length - 1]).tip;
+    h += '<div class="card chart-card"><h3>Test results month by month</h3><div class="sub">All subjects combined · dashed line = 33% pass mark · grade under each month</div>' + colSvg(tItems, 33, 'Test percentage by month') + chartTipBox(selTip) + '</div>';
     const subs = Object.keys(cur.subjects).sort();
     h += '<div class="card chart-card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1"><h3>Subject-wise %</h3><div class="sub">Red = below 33%</div></div>' +
-      '<select class="mini-sel" id="' + (pre || 'rec') + 'StuTest">' + has.map((t) => '<option value="' + esc(t) + '"' + (t === recStuTest ? ' selected' : '') + '>' + esc(shortTest(t)) + '</option>').join('') + '</select></div>' +
-      barSvg(subs.map((sName) => { const x = cur.subjects[sName]; return { label: sName, absent: x.status === 'Absent', pct: x.status === 'Absent' ? 0 : r1(100 * x.obt / x.total), detail: x.obt + '/' + x.total }; })) + '</div>';
+      '<select class="mini-sel" id="' + (pre || 'rec') + 'StuTest" aria-label="Test">' + has.map((t) => '<option value="' + esc(t) + '"' + (t === recStuTest ? ' selected' : '') + '>' + esc(shortTest(t)) + '</option>').join('') + '</select></div>' +
+      barSvg(testSubjItems(cur)) + chartTipBox() + '</div>';
     const allSubs = {}; has.forEach((t) => Object.keys(R.tests[t].subjects).forEach((k) => { allSubs[k] = 1; }));
     h += '<div class="card" style="margin-top:12px"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Subject</th>' + has.map((t) => '<th class="num">' + esc(shortTest(t)) + '</th>').join('') + '</tr></thead><tbody>' +
       Object.keys(allSubs).sort().map((k) => '<tr><td>' + esc(k) + '</td>' + has.map((t) => {
@@ -3856,30 +4026,59 @@
     const has = R ? tests.filter((x) => R.tests[x] && R.tests[x].total) : [];
     const subs = {}; has.forEach((x) => Object.keys(R.tests[x].subjects).forEach((k) => { subs[k] = 1; }));
     const yl = s.year ? yearLabel(s.year) : '1st Year';
-    let h = '<div class="tr-page"><div class="tr-head"><img src="icons/college-logo.png" alt=""><div class="c"><b>' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</b><span>Student Transcript · ' + esc(yl) + '</span></div><img src="icons/college-logo.png" alt="" style="visibility:hidden"></div>';
-    h += '<div class="tr-info"><table><tr><td>Name</td><td>' + esc(s.name) + '</td></tr>' + (s.father ? '<tr><td>Father’s name</td><td>' + esc(s.father) + '</td></tr>' : '') +
-      '<tr><td>College roll no.</td><td>' + s.roll + '</td></tr><tr><td>Class</td><td>' + esc(yl) + '</td></tr><tr><td>Group</td><td>' + esc(groupLabel(s.group, s.year || 1)) + '</td></tr>' +
-      (s.subjectGroup ? '<tr><td>Subjects</td><td>' + esc(s.subjectGroup) + '</td></tr>' : '') + '</table>' +
+    const ap = pctOf(t.present, t.total), avg = has.length ? r1(has.reduce((a, x) => a + r1(100 * R.tests[x].obt / R.tests[x].total), 0) / has.length) : null;   // same average as the app
+    const plain = (items) => items.map((x) => Object.assign({}, x, { sel: false }));
+    let h = '<div class="tr-page tr1"><div class="tr-head"><img src="icons/college-logo.png" alt=""><div class="c"><b>' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</b><span>Student Transcript · ' + esc(yl) + '</span></div><img src="icons/college-logo.png" alt="" style="visibility:hidden"></div>';
+    h += '<div class="tr-info"><table><tr><td>Name</td><td>' + esc(s.name) + '</td><td>Roll no.</td><td>' + s.roll + '</td></tr>' +
+      '<tr><td>Father’s name</td><td>' + esc(s.father || '—') + '</td><td>Class</td><td>' + esc(yl) + '</td></tr>' +
+      '<tr><td>Group</td><td>' + esc(groupLabel(s.group, s.year || 1)) + '</td><td>Subjects</td><td>' + esc(s.subjectGroup || '—') + '</td></tr></table>' +
       (j.photo ? '<img class="ph" src="' + j.photo + '" alt="">' : '<div class="ph none">No photo</div>') + '</div>';
+    h += '<div class="tr-sum tr-kpi"><span>Attendance: <b>' + (ap === null ? '—' : ap + '%') + '</b> (' + t.present + ' of ' + t.total + ' lectures)</span>' +
+      '<span>Tests taken: <b>' + has.length + '</b></span><span>Average: <b>' + (avg === null ? '—' : avg + '%') + '</b></span><span>Overall grade: <b>' + (avg === null ? '—' : gradeOf(avg)) + '</b></span></div>';
+    // 1) test results table
     h += '<div class="tr-h">Test results</div>';
-    if (!has.length) h += '<p style="font-size:10pt">No test marks have been entered yet.</p>';
+    if (!has.length) h += '<p class="tr-none">No test marks have been entered yet.</p>';
     else {
       h += '<table class="tr-t"><thead><tr><th>Subject</th>' + has.map((x) => '<th>' + esc(shortTest(x)) + '</th>').join('') + '</tr></thead><tbody>' +
-        Object.keys(subs).sort().map((k) => '<tr><td>' + esc(k) + '</td>' + has.map((x) => { const m = R.tests[x].subjects[k]; return '<td>' + (!m ? '—' : m.status === 'Absent' ? 'Absent' : m.obt + ' / ' + m.total) + '</td>'; }).join('') + '</tr>').join('') +
-        '<tr class="tot"><td>Total</td>' + has.map((x) => '<td>' + R.tests[x].obt + ' / ' + R.tests[x].total + '</td>').join('') + '</tr>' +
-        '<tr class="tot"><td>Percentage · Grade</td>' + has.map((x) => { const pc = r1(100 * R.tests[x].obt / R.tests[x].total); return '<td>' + pc + '% · ' + gradeOf(pc) + '</td>'; }).join('') + '</tr></tbody></table>';
-      const avg = r1(has.reduce((a, x) => a + 100 * R.tests[x].obt / R.tests[x].total, 0) / has.length);
-      h += '<div class="tr-sum"><span>Tests taken: ' + has.length + '</span><span>Average: ' + avg + '%</span><span>Overall grade: ' + gradeOf(avg) + '</span></div>';
+        Object.keys(subs).sort().map((k) => '<tr><td>' + esc(k) + '</td>' + has.map((x) => { const m = R.tests[x].subjects[k]; if (!m) return '<td>—</td>'; if (m.status === 'Absent') return '<td class="lo">Absent</td>'; const pc = r1(100 * m.obt / m.total); return '<td' + (pc < 33 ? ' class="lo"' : '') + '>' + m.obt + '/' + m.total + '</td>'; }).join('') + '</tr>').join('') +
+        '<tr class="tot"><td>Total</td>' + has.map((x) => '<td>' + R.tests[x].obt + '/' + R.tests[x].total + '</td>').join('') + '</tr>' +
+        '<tr class="tot"><td>% · Grade</td>' + has.map((x) => { const pc = r1(100 * R.tests[x].obt / R.tests[x].total); return '<td' + (pc < 33 ? ' class="lo"' : '') + '>' + pc + '% · ' + gradeOf(pc) + '</td>'; }).join('') + '</tr></tbody></table>';
     }
-    const ap = t.total ? Math.round(100 * t.present / t.total) : null;
-    h += '<div class="tr-h">Attendance</div><div class="tr-sum"><span>Lectures: ' + t.total + '</span><span>Present: ' + t.present + '</span><span>Absent: ' + t.absent + '</span><span>Leave: ' + t.leave + '</span><span>Attendance: ' + (ap === null ? '—' : ap + '%') + '</span></div>';
-    if ((j.subjects || []).length) h += '<table class="tr-t" style="margin-top:6px"><thead><tr><th>Subject</th><th>Present</th><th>Absent</th><th>Leave</th><th>Lectures</th><th>%</th></tr></thead><tbody>' +
-      j.subjects.map((x) => { const n = x.present + x.absent + x.leave; return '<tr><td>' + esc(x.subject) + '</td><td>' + x.present + '</td><td>' + x.absent + '</td><td>' + x.leave + '</td><td>' + n + '</td><td>' + (n ? Math.round(100 * x.present / n) + '%' : '—') + '</td></tr>'; }).join('') + '</tbody></table>';
-    h += '<div class="tr-sign"><div>Class Incharge</div><div>Principal</div></div><div class="tr-foot">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. Attendance and marks as entered by the teachers up to this date.</div></div>';
+    // 2) attendance tables: month-wise | subject-wise
+    const mon = attMonthItems(j), sub = attSubjItems(j);
+    h += '<div class="tr-h">Attendance</div>';
+    if (!t.total) h += '<p class="tr-none">No attendance has been marked yet.</p>';
+    else {
+      const mt = mon.reduce((a, e) => [a[0] + e.n, a[1] + e.p, a[2] + e.a, a[3] + e.l], [0, 0, 0, 0]);
+      const pcTd = (p, n) => { const v = pctOf(p, n); return '<td' + (v !== null && v < 75 ? ' class="lo"' : '') + '>' + (v === null ? '—' : v + '%') + '</td>'; };
+      h += '<div class="tr-2">' +
+        '<table class="tr-t"><thead><tr><th>Month</th><th>Lect.</th><th>P</th><th>A</th><th>L</th><th>%</th></tr></thead><tbody>' +
+        mon.map((e) => '<tr><td>' + esc(e.long) + '</td><td>' + e.n + '</td><td>' + e.p + '</td><td>' + e.a + '</td><td>' + e.l + '</td>' + pcTd(e.p, e.n) + '</tr>').join('') +
+        '<tr class="tot"><td>Total</td><td>' + mt[0] + '</td><td>' + mt[1] + '</td><td>' + mt[2] + '</td><td>' + mt[3] + '</td>' + pcTd(mt[1], mt[0]) + '</tr></tbody></table>' +
+        '<table class="tr-t"><thead><tr><th>Subject</th><th>Lect.</th><th>P</th><th>A</th><th>L</th><th>%</th></tr></thead><tbody>' +
+        (j.subjects || []).map((x) => { const n = x.present + x.absent + x.leave; return '<tr><td>' + esc(x.subject) + '</td><td>' + n + '</td><td>' + x.present + '</td><td>' + x.absent + '</td><td>' + x.leave + '</td>' + pcTd(x.present, n) + '</tr>'; }).join('') +
+        '<tr class="tot"><td>Total</td><td>' + t.total + '</td><td>' + t.present + '</td><td>' + t.absent + '</td><td>' + t.leave + '</td>' + pcTd(t.present, t.total) + '</tr></tbody></table></div>' +
+        (mt[0] < t.total ? '<p class="tr-none">Month-wise table shows the months still in the attendance log; older months are archived (included in the subject totals).</p>' : '');
+    }
+    // 3) graphs (2 × 2)
+    const figs = [];
+    if (mon.length) figs.push(['Attendance by month (%) · dashed = 75%', colSvg(plain(mon), 75, 'Attendance by month')]);
+    if (has.length) figs.push(['Test results by month (%) · dashed = 33% pass', colSvg(plain(testColItems(R, tests, null)), 33, 'Test results by month')]);
+    if (sub.length) figs.push(['Attendance by subject (%) · dashed = 75%', barSvg(sub, 75), 'h']);
+    if (has.length) figs.push(['Subjects in the ' + shortTest(has[has.length - 1]) + ' test (%) · dashed = 33%', barSvg(testSubjItems(R.tests[has[has.length - 1]])), 'h']);
+    if (figs.length) h += '<div class="tr-h">Progress graphs</div><div class="tr-figs">' + figs.map((f) => '<div class="tr-fig ' + (f[2] || '') + '"><div class="tr-fig-h">' + esc(f[0]) + '</div>' + f[1] + '</div>').join('') + '</div>';
+    h += '<div class="tr-sign"><div>Class Incharge</div><div>Principal</div></div><div class="tr-foot">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. Attendance and marks as entered by the teachers up to this date. Red = below 75% attendance or below 33% marks.</div></div>';
     let box = $('trPrint'); if (!box) { box = document.createElement('div'); box.id = 'trPrint'; document.body.appendChild(box); }
     box.innerHTML = h;
+    // fit everything on ONE A4 page (portrait, 10 mm margins → 190 × 277 mm)
+    const pg = box.querySelector('.tr-page');
+    box.style.cssText = 'display:block;position:absolute;left:-10000px;top:0;width:190mm';
+    const maxH = 277 * 96 / 25.4 * 0.95, hNow = pg.scrollHeight;   // 5% spare: print fonts run a little taller
+    box.style.cssText = '';
+    pg.style.zoom = hNow > maxH ? String(Math.floor(1000 * maxH / hNow) / 1000) : '';
+    const st = document.createElement('style'); st.textContent = '@page { size: A4 portrait; margin: 10mm; }'; document.head.appendChild(st);
     document.body.classList.add('print-tr');
-    const done = () => { document.body.classList.remove('print-tr'); window.removeEventListener('afterprint', done); };
+    const done = () => { document.body.classList.remove('print-tr'); st.remove(); window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
     setTimeout(() => window.print(), 250);
   }
@@ -3896,13 +4095,16 @@
       '<div class="att-counts" style="margin:12px 0 0"><span class="c-P">Present ' + t.present + '</span><span class="c-A">Absent ' + t.absent + '</span><span class="c-L">Leave ' + t.leave + '</span><span style="color:var(--muted)">Lectures ' + t.total + '</span></div>' +
       (p !== null && p < 75 ? '<p class="note" style="color:var(--red);font-weight:700">Below 75% attendance.</p>' : '') +
       '<button class="btn-go tr-btn no-print" id="' + pre + 'TrBtn">🖨 Print transcript</button></div>';
-    h += resultsHtml(j, pre);
     h += '<div class="section-title">✅ Attendance</div>';
     if (!t.total) h += '<div class="card" style="margin-top:12px"><div class="empty">No attendance has been marked for this student yet.</div></div>';
     else {
-      h += '<div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Subject</th><th class="num">P</th><th class="num">A</th><th class="num">L</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>' +
+      h += attChartsHtml(j);
+      h += '<div class="card" style="margin-top:12px"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Subject</th><th class="num">P</th><th class="num">A</th><th class="num">L</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>' +
         j.subjects.map((x) => { const n = x.present + x.absent + x.leave; return '<tr><td>' + esc(x.subject) + '<span class="ttnote">' + esc(x.teachers.join(', ')) + '</span></td><td class="num">' + x.present + '</td><td class="num">' + x.absent + '</td><td class="num">' + x.leave + '</td><td class="num">' + n + '</td>' + pctCell(x.present, n) + '</tr>'; }).join('') +
         '</tbody></table></div></div>';
+    }
+    h += resultsHtml(j, pre);
+    if (t.total) {
       const list = recHistAll ? j.history : j.history.filter((x) => x.status !== 'Present');
       h += '<div class="tbl-tools"><div class="section-title">Day-by-day</div><button class="mini-btn" id="' + pre + 'HistToggle">' + (recHistAll ? 'Show absences only' : 'Show all lectures') + '</button><button class="mini-btn" id="' + pre + 'StuCsv">⬇ CSV</button></div><div class="card">';
       if (!list.length) h += '<div class="empty">' + (recHistAll ? 'No lectures yet.' : 'No absences or leave — present in every lecture marked. 🎉') + '</div>';
@@ -4084,6 +4286,257 @@
     if (tr.dataset.group) { $('recFGroup').value = tr.dataset.group; paintAll(); window.scrollTo(0, 0); }
     else openStudent(tr.dataset.roll);
   });
+  /* ---------- v12.4: 📅 Attendance (admins) and 📝 Results (admins + Controller of Examinations) ---------- */
+  const isController = () => !!(attAuth && attAuth.role === 'Controller');
+  const canResults = () => isAdminUser() || isController();
+  const SECS = ['All', 'Odd', 'Even', 'Urdu Batch 1', 'Urdu Batch 2', 'Urdu Batch 3'];
+  const monLabel = (k) => MON_FULL[Number(k.slice(5)) - 1].slice(0, 3) + ' ' + k.slice(2, 4);
+  const monLong = (k) => MON_FULL[Number(k.slice(5)) - 1] + ' ' + k.slice(0, 4);
+  function groupOrder(gs) { const ord = (yrCfg(recYear).groups || []).concat(ATT_GROUPS); return gs.slice().sort((a, b) => { const x = ord.indexOf(a), y = ord.indexOf(b); return (x < 0 ? 999 : x) - (y < 0 ? 999 : y) || a.localeCompare(b); }); }
+  const selOpts = (list, cur) => list.map((o) => { const v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return '<option value="' + esc(v) + '"' + (String(v) === String(cur) ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('');
+  const pctTd = (v, ref) => '<td class="num' + (v !== null && v !== undefined && v < ref ? ' low' : '') + '">' + (v === null || v === undefined ? '—' : v + '%') + '</td>';
+  function tabFilters(pre, d, extra) {
+    const gs = groupOrder([...new Set(d.rows.map((r) => r[2]))]);
+    const f = (id) => { const e = $(pre + id); return e ? e.value : ''; };
+    return '<div class="card pad"><div class="field-row">' +
+      '<div class="field"><label for="' + pre + 'G">Group</label><select id="' + pre + 'G">' + selOpts([['', 'All groups']].concat(gs.map((g) => [g, groupLabel(g)])), f('G')) + '</select></div>' +
+      (isBS(recYear) ? '' : '<div class="field"><label for="' + pre + 'S">Section</label><select id="' + pre + 'S">' + selOpts(SECS, f('S') || 'All') + '</select></div>') + '</div>' +
+      extra + '<div class="field-row"><div class="field"><label for="' + pre + 'Q">Search</label><input id="' + pre + 'Q" type="search" placeholder="Name or roll no." value="' + esc(f('Q')) + '"></div>' +
+      '<div class="field"><label for="' + pre + 'O">Sort by</label><select id="' + pre + 'O">' + selOpts([['roll', 'Roll number'], ['lo', '% (lowest first)'], ['hi', '% (highest first)']], f('O') || 'roll') + '</select></div></div>' +
+      '<div class="tab-btns"><button class="mini-btn" id="' + pre + 'R">↻ Refresh</button><button class="mini-btn" id="' + pre + 'C">⬇ CSV</button><button class="mini-btn" id="' + pre + 'P">🖨 Print</button>' + (pre === 'rs' ? '<button class="mini-btn" id="rsL">🕘 Changes</button>' : '') + '</div>' +
+      '<div class="tt-error" id="' + pre + 'E"></div></div>';
+  }
+  function filtRows(pre, d) {
+    const g = $(pre + 'G').value, sec = $(pre + 'S') ? $(pre + 'S').value : 'All', q = $(pre + 'Q').value.trim().toLowerCase();
+    return d.rows.filter((r) => (!g || r[2] === g) && secOf(r[0], sec) && (!q || String(r[0]) === q || r[1].toLowerCase().indexOf(q) >= 0));
+  }
+  function sortRows(rows, key, pre) { const o = $(pre + 'O').value; if (o === 'lo') rows.sort((a, b) => (key(a) === null ? 999 : key(a)) - (key(b) === null ? 999 : key(b)) || a[0] - b[0]); else if (o === 'hi') rows.sort((a, b) => (key(b) === null ? -1 : key(b)) - (key(a) === null ? -1 : key(a)) || a[0] - b[0]); else rows.sort((a, b) => a[0] - b[0]); return rows; }
+  const nameCell = (r) => '<td>' + esc(r[1]) + (r[4] ? ' <span class="ttnote" style="display:inline">⏸ inactive</span>' : '') + '</td>';
+  function wireTab(pre, paint, load) {
+    ['G', 'S', 'O', 'M', 'U', 'T'].forEach((k) => { const e = $(pre + k); if (e) e.onchange = paint; });
+    $(pre + 'Q').oninput = paint; $(pre + 'R').onclick = () => load(true);
+    $(pre + 'P').onclick = () => printLandscape();
+  }
+
+  /* ----- 📅 Attendance ----- */
+  async function loadAttTab(force) {
+    if (atData && atData.y === recYear && !force) { paintAttTab(); return; }
+    const box = $('atOut') || $('recAtt'); box.innerHTML = '<div class="card pad empty">Loading attendance of every student… (this can take a few seconds)</div>';
+    try { const j = await attApi('attMonthly', { year: recYear, force: !!force }); atData = Object.assign(j, { y: recYear }); paintAttTab(true); }
+    catch (e) { if (!recAuthFail(e)) $('recAtt').innerHTML = '<div class="card pad"><div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div></div>'; }
+  }
+  function paintAttTab(rebuild) {
+    const d = atData; if (!d) return;
+    if (!$('atG') || rebuild === true) {
+      const curM = $('atM') ? $('atM').value : '', curU = $('atU') && $('atU').value !== '' ? $('atU').options[$('atU').selectedIndex].text : '';
+      $('recAtt').innerHTML = tabFilters('at', d, '<div class="field-row"><div class="field"><label for="atM">Month</label><select id="atM">' + selOpts([['', 'All months (month-wise)']].concat(d.months.map((m) => [m, monLong(m)])), curM) + '</select></div>' +
+        '<div class="field"><label for="atU">Subject</label><select id="atU">' + selOpts([['', 'All subjects']].concat(d.subjects.map((s, i) => [String(i), s])), String(d.subjects.indexOf(curU))) + '</select></div></div>') + '<div id="atOut"></div>';
+      wireTab('at', paintAttTab, loadAttTab);
+      $('atC').onclick = () => attCsv();
+    }
+    const mSel = $('atM').value, uSel = $('atU').value, g = $('atG').value, q = $('atQ').value.trim();
+    const agg = (r) => { const by = d.months.map(() => [0, 0, 0]); r[5].forEach((c) => { if (uSel !== '' && c[1] !== Number(uSel)) return; const b = by[c[0]]; b[0] += c[2]; b[1] += c[3]; b[2] += c[4]; }); return by; };
+    const rows = filtRows('at', d).map((r) => { const by = agg(r), cur = mSel === '' ? by.reduce((a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], [0, 0, 0]) : by[d.months.indexOf(mSel)]; const n = cur[0] + cur[1] + cur[2]; return { r, by, cur, n, pct: pctOf(cur[0], n) }; });
+    const sorted = sortRows(rows.map((x) => Object.assign(x.r, { _x: x })), (r) => r._x.pct, 'at').map((r) => r._x);
+    const marked = sorted.filter((x) => x.n), avg = marked.length ? Math.round(marked.reduce((a, x) => a + x.pct, 0) / marked.length) : null, low = marked.filter((x) => x.pct < 75).length;
+    let h = '<div class="stat-grid"><div class="stat"><b>' + sorted.length + '</b><span>Students</span></div><div class="stat"><b class="' + (avg !== null && avg < 75 ? 'low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</b><span>Average' + (mSel ? ' · ' + esc(monLabel(mSel)) : '') + '</span></div><div class="stat"><b class="' + (low ? 'low' : '') + '">' + low + '</b><span>Below 75%</span></div></div>';
+    // month-by-month chart (pooled over the students shown)
+    const pool = d.months.map((m, i) => sorted.reduce((a, x) => [a[0] + x.by[i][0], a[1] + x.by[i][0] + x.by[i][1] + x.by[i][2], a[2] + x.by[i][1], a[3] + x.by[i][2]], [0, 0, 0, 0]));
+    const items = d.months.map((m, i) => { const pc = pctOf(pool[i][0], pool[i][1]); return { label: monLabel(m).slice(0, 3), pct: pc, low: pc !== null && pc < 75, sel: mSel ? m === mSel : i === d.months.length - 1, tip: monLong(m) + ': ' + (pc === null ? 'no lectures' : pc + '% — ' + pool[i][0] + ' present of ' + pool[i][1] + ' student-lectures · absent ' + pool[i][2] + ' · leave ' + pool[i][3]) }; }).filter((x) => x.pct !== null);
+    if (items.length) h += '<div class="card chart-card"><h3>Attendance month by month</h3><div class="sub">' + esc((g ? groupLabel(g) : 'All groups') + (uSel !== '' ? ' · ' + d.subjects[Number(uSel)] : ' · all subjects')) + ' · dashed line = 75%</div>' + colSvg(items, 75, 'Attendance by month') + chartTipBox((items.find((x) => x.sel) || items[items.length - 1]).tip) + '</div>';
+    // group-wise
+    if (!g && !q) {
+      const by = {}; sorted.forEach((x) => { (by[x.r[2]] = by[x.r[2]] || []).push(x); });
+      h += '<div class="section-title">Group-wise' + (mSel ? ' · ' + esc(monLong(mSel)) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">Students</th><th class="num">Avg %</th><th class="num">Below 75%</th></tr></thead><tbody>' +
+        groupOrder(Object.keys(by)).map((x) => { const m = by[x].filter((y) => y.n), av = m.length ? Math.round(m.reduce((a, y) => a + y.pct, 0) / m.length) : null, lw = m.filter((y) => y.pct < 75).length;
+          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + by[x].length + '</td>' + pctTd(av, 75) + '<td class="num' + (lw ? ' low' : '') + '">' + lw + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    }
+    // student table
+    const ms = d.months;
+    h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + (mSel ? ' · ' + esc(monLong(mSel)) : ' · month-wise %') + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') +
+      (mSel ? '<th class="num">Lect.</th><th class="num">P</th><th class="num">A</th><th class="num">L</th><th class="num">%</th>' : ms.map((m) => '<th class="num">' + esc(monLabel(m)) + '</th>').join('') + '<th class="num">Total</th>') + '</tr></thead><tbody>' +
+      (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') +
+        (mSel ? '<td class="num">' + x.n + '</td><td class="num">' + x.cur[0] + '</td><td class="num">' + x.cur[1] + '</td><td class="num">' + x.cur[2] + '</td>' + pctTd(x.pct, 75)
+          : x.by.map((b) => pctTd(pctOf(b[0], b[0] + b[1] + b[2]), 75)).join('') + pctTd(x.pct, 75)) + '</tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
+      '</tbody></table></div></div><p class="note">From the attendance teachers have marked' + (d.at ? ' (as of ' + esc(d.at.slice(11)) + ')' : '') + '. % = present ÷ lectures; below 75% in red. Tap a student for the full record and transcript.' + (d.archived ? ' Months moved to the archive are not shown here.' : '') + '</p>';
+    $('atOut').innerHTML = h;
+  }
+  function attCsv() {
+    const d = atData; if (!d) return;
+    const uSel = $('atU').value, rows = filtRows('at', d).sort((a, b) => a[0] - b[0]);
+    const head = ['Roll', 'Name', 'Group'].concat(...d.months.map((m) => [monLabel(m) + ' lectures', monLabel(m) + ' present', monLabel(m) + ' absent', monLabel(m) + ' leave', monLabel(m) + ' %']), ['Total lectures', 'Total present', 'Total %']);
+    csvDownload('Attendance_month-wise_' + yearLabel(recYear).replace(/\s+/g, '_') + ($('atG').value ? '_' + $('atG').value : '') + (uSel !== '' ? '_' + d.subjects[Number(uSel)].replace(/\s+/g, '_') : '') + '.csv', [head].concat(rows.map((r) => {
+      const by = d.months.map(() => [0, 0, 0]); r[5].forEach((c) => { if (uSel !== '' && c[1] !== Number(uSel)) return; by[c[0]][0] += c[2]; by[c[0]][1] += c[3]; by[c[0]][2] += c[4]; });
+      const t = by.reduce((a, b) => [a[0] + b[0], a[1] + b[0] + b[1] + b[2]], [0, 0]);
+      return [r[0], r[1], r[2]].concat(...by.map((b) => [b[0] + b[1] + b[2], b[0], b[1], b[2], pctOf(b[0], b[0] + b[1] + b[2]) ?? ''])).concat([t[1], t[0], pctOf(t[0], t[1]) ?? '']);
+    })));
+  }
+  $('recAtt').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr.click'); if (!tr) return;
+    if (tr.dataset.group) { $('atG').value = tr.dataset.group; paintAttTab(); window.scrollTo(0, 0); } else openStudent(tr.dataset.roll);
+  });
+
+  /* ----- 📝 Results ----- */
+  async function loadResTab(force) {
+    if (rsData && rsData.y === recYear && !force) { paintResTab(); return; }
+    const box = $('rsOut') || $('recRes'); box.innerHTML = '<div class="card pad empty">Loading results of every student…</div>';
+    try { const j = await attApi('resultsAll', { year: recYear }); rsData = Object.assign(j, { y: recYear }); rsEdit = null; paintResTab(true); }
+    catch (e) { if (!recAuthFail(e)) $('recRes').innerHTML = '<div class="card pad"><div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div></div>'; }
+  }
+  /** one student's marks in one test: {subjectIndex: {obt, total, absent}} */
+  const rsCells = (r, ti) => { const o = {}; r[5].forEach((c) => { if (c[0] === ti) o[c[1]] = { obt: c[2], total: c[3], absent: !!c[4] }; }); return o; };
+  const rsSum = (cells, si) => { let o = 0, t = 0, n = 0; Object.keys(cells).forEach((k) => { if (si !== '' && Number(k) !== Number(si)) return; const c = cells[k]; t += c.total; o += c.absent ? 0 : c.obt; n++; }); return n && t ? { obt: o, total: t, pct: r1(100 * o / t) } : null; };
+  function paintResTab(rebuild) {
+    const d = rsData; if (!d) return;
+    const withMarks = d.tests.filter((t, ti) => d.rows.some((r) => r[5].some((c) => c[0] === ti)));
+    if (!$('rsG') || rebuild === true) {
+      const curU = $('rsU') && $('rsU').value !== '' ? $('rsU').options[$('rsU').selectedIndex].text : '';
+      const lastT = $('rsT') ? $('rsT').value : (withMarks[withMarks.length - 1] || d.tests[0]);
+      $('recRes').innerHTML = tabFilters('rs', d, '<div class="field-row"><div class="field"><label for="rsT">Test</label><select id="rsT">' + selOpts([['*', 'All tests (month-wise)']].concat(d.tests.map((t) => [t, t + (withMarks.indexOf(t) < 0 ? ' (no marks yet)' : '')])), lastT) + '</select></div>' +
+        '<div class="field"><label for="rsU">Subject</label><select id="rsU">' + selOpts([['', 'All subjects']].concat(d.subjects.map((s, i) => [String(i), s])), String(d.subjects.indexOf(curU))) + '</select></div></div>') +
+        '<div id="rsLog" style="display:' + (rsLogOpen ? 'block' : 'none') + '"></div><div id="rsEd"></div><div id="rsOut"></div>';
+      wireTab('rs', paintResTab, loadResTab);
+      $('rsC').onclick = () => resCsv();
+      $('rsL').onclick = () => toggleResLog();
+    }
+    const tSel = $('rsT').value, uSel = $('rsU').value, g = $('rsG').value, q = $('rsQ').value.trim(), all = tSel === '*', ti = d.tests.indexOf(tSel);
+    const base = filtRows('rs', d);
+    let h = '';
+    if (all) {
+      const per = base.map((r) => { const ps = d.tests.map((t, i) => { const x = rsSum(rsCells(r, i), uSel); return x ? x.pct : null; }); const v = ps.filter((p) => p !== null); return { r, ps, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null }; });
+      const shownT = d.tests.map((t, i) => i).filter((i) => per.some((x) => x.ps[i] !== null));
+      const cls = shownT.map((i) => { const v = per.map((x) => x.ps[i]).filter((p) => p !== null); return { i, avg: v.length ? r1(v.reduce((a, b) => a + b, 0) / v.length) : null, n: v.length, pass: v.filter((p) => p >= 33).length }; });
+      if (cls.length) h += '<div class="card chart-card"><h3>Class average month by month</h3><div class="sub">' + esc((g ? groupLabel(g) : 'All groups') + (uSel !== '' ? ' · ' + d.subjects[Number(uSel)] : ' · all subjects')) + ' · dashed line = 33% pass</div>' +
+        colSvg(cls.map((c, k) => ({ label: shortTest(d.tests[c.i]), pct: c.avg, sub: gradeOf(c.avg), low: c.avg < 33, sel: k === cls.length - 1, tip: d.tests[c.i] + ': class average ' + c.avg + '% · ' + c.n + ' students with marks · passed ' + c.pass + ' · below 33%: ' + (c.n - c.pass) })), 33, 'Class average by test') + chartTipBox(d.tests[cls[cls.length - 1].i] + ': class average ' + cls[cls.length - 1].avg + '% · ' + cls[cls.length - 1].n + ' students with marks') + '</div>';
+      const sorted = sortRows(per.map((x) => Object.assign(x.r, { _x: x })), (r) => r._x.avg, 'rs').map((r) => r._x);
+      h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + ' · month-wise %' + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') + shownT.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Avg</th><th class="num">Grade</th></tr></thead><tbody>' +
+        (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') + shownT.map((i) => pctTd(x.ps[i], 33)).join('') + pctTd(x.avg, 33) + '<td class="num">' + gradeChip(x.avg) + '</td></tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
+        '</tbody></table></div></div><p class="note">Choose one test above to see subject marks' + (d.canEdit ? ' and to change, add or delete marks' : '') + '. Tap a student for the full record and transcript.</p>';
+      $('rsOut').innerHTML = h; $('rsEd').innerHTML = ''; return;
+    }
+    // one test
+    const subjIn = {}; base.forEach((r) => r[5].forEach((c) => { if (c[0] === ti) subjIn[c[1]] = 1; }));
+    const subs = Object.keys(subjIn).map(Number).filter((si) => uSel === '' || si === Number(uSel)).sort((a, b) => d.subjects[a].localeCompare(d.subjects[b]));
+    let per = base.map((r) => { const cells = rsCells(r, ti); return { r, cells, sum: rsSum(cells, uSel) }; });
+    const ranked = per.filter((x) => x.sum).sort((a, b) => b.sum.pct - a.sum.pct); let pos = 0, lastP = null;
+    ranked.forEach((x, k) => { if (x.sum.pct !== lastP) { pos = k + 1; lastP = x.sum.pct; } x.pos = pos; });
+    const vals = ranked.map((x) => x.sum.pct), avg = vals.length ? r1(vals.reduce((a, b) => a + b, 0) / vals.length) : null, pass = vals.filter((v) => v >= 33).length;
+    const gd = {}; vals.forEach((v) => { const k = gradeOf(v); gd[k] = (gd[k] || 0) + 1; });
+    h += '<div class="stat-grid g4"><div class="stat"><b>' + vals.length + '/' + base.length + '</b><span>With marks</span></div><div class="stat"><b class="' + (avg !== null && avg < 33 ? 'low' : '') + '">' + (avg === null ? '—' : avg + '%') + '</b><span>Class average</span></div><div class="stat"><b>' + pass + '</b><span>Passed</span></div><div class="stat"><b class="' + (vals.length - pass ? 'low' : '') + '">' + (vals.length - pass) + '</b><span>Below 33%</span></div></div>' +
+      (vals.length ? '<div class="grade-row">' + ['A+', 'A', 'B', 'C', 'D', 'E', 'F'].map((k) => '<span>' + gradeChip(k === 'A+' ? 85 : k === 'A' ? 75 : k === 'B' ? 65 : k === 'C' ? 55 : k === 'D' ? 45 : k === 'E' ? 35 : 10) + ' ' + (gd[k] || 0) + '</span>').join('') + '</div>' : '');
+    if (vals.length && uSel === '') {
+      const sa = subs.map((si) => { let o = 0, t = 0, n = 0, ab = 0; per.forEach((x) => { const c = x.cells[si]; if (!c) return; if (c.absent) { ab++; return; } o += c.obt; t += c.total; n++; }); return { label: d.subjects[si], pct: t ? r1(100 * o / t) : 0, absent: !t, detail: n + ' students', tip: d.subjects[si] + ': average ' + (t ? r1(100 * o / t) + '%' : '—') + ' · ' + n + ' with marks' + (ab ? ' · ' + ab + ' absent' : '') }; });
+      if (sa.length) h += '<div class="card chart-card"><h3>Subject averages · ' + esc(tSel) + '</h3><div class="sub">' + esc(g ? groupLabel(g) : 'All groups') + ' · dashed line = 33% · red = below 33%</div>' + barSvg(sa) + chartTipBox() + '</div>';
+    }
+    if (!g && !q && vals.length) {
+      const by = {}; per.forEach((x) => { (by[x.r[2]] = by[x.r[2]] || []).push(x); });
+      h += '<div class="section-title">Group-wise · ' + esc(tSel) + '</div><div class="card"><div class="overflow-x"><table class="wl sum"><thead><tr><th>Group</th><th class="num">With marks</th><th class="num">Avg %</th><th class="num">Below 33%</th><th>Top</th></tr></thead><tbody>' +
+        groupOrder(Object.keys(by)).map((x) => { const m = by[x].filter((y) => y.sum).sort((a, b) => b.sum.pct - a.sum.pct), av = m.length ? r1(m.reduce((a, y) => a + y.sum.pct, 0) / m.length) : null, lw = m.filter((y) => y.sum.pct < 33).length;
+          return '<tr class="click" data-group="' + esc(x) + '"><td>' + esc(groupLabel(x)) + '</td><td class="num">' + m.length + '/' + by[x].length + '</td>' + pctTd(av, 33) + '<td class="num' + (lw ? ' low' : '') + '">' + lw + '</td><td>' + (m[0] ? esc(m[0].r[1]) + ' <span class="ttnote" style="display:inline">' + m[0].sum.pct + '%</span>' : '—') + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    }
+    const sorted = sortRows(per.map((x) => Object.assign(x.r, { _x: x })), (r) => (r._x.sum ? r._x.sum.pct : null), 'rs').map((r) => r._x);
+    const edit = d.canEdit;
+    h += '<div class="section-title">' + esc(g ? groupLabel(g) : 'All students') + ' · ' + esc(tSel) + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl"><thead><tr><th>Roll</th><th>Name</th>' + (g ? '' : '<th>Grp</th>') +
+      subs.map((si) => '<th class="num">' + esc(d.subjects[si]) + '</th>').join('') + (uSel === '' ? '<th class="num">Total</th>' : '') + '<th class="num">%</th><th class="num">Grade</th><th class="num">Pos.</th>' + (edit ? '<th></th>' : '') + '</tr></thead><tbody>' +
+      (sorted.length ? sorted.slice(0, 600).map((x) => '<tr class="click" data-roll="' + x.r[0] + '"><td class="period">' + x.r[0] + '</td>' + nameCell(x.r) + (g ? '' : '<td>' + esc(x.r[2]) + '</td>') +
+        subs.map((si) => { const c = x.cells[si]; if (!c) return '<td class="num" style="color:var(--muted)">—</td>'; if (c.absent) return '<td class="num low">Abs</td>'; const p = r1(100 * c.obt / c.total); return '<td class="num' + (p < 33 ? ' low' : '') + '">' + c.obt + '/' + c.total + '</td>'; }).join('') +
+        (uSel === '' ? '<td class="num">' + (x.sum ? x.sum.obt + '/' + x.sum.total : '—') + '</td>' : '') + pctTd(x.sum ? x.sum.pct : null, 33) + '<td class="num">' + (x.sum ? gradeChip(x.sum.pct) : '—') + '</td><td class="num">' + (x.pos || '—') + '</td>' +
+        (edit ? '<td><button class="mini-btn rs-ed" data-roll="' + x.r[0] + '" aria-label="Change marks of roll ' + x.r[0] + '">✏️</button></td>' : '') + '</tr>').join('') : '<tr><td colspan="9" class="empty">No students match.</td></tr>') +
+      '</tbody></table></div></div><p class="note">' + (edit ? 'Tap ✏️ to change, add or delete a student’s marks in this test (every change is logged). ' : '') + 'Tap a student for the full record and transcript. Below 33% in red. Position is within the students shown.</p>';
+    $('rsOut').innerHTML = h;
+    if (rsEdit && (rsEdit.test !== tSel)) { rsEdit = null; $('rsEd').innerHTML = ''; }
+  }
+  function openResEditor(roll) {
+    const d = rsData, tSel = $('rsT').value, ti = d.tests.indexOf(tSel), r = d.rows.find((x) => x[0] === Number(roll)); if (!r || ti < 0) return;
+    const cells = rsCells(r, ti), grpSubs = {};
+    d.rows.forEach((x) => { if (x[2] === r[2]) x[5].forEach((c) => { if (c[0] === ti) grpSubs[c[1]] = c[3]; }); });
+    const list = [...new Set(Object.keys(cells).map(Number).concat(Object.keys(grpSubs).map(Number)))].sort((a, b) => d.subjects[a].localeCompare(d.subjects[b]));
+    rsEdit = { roll: r[0], test: tSel, list, cells };
+    $('rsEd').innerHTML = '<div class="card pad rs-editor"><p class="screen-title" style="margin-top:0">✏️ ' + esc(r[1]) + ' · Roll ' + r[0] + ' · ' + esc(groupLabel(r[2])) + '</p><p class="note" style="margin-top:0">' + esc(tSel) + '. Change the marks, tick <b>Absent</b>, or tick <b>Delete</b> to remove a subject’s marks. Empty rows = no marks yet (fill to add).</p>' +
+      '<div class="overflow-x"><table class="wl sum rs-et"><thead><tr><th>Subject</th><th class="num">Marks</th><th class="num">Total</th><th class="num">Abs.</th><th class="num">Del.</th></tr></thead><tbody>' +
+      list.map((si) => { const c = cells[si]; return '<tr data-si="' + si + '"><td>' + esc(d.subjects[si]) + (c ? '' : ' <span class="ttnote" style="display:inline">no marks</span>') + '</td><td class="num"><input class="rs-o" type="number" inputmode="decimal" min="0" step="0.5" value="' + (c && !c.absent ? c.obt : '') + '"></td><td class="num"><input class="rs-t" type="number" inputmode="numeric" min="1" value="' + (c ? c.total : (grpSubs[si] || '')) + '"></td><td class="num"><input class="rs-a" type="checkbox"' + (c && c.absent ? ' checked' : '') + '></td><td class="num">' + (c ? '<input class="rs-d" type="checkbox">' : '') + '</td></tr>'; }).join('') +
+      '<tr data-new="1"><td><input class="rs-n" placeholder="Other subject…" list="rsSubjList"></td><td class="num"><input class="rs-o" type="number" inputmode="decimal" min="0" step="0.5"></td><td class="num"><input class="rs-t" type="number" inputmode="numeric" min="1"></td><td class="num"><input class="rs-a" type="checkbox"></td><td></td></tr>' +
+      '</tbody></table></div><datalist id="rsSubjList">' + d.subjects.map((s) => '<option value="' + esc(s) + '">').join('') + '</datalist>' +
+      '<div class="field"><label for="rsNote">Reason (optional, kept in the log)</label><input id="rsNote" maxlength="200" placeholder="e.g. rechecked paper"></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="rsSave">Save changes</button><button class="btn-secondary" id="rsCancel">Close</button></div><div class="tt-error" id="rsEdErr"></div></div>';
+    $('rsEd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('rsCancel').onclick = () => { rsEdit = null; $('rsEd').innerHTML = ''; };
+    $('rsSave').onclick = saveResEditor;
+  }
+  async function saveResEditor() {
+    const d = rsData, E = rsEdit; if (!E) return;
+    const note = $('rsNote').value.trim(), edits = [];
+    let bad = '';
+    document.querySelectorAll('#rsEd tbody tr').forEach((tr) => {
+      const isNew = !!tr.dataset.new, subject = isNew ? tr.querySelector('.rs-n').value.trim() : d.subjects[Number(tr.dataset.si)];
+      const o = tr.querySelector('.rs-o').value.trim(), t = tr.querySelector('.rs-t').value.trim(), ab = tr.querySelector('.rs-a').checked, del = tr.querySelector('.rs-d') && tr.querySelector('.rs-d').checked;
+      const old = isNew ? null : E.cells[Number(tr.dataset.si)];
+      if (!subject) return;
+      if (del) { edits.push({ test: E.test, subject, roll: E.roll, del: true, note }); return; }
+      if (!ab && o === '') { if (old && !old.absent) bad = subject + ': write the marks, tick Absent, or tick Delete.'; return; }
+      if (!t) { bad = subject + ': write the total marks.'; return; }
+      if (old && old.absent === ab && (ab || Number(o) === old.obt) && Number(t) === old.total) return;
+      edits.push({ test: E.test, subject, roll: E.roll, obt: ab ? '' : Number(o), total: Number(t), absent: ab, note });
+    });
+    $('rsEdErr').textContent = bad; if (bad) return;
+    if (!edits.length) { $('rsEdErr').textContent = 'Nothing has changed.'; return; }
+    const b = $('rsSave'); b.disabled = true; b.textContent = 'Saving…';
+    try {
+      const j = await attApi('marksEdit', { year: recYear, edits });
+      toast('Saved ✓ ' + [j.changed ? j.changed + ' changed' : '', j.added ? j.added + ' added' : '', j.deleted ? j.deleted + ' deleted' : ''].filter(Boolean).join(', '));
+      rsEdit = null; $('rsEd').innerHTML = ''; recAllRows = null; recLastStudent = null;
+      await loadResTab(true);
+      if (rsLogOpen) loadResLog();
+    } catch (e) { if (!recAuthFail(e)) { $('rsEdErr').textContent = e.offline ? 'You need internet.' : e.message; b.disabled = false; b.textContent = 'Save changes'; } }
+  }
+  function toggleResLog() { rsLogOpen = !rsLogOpen; $('rsLog').style.display = rsLogOpen ? 'block' : 'none'; if (rsLogOpen) loadResLog(); }
+  async function loadResLog() {
+    $('rsLog').innerHTML = '<div class="card pad empty">Loading changes…</div>';
+    try {
+      const j = await attApi('marksLog', { year: recYear });
+      $('rsLog').innerHTML = '<div class="card"><div class="tbl-tools" style="padding:10px 12px 0"><div class="section-title" style="margin:0">🕘 Marks changes (latest first)</div></div>' + (j.rows.length ? '<div class="overflow-x"><table class="wl sum"><thead><tr><th>When</th><th>Student</th><th>Test · Subject</th><th>Before → After</th><th>By</th></tr></thead><tbody>' +
+        j.rows.map((x) => '<tr><td>' + esc(x.when) + '</td><td>' + x.roll + ' · ' + esc(x.name) + '</td><td>' + esc(shortTest(x.test)) + ' · ' + esc(x.subject) + '</td><td>' + esc(x.before) + ' → <b>' + esc(x.after) + '</b>' + (x.note ? '<span class="ttnote">' + esc(x.note) + '</span>' : '') + '</td><td>' + esc(x.by) + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty">No marks have been changed here yet.</div>') + '</div>';
+    } catch (e) { if (!recAuthFail(e)) $('rsLog').innerHTML = '<div class="card pad"><div class="tt-error">' + esc(e.message) + '</div></div>'; }
+  }
+  function resCsv() {
+    const d = rsData; if (!d) return;
+    const rows = filtRows('rs', d).sort((a, b) => a[0] - b[0]), uSel = $('rsU').value;
+    const tests = d.tests.filter((t, ti) => rows.some((r) => r[5].some((c) => c[0] === ti)));
+    const subs = d.subjects.map((s, i) => i).filter((si) => uSel === '' || si === Number(uSel)).filter((si) => rows.some((r) => r[5].some((c) => c[1] === si)));
+    const head = ['Roll', 'Name', 'Group'].concat(...tests.map((t) => subs.map((si) => shortTest(t) + ' · ' + d.subjects[si]).concat([shortTest(t) + ' total', shortTest(t) + ' %', shortTest(t) + ' grade'])));
+    csvDownload('Results_' + yearLabel(recYear).replace(/\s+/g, '_') + ($('rsG').value ? '_' + $('rsG').value : '') + '.csv', [head].concat(rows.map((r) => [r[0], r[1], r[2]].concat(...tests.map((t) => {
+      const cells = rsCells(r, d.tests.indexOf(t)), s = rsSum(cells, uSel);
+      return subs.map((si) => { const c = cells[si]; return !c ? '' : c.absent ? 'Absent' : c.obt + '/' + c.total; }).concat([s ? s.obt + '/' + s.total : '', s ? s.pct : '', s ? gradeOf(s.pct) : '']);
+    })))));
+  }
+  $('recRes').addEventListener('click', (e) => {
+    const ed = e.target.closest('.rs-ed'); if (ed) { openResEditor(ed.dataset.roll); return; }
+    if (e.target.closest('#rsEd')) return;
+    const tr = e.target.closest('tr.click'); if (!tr) return;
+    if (tr.dataset.group) { $('rsG').value = tr.dataset.group; paintResTab(); window.scrollTo(0, 0); } else openStudent(tr.dataset.roll);
+  });
+
+  /* ----- Faculty Profiles: Controller of Examinations ----- */
+  $('facCtrl').addEventListener('click', async () => {
+    const F = $('facCtrlForm');
+    if (F.style.display === 'block') { F.style.display = 'none'; return; }
+    F.style.display = 'block'; F.innerHTML = '<div class="empty">Loading…</div>';
+    const paint = (roles) => {
+      const ctrl = roles.filter((x) => x.role === 'Controller'), others = roles.filter((x) => x.role === 'Teacher').sort((a, b) => a.name.localeCompare(b.name));
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">🎓 Controller of Examinations</p><p class="note" style="margin-top:0">The Controller signs in to <b>Student Records</b> with their own PIN and gets the <b>📝 Results</b> tab: every student’s marks in every class, month-wise, subject-wise and class-wise, and can change, add or delete marks (each change is logged). They do not get the other admin tools.</p>' +
+        (ctrl.length ? ctrl.map((x) => '<div class="ctrl-row"><b>' + esc(x.name) + '</b><button class="mini-btn" data-rm="' + esc(x.name) + '">Remove</button></div>').join('') : '<p class="note">No Controller yet.</p>') +
+        '<div class="field" style="margin-top:8px"><label for="ctrlPick">Make Controller</label><select id="ctrlPick"><option value="">Choose a staff member with a sign-in…</option>' + others.map((x) => '<option>' + esc(x.name) + '</option>').join('') + '</select></div>' +
+        '<button class="btn-primary" id="ctrlSet">Make Controller of Examinations</button><div class="tt-error" id="ctrlErr"></div>';
+      $('ctrlSet').onclick = () => { const n = $('ctrlPick').value; if (!n) { $('ctrlErr').textContent = 'Choose a name.'; return; } setRole(n, 'Controller'); };
+      F.querySelectorAll('[data-rm]').forEach((b) => { b.onclick = () => setRole(b.dataset.rm, 'Teacher'); });
+    };
+    const setRole = async (name, role) => {
+      try { await attApi('roleSet', { name, role }); toast(role === 'Controller' ? name + ' is now the Controller of Examinations ✓' : name + ' is a teacher again'); paint((await attApi('rolesList')).roles); }
+      catch (e) { if (!facAuthFail(e)) $('ctrlErr').textContent = e.offline ? 'You need internet.' : e.message; }
+    };
+    try { paint((await attApi('rolesList')).roles); } catch (e) { if (!facAuthFail(e)) F.innerHTML = '<div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div>'; }
+  });
+
   $('recReload').addEventListener('click', () => loadAll(true));
   $('recRebuild').addEventListener('click', async () => {
     $('recRebuild').disabled = true; $('recRebuild').textContent = 'Recalculating…';
@@ -4578,6 +5031,7 @@
     $('mgMain').style.display = admin ? 'block' : 'none';
     if (!admin) return;
     if (!$('mgYear').options.length) $('mgYear').innerHTML = MG_YEARS().map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('');
+    if (!$('scYear').options.length) $('scYear').innerHTML = MG_YEARS().map((o) => '<option value="' + o[0] + '">' + esc(o[1]) + '</option>').join('');
     $('mgYear').value = mgYearSel;
     mgShowTab(mgTab);
   }
@@ -4586,9 +5040,105 @@
     document.querySelectorAll('#mgTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
     $('mgStu').style.display = t === 'stu' ? 'block' : 'none';
     $('mgTT').style.display = t === 'tt' ? 'block' : 'none';
-    if (t === 'stu') mgLoad(false); else ttcPaintList(true);
+    $('mgSafe').style.display = t === 'safe' ? 'block' : 'none';
+    if (t === 'stu') mgLoad(false); else if (t === 'safe') bkLoad(); else ttcPaintList(true);
   }
   $('mgTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) mgShowTab(b.dataset.t); });
+
+  /* ---------- v12.3: Backups & data — weekly backup, storage check, close a session ---------- */
+  let bkInfo = null, scY = null;
+  const BK_SETUP_HELP = '<div class="sf-setup"><b>One-time set-up (about 2 minutes, on a computer):</b><ol>' +
+    '<li>Open the Apps Script editor of the attendance service — the same place where you paste the code.</li>' +
+    '<li>At the top, pick <b>setupBackups</b> in the function list and press <b>▶ Run</b>.</li>' +
+    '<li>Google asks for permission — choose your account and press <b>Allow</b>. (Sign in yourself; never share your password.)</li>' +
+    '<li>Come back here and tap <b>Refresh</b>. The first backup is made at once.</li></ol></div>';
+  const bkWhen = (at) => (at ? fmtDate(String(at).slice(0, 10)) + ', ' + String(at).slice(11, 16) : '—');
+  function bkFail(e, box) {
+    const m = String((e && e.message) || e);
+    let h;
+    if (e && e.offline) h = 'You need internet.';
+    else if (/^NEEDS_SETUP/.test(m)) { $(box).innerHTML = BK_SETUP_HELP; return; }
+    else if (/^BUSY/.test(m)) h = 'Google is busy right now — please try again in a minute.' + (box === 'scErr' ? ' (If it keeps happening, tap “Check what will be archived” — the archive may already be done.)' : '');
+    else h = m;
+    $(box).innerHTML = '<span class="tt-error" style="display:block">' + esc(h) + '</span>';
+    if (/PIN|sign in/i.test(m)) { recSignOut(); render(); }
+  }
+  async function bkLoad() {
+    $('bkErr').textContent = '';
+    try { bkInfo = await attApi('backupInfo', {}); bkPaint(); }
+    catch (e) { $('bkStatus').innerHTML = ''; bkFail(e, 'bkErr'); }
+  }
+  function bkPaint() {
+    const j = bkInfo || {}, L = j.last;
+    let h = '';
+    if (j.scheduled === null) h += '<p class="sf-state warn">⚠️ Weekly backup is not set up yet.</p>' + BK_SETUP_HELP;
+    else if (j.scheduled) h += '<p class="sf-state ok">✅ Weekly backup is ON — every Sunday at about 2 am.</p>';
+    else h += '<p class="sf-state warn">⏸ Weekly backup is OFF.</p>';
+    if (L) {
+      h += '<p class="note" style="margin:4px 0">Last backup: <b>' + esc(bkWhen(L.at)) + '</b> · ' + L.files + ' of ' + L.of + ' files copied' + (L.by ? ' · ' + esc(L.by) : '') +
+        '<br><a href="' + esc(L.url) + '" target="_blank" rel="noopener">Open this backup</a> · <a href="' + esc(L.root) + '" target="_blank" rel="noopener">All backups</a></p>';
+      if (L.errors && L.errors.length) h += '<p class="tt-error">Not copied: ' + esc(L.errors.join('; ')) + '</p>';
+    } else if (j.scheduled !== null) h += '<p class="note" style="margin:4px 0">No backup has been made yet.</p>';
+    $('bkStatus').innerHTML = h;
+    $('bkToggle').textContent = j.scheduled === null ? 'Refresh' : j.scheduled ? 'Turn weekly backup off' : 'Turn weekly backup on';
+    $('bkNow').style.display = j.scheduled === null ? 'none' : '';
+  }
+  $('bkNow').addEventListener('click', async () => {
+    const b = $('bkNow'); b.disabled = true; b.textContent = 'Backing up… (about a minute)'; $('bkErr').textContent = '';
+    try { bkInfo = await attApi('backupNow', {}); bkPaint(); toast('Backup made ✓ ' + bkInfo.done.files + ' files copied to your Drive'); }
+    catch (e) { bkFail(e, 'bkErr'); }
+    b.disabled = false; b.textContent = 'Back up now';
+  });
+  $('bkToggle').addEventListener('click', async () => {
+    if (!bkInfo || bkInfo.scheduled === null) { $('bkStatus').innerHTML = '<div class="empty">Checking…</div>'; bkLoad(); return; }
+    const b = $('bkToggle'); b.disabled = true; $('bkErr').textContent = '';
+    try { bkInfo = await attApi('backupSchedule', { on: !bkInfo.scheduled }); bkPaint(); toast(bkInfo.scheduled ? 'Weekly backup turned on ✓' : 'Weekly backup turned off'); }
+    catch (e) { bkFail(e, 'bkErr'); }
+    b.disabled = false;
+  });
+  $('dhCheck').addEventListener('click', async () => {
+    const b = $('dhCheck'); b.disabled = true; b.textContent = 'Checking… (up to a minute)'; $('dhOut').innerHTML = '';
+    try {
+      const j = await attApi('dataHealth', { force: true });
+      const cls = (p) => (p >= 80 ? 'bad' : p >= 50 ? 'mid' : 'ok');
+      $('dhOut').innerHTML = '<div class="dh-list">' + j.files.map((f) => (f.error
+        ? '<div class="dh-row"><div class="dh-top"><b>' + esc(f.label) + '</b></div><small class="tt-error">' + esc(f.error) + '</small></div>'
+        : '<div class="dh-row"><div class="dh-top"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' + esc(f.label) + '</a><b class="dh-' + cls(f.pct) + '">' + f.pct + '%</b></div>' +
+          '<span class="dh-bar"><i class="' + cls(f.pct) + '" style="width:' + Math.max(1, Math.min(100, f.pct)) + '%"></i></span>' +
+          '<small>Largest tab: ' + esc(f.biggest ? f.biggest.name : '—') + (f.biggest ? ' · ' + Number(f.biggest.rows).toLocaleString('en') + ' rows' : '') + '</small></div>')).join('') +
+        '</div><p class="note" style="margin-bottom:0">Checked ' + esc(bkWhen(j.at)) + '.' + (j.files.some((f) => f.pct >= 80) ? ' <b>A file is above 80% — close that class’s session soon.</b>' : j.files.some((f) => f.pct >= 50) ? ' Keep an eye on the files above 50%.' : ' Everything is well within the limit.') + '</p>';
+    } catch (e) { bkFail(e, 'dhOut'); }
+    b.disabled = false; b.textContent = 'Check storage';
+  });
+  $('scYear').addEventListener('change', () => { $('scOut').innerHTML = ''; $('scErr').textContent = ''; });
+  $('scCheck').addEventListener('click', async () => {
+    const y = yk($('scYear').value); $('scErr').textContent = ''; $('scOut').innerHTML = '<div class="empty">Checking…</div>';
+    try {
+      const j = await attApi('sessionPreview', { year: y }); scY = y;
+      const c = j.counts || {}, n = (x) => Number(x || 0).toLocaleString('en');
+      $('scOut').innerHTML = '<div class="sc-box"><p><b>' + esc(j.name) + '</b> — ' + n(j.students) + ' students</p><ul>' +
+        '<li>Attendance: <b>' + n(c.Log) + '</b> rows' + (j.from ? ' (' + esc(fmtDate(j.from)) + ' – ' + esc(fmtDate(j.to)) + ')' : '') + '</li>' +
+        '<li>Lectures marked: <b>' + n(c.Lectures) + '</b></li><li>Marks: <b>' + n(c.Marks) + '</b> rows</li></ul>' +
+        (c.Log || c.Marks || c.Lectures
+          ? '<p class="note">All of this is saved in the archive, then emptied so ' + esc(j.name) + ' starts fresh. Teachers and students will no longer see this session’s attendance and marks in the app — they stay in the archive in your Drive. <b>Do this only when the session or semester is over.</b></p>' +
+            '<div class="field"><label for="scConfirm">Type CLOSE SESSION to confirm</label><input id="scConfirm" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>' +
+            '<button class="btn-primary mg-danger" id="scGo">📦 Archive &amp; start fresh</button>'
+          : '<p class="note" style="margin:0">Nothing to archive — this class has no attendance or marks yet.</p>') + '</div>';
+    } catch (e) { $('scOut').innerHTML = ''; bkFail(e, 'scErr'); }
+  });
+  $('scOut').addEventListener('click', async (e) => {
+    if (!e.target.closest('#scGo')) return;
+    const v = ($('scConfirm').value || '').trim().toUpperCase();
+    if (v !== 'CLOSE SESSION') { $('scErr').textContent = 'Type CLOSE SESSION in the box to confirm.'; return; }
+    const b = $('scGo'); b.disabled = true; b.textContent = 'Archiving… (1–3 minutes — keep this page open)'; $('scErr').textContent = '';
+    try {
+      const j = await attApi('sessionClose', { year: scY, confirm: v });
+      const n = (x) => Number(x || 0).toLocaleString('en');
+      $('scOut').innerHTML = '<div class="sc-box ok"><p>✅ <b>' + esc(j.name) + '</b> is archived and has started fresh.</p><p class="note" style="margin:0">' + n(j.cleared.Log) + ' attendance rows and ' + n(j.cleared.Marks) + ' marks rows are in the archive. <a href="' + esc(j.folder) + '" target="_blank" rel="noopener">Open the archive folder</a></p>' +
+        (j.rebuildError ? '<p class="tt-error">Totals: ' + esc(j.rebuildError) + ' — tap “Recalculate totals” in Student records.</p>' : '') + '</div>';
+      toast('Session closed ✓ The archive is in your Drive');
+    } catch (err) { b.disabled = false; b.textContent = '📦 Archive & start fresh'; bkFail(err, 'scErr'); }
+  });
   async function mgLoad(force) {
     const y = mgYk();
     if (mgData && mgData.y === y && !force) { mgPaint(); return; }
