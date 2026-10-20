@@ -10,10 +10,10 @@ const all_ = (gs) => gs.map((g) => [g, "All"]);
 const SIX7 = {
   1: [
     // Science
-    { period: "VI", days: "3-4", subject: "Islamic Education", with: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", parts: [["M", "All"], ["E", "All"], ["STAR", "All"]] },
+    { period: "VI", days: "3-3", subject: "Islamic Education", with: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", parts: [["M", "All"], ["E", "All"], ["STAR", "All"]] },
     { period: "VI", days: "2-2", subject: "Physics Practical", with: "M + E", room: "LAB", teacher: "Prof. Muhammad Imran Bashir + Prof. Sidra Kanwal", parts: [["M", "All"], ["E", "All"]] },
     { period: "VI", days: "2-2", subject: "Physics Practical", with: "B.Star", room: "LAB", teacher: "Prof. Muhammad Asif Ali", parts: [["STAR", "All"]] },
-    { period: "VII", days: "3-4", subject: "Tarjuma-tul-Quran", with: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", parts: [["M", "All"], ["E", "All"], ["STAR", "All"]] },
+    { period: "VII", days: "4-4", subject: "Tarjuma-tul-Quran", with: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", parts: [["M", "All"], ["E", "All"], ["STAR", "All"]] },
     { period: "VII", days: "4-4", subject: "Chemistry Practical", with: "M + E", room: "LAB", teacher: "Prof. Madiha Aqsa + Prof. Zarafshan Nawaz", parts: [["M", "All"], ["E", "All"]] },
     { period: "VII", days: "4-4", subject: "Chemistry Practical", with: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", parts: [["STAR", "Medical + Engineering"]] },
     { period: "VII", days: "1-1", subject: "Biology Practical", with: "M", room: "LAB", teacher: "Prof. Aeman Sehar", parts: [["M", "All"]] },

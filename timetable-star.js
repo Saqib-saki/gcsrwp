@@ -42,10 +42,10 @@ const STAR_TT = {
 // Periods VI-VII rotate weekly (check the noticeboard)
 const STAR_ROT = {
   1: [
-    { subject: "VI · Islamic Education (3-4)", group: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", sec: "All" },
+    { subject: "VI · Islamic Education (3-3)", group: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", sec: "All" },
     { subject: "VI · Ethics (Non-Muslim students)", group: "Non-Muslim students", room: "UB2", teacher: "Prof. Ashar Shahzad", sec: "All" },
     { subject: "VI · Physics Practical (2-2)", group: "B.Star", room: "LAB", teacher: "Prof. Muhammad Asif Ali", sec: "All" },
-    { subject: "VII · Tarjuma-tul-Quran (3-4)", group: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", sec: "All" },
+    { subject: "VII · Tarjuma-tul-Quran (4-4)", group: "B.Star + M + E", room: "UB1", teacher: "Prof. Abaid Ullah Tariq", sec: "All" },
     { subject: "VII · Chemistry Practical (4-4)", group: "B.Star", room: "LAB", teacher: "Prof. Samad Yaseen", sec: "Medical + Engineering" },
     { subject: "VII · Biology Practical (1-1)", group: "B.Star", room: "LAB", teacher: "Prof. Nadeem Khan", sec: "Pre-Medical" }
   ],

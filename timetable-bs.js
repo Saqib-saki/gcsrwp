@@ -22,7 +22,7 @@ const BS_TT = [
   [1, "Chemistry",  "I",  "Tarjuma-tul-Quran",  "HQ-001",  "Prof. Inaam",  "GB-4",  "",  "1-1"],
   [1, "Chemistry",  "II",  "English (GENG-101)",  "GENG-101",  "Prof. Aisha Rehmat",  "GB-2",  "",  "1-5"],
   [1, "Chemistry",  "III",  "Chemistry (+ lab CHE-102)",  "CHE-101",  "Prof. Tehmina Akhtar",  "Lab-I",  "",  "1-6"],
-  [1, "Chemistry",  "IV",  "Wonder of Science GEN (NS)",  "NSW-106",  "Prof. Nadeem Asghar Khan",  "Lab-I",  "",  "1-5"],
+  [1, "Chemistry",  "IV",  "Wonder of Science GEN (NS)",  "NSW-106",  "Prof. Nadeem Khan",  "Lab-I",  "",  "1-5"],
   [1, "Chemistry",  "V",  "Chemistry (+ lab CHE-117)",  "CHE-116",  "Prof. Noor ul Aen",  "Lab-I",  "",  "1-6"],
   [1, "Chemistry",  "VI",  "Civics",  "GCCE-101",  "Prof. Bushra Zahoor",  "GB-2",  "",  "1-5"],
   [1, "Physics",  "I",  "Islamiat (GISL-101)",  "GISL-101",  "Prof. Inaam",  "GB-4",  "",  "2-5"],

@@ -65,10 +65,14 @@ function buildSchedule(roll) {
   if (!code) return null;
 
   if (code === "D") {
+    // v12.8: DIT Semester 1 (timetable-dit.js, classes on certain days only) — teachers as assigned by the admin
+    const DAY = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dl = (d) => { const m = /^(\d)-(\d)$/.exec(d || ""); return m ? (m[1] === m[2] ? DAY[+m[1]] : DAY[+m[1]] + " – " + DAY[+m[2]]) : (d || ""); };
+    const list = (typeof SIX7 !== "undefined" && SIX7[1] ? SIX7[1].filter((e) => e.dit) : []).slice().sort((x, y) => String(x.days).localeCompare(String(y.days)) || String(x.period).localeCompare(String(y.period)));
     return {
-      code, group: "DIT",
-      rows: [],
-      note: "DIT follows a separate departmental timetable that wasn't included on these sheets — please check with the DIT department directly."
+      code, group: "DIT — Semester 1", sheet: "DIT",
+      rows: list.map((e) => ({ period: dl(e.days), subject: e.subject, note: e.time || "", room: e.room || "Room 18 (M-B)", teacher: e.teacher === "CTI" ? "To be announced" : e.teacher })),
+      note: list.length ? "" : "DIT timetable failed to load. Please refresh."
     };
   }
 

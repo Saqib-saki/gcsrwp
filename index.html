@@ -262,10 +262,20 @@
   .sc-box { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; } .sc-box p { margin: 0 0 6px; } .sc-box.ok { border-color: var(--green); } .sc-box ul { margin: 4px 0 8px; padding-left: 20px; }
   #recTabs { flex-wrap: wrap; overflow: visible; }
   table.tch-tbl tr.tch-head td { background: var(--chip-bg); white-space: normal; }
+  @media (min-width: 900px) { body.wide .wrap, body.wide .header-inner { max-width: 1280px; } body.wide .chart-card { max-width: 720px; } }
+  .chart-card svg { max-width: 480px; margin-left: auto; margin-right: auto; }
+  table.tab-tbl th { white-space: normal; vertical-align: bottom; }
+  #tabPrint { display: none; }
+  @media print { body.print-tab > *:not(#tabPrint) { display: none !important; } body.print-tab #tabPrint { display: block !important; } }
+  #tabPrint { font-family: Arial, sans-serif; color: #000; } #tabPrint h1 { font-size: 13pt; margin: 0; text-align: center; color: #0b4429; } #tabPrint h2 { font-size: 10pt; margin: 2px 0 6px; text-align: center; font-weight: normal; letter-spacing: .04em; }
+  #tabPrint .kpi { font-size: 8.5pt; margin: 0 0 6px; text-align: center; } #tabPrint table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+  #tabPrint th, #tabPrint td { border: 1px solid #888; padding: 2px 3px; text-align: center; white-space: nowrap; } #tabPrint th { background: #e8f1ec; } #tabPrint th { white-space: normal; vertical-align: bottom; } #tabPrint .tp-page.brk { break-after: page; } #tabPrint table { width: auto; min-width: 100%; } #tabPrint td:nth-child(2) { text-align: left; white-space: normal; }
+  #tabPrint tr.tch-head td { text-align: left; background: #f1f1f1; font-weight: bold; } #tabPrint .low, #tabPrint .lo { color: #b3261e; font-weight: bold; } #tabPrint .grade { font-weight: bold; } #tabPrint .ttnote { font-weight: normal; color: #444; }
+  #tabPrint .foot { font-size: 7.5pt; color: #444; margin-top: 6px; display: flex; justify-content: space-between; } #tabPrint .sign { display: flex; justify-content: space-between; margin-top: 30px; font-size: 9pt; } #tabPrint .sign div { border-top: 1px solid #000; width: 30%; text-align: center; padding-top: 2px; }
   .tab-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .grade-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: -4px 0 12px; font-size: .82rem; font-weight: 700; }
   .ctrl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  table.tab-tbl td, table.tab-tbl th { white-space: nowrap; } table.tab-tbl td:nth-child(2) { white-space: normal; min-width: 120px; }
+  table.tab-tbl td { white-space: nowrap; } table.tab-tbl td:nth-child(2) { white-space: normal; min-width: 120px; }
   table.rs-et { font-size: .86rem; } table.rs-et td, table.rs-et th { padding-left: 4px; padding-right: 4px; } table.rs-et input[type=number] { width: 54px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); font: inherit; text-align: right; }
   table.rs-et input.rs-n { width: 104px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); font: inherit; }
   table.rs-et input[type=checkbox] { width: 20px; height: 20px; }
@@ -1240,6 +1250,7 @@
         <button class="name-row sub" data-go="/timetable/bs/5"><span class="idx"></span><span>5th Semester</span><span class="chev">&rsaquo;</span></button>
         <button class="name-row sub" data-go="/timetable/bs/7"><span class="idx"></span><span>7th Semester</span><span class="chev">&rsaquo;</span></button>
       </div>
+      <button class="name-row" data-go="/timetable/dit"><span class="idx">IT</span><span><b>DIT</b><div class="tt-menu-sub">Diploma in IT · Semester 1 · Room 18 (M-B)</div></span><span class="chev">&rsaquo;</span></button>
     </div>
   </section>
 
@@ -1361,6 +1372,7 @@
 <script src="timetable-bs.js"></script>
 <script src="timetable-star.js"></script>
 <script src="timetable-67.js"></script>
+<script src="timetable-dit.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1416,6 +1428,7 @@
     'tt-menu':     { view: 'view-tt-menu',       title: () => 'Time Table',         parent: '/' },
     'tt-bs':       { view: 'view-tt-bs',         title: () => 'BS Time Table',      parent: '/timetable' },
     'tt-star':     { view: 'view-tt-bs',         title: () => 'Bright Star',        parent: '/timetable' },
+    'tt-dit':      { view: 'view-tt-bs',         title: () => 'DIT Time Table',     parent: '/timetable' },
     timetable:     { view: 'view-timetable',     title: () => yearLabel(ttYear) + ' Time Table', parent: '/timetable' },
     'timetable-one': { view: 'view-timetable-one', title: () => yearLabel(ttYear) + ' Time Table', parent: () => '/timetable/y' + ttYear },
     notices:       { view: 'view-notices',       title: () => 'Notices',            parent: '/' },
@@ -1447,6 +1460,7 @@
       if (!arg) return { key: 'tt-menu' };
       const bs = /^bs\/(\d)$/.exec(arg); if (bs) return { key: 'tt-bs', arg: bs[1] };
       const st = /^star\/([12])$/.exec(arg); if (st) return { key: 'tt-star', arg: st[1] };
+      if (arg === 'dit') return { key: 'tt-dit' };
       const y = /^y([12])(?:\/(\d+))?$/.exec(arg);
       if (y) { ttYear = Number(y[1]); return y[2] ? { key: 'timetable-one', arg: y[2] } : { key: 'timetable' }; }
       if (/^\d+$/.test(arg)) { ttYear = 1; return { key: 'timetable-one', arg }; } // old links: #/timetable/433
@@ -1487,6 +1501,7 @@
     lastRouteKey = r.key;
     if (r.key === 'timetable') renderRollInput();
     if (r.key === 'tt-bs') renderBsTimetable(Number(r.arg));
+    if (r.key === 'tt-dit') renderDitTimetable();
     if (r.key === 'tt-star') renderStarTimetable(Number(r.arg));
     if (r.key === 'timetable-one') ok = renderTimetable(r.arg);
     if (r.key === 'notices') renderNotices();
@@ -1494,6 +1509,7 @@
     if (r.key === 'about') renderAbout();
     if (r.key === 'staff') renderStaff(r.arg);
     if (r.key === 'attendance') renderAttendance();
+    document.body.classList.toggle('wide', r.key === 'records' && (recTab === 'att' || recTab === 'res'));   // v12.7: wide tables on computers
     if (r.key === 'records') renderRecords();
     if (r.key === 'marks') renderMarks();
     if (r.key === 'board') renderBoard();
@@ -1647,12 +1663,12 @@
       let base = clone(TT_PRISTINE.six[y] || []);
       act.filter((x) => ttYearOk(x, y)).forEach((x) => {
         if (x.action === 'replace') { base.forEach((e) => { if (ttHasName(e.teacher, x.fromTeacher)) e.teacher = ttSwapName(e.teacher, x); }); return; }
-        if (!isSixP(x.period)) return;
         const P = ttParts(x);
+        if (!isSixP(x.period) && !(Number(y) === 1 && P.some((q) => q[0] === 'D'))) return;   // v12.8: DIT classes live in this list too
         const mine = (p) => P.some((q) => p[0] === q[0] && (q[1] === 'All' || p[1] === q[1] || p[1] === 'All'));
         const hit = (e) => e.period === x.period && ttNorm(e.subject) === ttNorm(x.subject) && (e.cls ? P.some((q) => q[0] === e.cls[0]) : e.parts.some(mine));
         const label = P.map((q) => q[0] + (q[1] !== 'All' ? ' (' + q[1] + ')' : '')).join(' + ');
-        if (x.action === 'add') { base.push({ period: x.period, days: x.days || '1-6', subject: x.subject, with: label, room: x.room || '', teacher: x.teacher, parts: P }); return; }
+        if (x.action === 'add') { const dit = Number(y) === 1 && !isSixP(x.period) && P.some((q) => q[0] === 'D'); base.push(Object.assign({ period: x.period, days: x.days || '1-6', subject: x.subject, with: dit ? 'DIT (Semester 1)' : label, room: x.room || (dit ? 'Room 18 (M-B)' : ''), teacher: x.teacher, parts: P }, dit ? { dit: true, time: (typeof DIT_SLOTS !== 'undefined' && DIT_SLOTS[x.period]) || '' } : {})); return; }
         const next = [];
         base.forEach((e) => {
           if (!hit(e)) { next.push(e); return; }
@@ -2386,7 +2402,7 @@
     A1: 'F.A Humanities — Civics, Islamic Studies, Arabic', A2: 'F.A Humanities — Civics, Islamic Studies, History',
     A3: 'F.A Humanities — Psychology, Islamic Studies, Health & P.E.', A4: 'F.A Humanities — Economics, Islamic Studies, Health & P.E.',
     A5: 'F.A Humanities — History, Islamic Studies, Health & P.E.', A6: 'F.A Humanities — Civics, History, Geography',
-    A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT'
+    A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT (Semester 1)'
   };
 
   /* ---------- BS timetables (by semester and programme) ---------- */
@@ -2419,6 +2435,19 @@
     $('bsOut').innerHTML = h;
   }
 
+  /** v12.8: DIT Semester 1 — weekly timetable (days × the two slots), teachers after the admin's timetable changes */
+  function renderDitTimetable() {
+    $('ttBsTitle').textContent = 'DIT · Semester 1';
+    $('bsProgs').innerHTML = '';
+    const L = (typeof SIX7 !== 'undefined' && SIX7[1] ? SIX7[1] : []).filter((e) => e.dit);
+    if (!L.length) { $('bsOut').innerHTML = '<div class="card pad empty">Timetable data failed to load. Please refresh.</div>'; return; }
+    const slots = typeof DIT_SLOTS !== 'undefined' ? DIT_SLOTS : { I: '8:30 – 10:00', II: '10:00 – 11:30' }, DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const cell = (d, p) => { const e = L.find((x) => x.period === p && (bsDays(x.days) || []).indexOf(d) >= 0); return e ? '<b>' + esc(e.subject) + '</b><span class="ttnote">' + esc(e.teacher === 'CTI' || !e.teacher ? 'Teacher to be announced' : e.teacher) + '</span>' : '<span style="color:var(--muted)">—</span>'; };
+    let h = '<div class="card"><div class="overflow-x"><table class="wl bs-tt"><thead><tr><th>Day</th><th>' + esc(slots.I) + '</th><th>' + esc(slots.II) + '</th></tr></thead><tbody>' +
+      DAYS.map((dn, i) => '<tr><td class="period">' + dn + '</td><td>' + cell(i + 1, 'I') + '</td><td>' + cell(i + 1, 'II') + '</td></tr>').join('') + '</tbody></table></div></div>';
+    h += '<p class="note">Room 18 (M-B). Semester 1 subjects: ICT, Intro to MS-Office, Computer Networks, Operating System, Intro to Programming and Library Activities. DIT students (roll 1401–1500) also see this by typing their roll number in the 1st Year timetable.</p>';
+    $('bsOut').innerHTML = h;
+  }
   /** Bright Star section timetable (whole section, or one combination) */
   function renderStarTimetable(y) {
     $('ttBsTitle').textContent = 'Bright Star · ' + (y === 2 ? '2nd Year' : '1st Year');
@@ -2449,7 +2478,7 @@
     $('rollInput').value = saved || '';
     $('ttCoverage').textContent = ttYear === 2
       ? 'Covers all 2nd Year groups: F.Sc (M, E), I.C.S (C1, C2, C3, H), General Science (G) and Arts (A1–A3, B1–B3, D1–D3), roll 1–1300.'
-      : 'Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350). DIT (1401–1500) follows a separate departmental timetable.';
+      : 'Covers 1st Year Science, I.C.S and Arts groups (roll 1–1350) and DIT Semester 1 (roll 1401–1500).';
     setTimeout(() => { if (!('ontouchstart' in window)) $('rollInput').focus(); }, 150);
   }
 
@@ -3190,8 +3219,8 @@
     if (!signed) { $('attName').value = store.get('attLastName') || ''; return; }
     $('attWho').textContent = attAuth.name;
     if (!$('attDate').value) $('attDate').value = todayISO();
-    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS) && navigator.onLine) {
-      attApi('scope').then((j) => { attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
+    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS || !teachFresh) && navigator.onLine) {   // v12.8: subjects refreshed once per app start
+      attApi('scope').then((j) => { teachFresh = true; attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
     }
     pickClassYear('att');
     if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
@@ -3501,10 +3530,17 @@
     return m === 9 ? 0 : m === 10 ? 1 : m === 11 ? 2 : m === 0 ? 3 : m === 1 ? 4 : m >= 2 && m <= 5 ? 5 : 0;
   }
   const isAdmin = () => attAuth && attAuth.role === 'Admin';
+  let teachFresh = false;
   function myTeachesBase(y) {
     if (!attAuth) return [];
     if (isBS(y)) return (attAuth.teachesBS || []).filter((t) => t.sem === bsSemOf(y)).map((t) => ({ group: t.group, subject: t.subject }));
-    return (Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches) || [];
+    // v12.8: an old combined subject ("Islamic Education / Tarjuma-tul-Quran") counts as two separate subjects
+    const out = [];
+    ((Number(y) === 2 ? attAuth.teaches2 : attAuth.teaches) || []).forEach((t) => {
+      if (/islamic education\s*\/\s*tarjuma/i.test(t.subject)) { out.push({ group: t.group, subject: 'Islamic Education' }, { group: t.group, subject: 'Tarjuma-tul-Quran' }); }
+      else out.push(t);
+    });
+    return out;
   }
   /** subjects the teacher may enter marks for: Teachers sheet / BS timetable + their Bright Star lectures */
   /** v12.2: {group, subject} given to this teacher by timetable changes (one class, merged parts, or all classes of a teacher who left) */
@@ -3546,6 +3582,9 @@
     if (!me || isBS(y)) return base;
     const star = [];
     starLectures(y).forEach((l) => { if (String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && !star.some((x) => x.subject === l.subject)) star.push({ group: 'STAR', subject: l.subject }); });
+    // v12.8: Period VI/VII classes (Islamic Education, Tarjuma-tul-Quran, Pak. Studies …) of Bright Star students — each subject separately
+    sixList(y).forEach((e) => { if (!String(e.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) || /practical/i.test(e.subject)) return;
+      (e.cls ? [e.cls] : e.parts || []).forEach((p) => { if (p[0] === 'STAR' && !star.some((x) => x.subject === e.subject) && !base.some((x) => x.group === 'STAR' && x.subject === e.subject)) star.push({ group: 'STAR', subject: e.subject }); }); });
     return base.concat(star);
   }
 
@@ -3591,8 +3630,8 @@
     if (!signed) { $('mkName').value = store.get('attLastName') || ''; return; }
     $('mkWho').textContent = attAuth.name + (isAdmin() ? ' (Admin)' : '');
     fillMkTests();
-    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS) && navigator.onLine) {
-      try { const j = await attApi('scope'); attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
+    if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS || !teachFresh) && navigator.onLine) {   // v12.8: subjects refreshed once per app start
+      try { const j = await attApi('scope'); teachFresh = true; attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
       catch (e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); return; } }
     }
     pickClassYear('mk');
@@ -3806,6 +3845,7 @@
     $('recClasses').style.display = tab === 'classes' ? 'block' : 'none';
     $('recAll').style.display = tab === 'all' ? 'block' : 'none';
     $('recAtt').style.display = tab === 'att' ? 'block' : 'none';
+    document.body.classList.toggle('wide', tab === 'att' || tab === 'res');
     $('recRes').style.display = tab === 'res' ? 'block' : 'none';
     if (tab === 'classes') paintClassList();
     if (tab === 'all') loadAll(false);
@@ -4326,9 +4366,51 @@
   function wireTab(pre, paint, load) {
     ['G', 'S', 'O', 'M', 'U', 'T', 'V', 'W'].forEach((k) => { const e = $(pre + k); if (e) e.onchange = paint; });
     $(pre + 'Q').oninput = paint; $(pre + 'R').onclick = () => load(true);
-    $(pre + 'P').onclick = () => printLandscape();
+    $(pre + 'P').onclick = () => printTabSheet(pre);
   }
 
+  /** v12.7: print the table now on screen (Attendance or Results tab) as a clean landscape A4 sheet.
+      Results, one test, all groups → one page per group (only that group's subjects, position within the group). */
+  function printTabSheet(pre) {
+    const outId = pre === 'at' ? 'atOut' : 'rsOut';
+    const grab = () => {
+      const out = $(outId), tbls = out.querySelectorAll('table.tab-tbl'), tbl = tbls[tbls.length - 1]; if (!tbl) return null;
+      const t = tbl.cloneNode(true);
+      t.querySelectorAll('.rs-ed').forEach((b) => { const td = b.closest('td'); if (td) td.remove(); });
+      const th = t.querySelector('thead tr'); if (th && th.lastElementChild && !th.lastElementChild.textContent.trim()) th.lastElementChild.remove();
+      t.querySelectorAll('.click').forEach((x) => x.classList.remove('click'));
+      const kpi = out.querySelector('.stat-grid');
+      return { table: t.outerHTML, kpi: kpi ? [...kpi.querySelectorAll('.stat')].map((x) => x.querySelector('span').textContent + ': ' + x.querySelector('b').textContent).join('   ·   ') : '' };
+    };
+    const sel = (id) => { const e = $(pre + id); return e && e.options ? e.options[e.selectedIndex].text : ''; };
+    const extra = [];
+    if (pre === 'rs') extra.push(sel('V') === 'Teacher-wise' ? 'Teacher-wise' + ($('rsW').value ? ' · ' + sel('W') : '') : '', sel('T'), $('rsU').value !== '' ? sel('U') : '');
+    else extra.push(sel('M'), $('atU').value !== '' ? sel('U') : '');
+    if ($(pre + 'S') && $(pre + 'S').value !== 'All') extra.push(sel('S'));
+    const title = pre === 'rs' ? 'RESULT SHEET' : 'ATTENDANCE SHEET';
+    const pages = [];
+    if (pre === 'rs' && $('rsV').value === 'stu' && $('rsG').value === '' && $('rsT').value !== '*') {
+      const gs = [...$('rsG').options].map((o) => o.value).filter(Boolean);
+      gs.forEach((g) => { $('rsG').value = g; paintResTab(); const x = grab(); if (x && !/No students match/.test(x.table)) pages.push(Object.assign(x, { head: [yearLabel(recYear), groupLabel(g)].concat(extra) })); });
+      $('rsG').value = ''; paintResTab();
+    } else { const x = grab(); if (x) pages.push(Object.assign(x, { head: [yearLabel(recYear), sel('G')].concat(extra) })); }
+    if (!pages.length) { toast('Nothing to print yet.'); return; }
+    let box = $('tabPrint'); if (!box) { box = document.createElement('div'); box.id = 'tabPrint'; document.body.appendChild(box); }
+    const college = esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi');
+    box.innerHTML = pages.map((pg, k) => '<div class="tp-page' + (k < pages.length - 1 ? ' brk' : '') + '"><h1>' + college + '</h1><h2>' + esc(title + ' · ' + pg.head.filter(Boolean).join(' · ')) + '</h2>' +
+      (pg.kpi ? '<div class="kpi">' + esc(pg.kpi) + '</div>' : '') + '<div class="tp-t">' + pg.table + '</div>' +
+      '<div class="foot"><span>' + (pre === 'rs' ? 'Pass mark 40% in each subject; absent = failed. Red = below 40%.' : 'Red = below 75% attendance.') + '</span><span>Printed from the GGCS RWP app on ' + esc(fmtDate(todayISO())) + (pages.length > 1 ? ' · page ' + (k + 1) + ' of ' + pages.length : '') + '</span></div>' +
+      '<div class="sign"><div>' + (pre === 'rs' ? 'Controller of Examinations' : 'Class Incharge') + '</div><div>Vice Principal</div><div>Principal</div></div></div>').join('');
+    // shrink any table that is wider than the page (A4 landscape, 8 mm margins → 281 mm)
+    box.style.cssText = 'display:block;position:absolute;left:-10000px;top:0;width:281mm';
+    box.querySelectorAll('.tp-t').forEach((w) => { const t = w.firstElementChild; if (t && t.scrollWidth > w.clientWidth) t.style.zoom = String(Math.floor(1000 * w.clientWidth / t.scrollWidth) / 1000); });
+    box.style.cssText = '';
+    const st = document.createElement('style'); st.textContent = '@page { size: A4 landscape; margin: 8mm; }'; document.head.appendChild(st);
+    document.body.classList.add('print-tab');
+    const done = () => { document.body.classList.remove('print-tab'); st.remove(); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(() => window.print(), 200);
+  }
   /* ----- 📅 Attendance ----- */
   async function loadAttTab(force) {
     if (atData && atData.y === recYear && !force) { paintAttTab(); return; }
@@ -5646,7 +5728,7 @@
     applyChrome();
     render();
     fetchLiveNotices();
-    refreshTTC(true).then((changed) => { if (changed && ['tt-bs', 'tt-star', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
+    refreshTTC(true).then((changed) => { if (changed && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
 </script>
