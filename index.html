@@ -1118,6 +1118,7 @@
         <button data-tab="all" id="recTabAll" style="display:none">🏫 All students</button>
         <button data-tab="att" id="recTabAtt" style="display:none">📅 Attendance</button>
         <button data-tab="res" id="recTabRes" style="display:none">📝 Results</button>
+        <button data-tab="ctrl" id="recTabCtrl" style="display:none">🎓 Controller of Examinations</button>
       </div>
 
       <!-- find a student -->
@@ -1164,6 +1165,8 @@
       <!-- v12.4: admin — attendance of every student, month-wise; admin + Controller — results -->
       <div id="recAtt" style="display:none"></div>
       <div id="recRes" style="display:none"></div>
+      <!-- admin: choose the Controller of Examinations -->
+      <div id="recCtrl" style="display:none"><div class="card pad" id="recCtrlForm"></div></div>
     </div>
     <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Google Sheets of all classes (admin)</button>
   </section>
@@ -1188,10 +1191,8 @@
       <div class="fac-pin-tools">
         <button class="btn-go" id="facNewT">🆕 New teacher — sign-in &amp; PIN</button>
         <button class="btn-go alt" id="facPins">🔑 PIN slips (all staff)</button>
-        <button class="btn-go alt" id="facCtrl" style="grid-column:1/-1">🎓 Controller of Examinations</button>
       </div>
       <div class="card pad" id="facNewForm" style="display:none"></div>
-      <div class="card pad" id="facCtrlForm" style="display:none"></div>
       <div class="tt-error" id="facErr"></div>
       <div id="nameList"><div class="card pad empty">Loading staff…</div></div>
     </div>
@@ -3830,8 +3831,9 @@
     const ctrl = attAuth && attAuth.role === 'Controller';
     $('recTabAtt').style.display = admin ? '' : 'none';
     $('recTabRes').style.display = admin || ctrl ? '' : 'none';
+    $('recTabCtrl').style.display = admin ? '' : 'none';
     if (admin && recTab === 'classes') recTab = 'all';
-    if (!admin && (recTab === 'all' || recTab === 'att')) recTab = ctrl ? 'res' : 'classes';
+    if (!admin && (recTab === 'all' || recTab === 'att' || recTab === 'ctrl')) recTab = ctrl ? 'res' : 'classes';
     if (!admin && !ctrl && recTab === 'res') recTab = 'classes';
     $('recFindNote').textContent = admin || ctrl
       ? 'As ' + (admin ? 'admin' : 'Controller of Examinations') + ' you can open any ' + yearLabel(recYear) + ' student.'
@@ -3847,10 +3849,13 @@
     $('recAtt').style.display = tab === 'att' ? 'block' : 'none';
     document.body.classList.toggle('wide', tab === 'att' || tab === 'res');
     $('recRes').style.display = tab === 'res' ? 'block' : 'none';
+    $('recCtrl').style.display = tab === 'ctrl' ? 'block' : 'none';
+    $('recYearSeg').style.display = tab === 'ctrl' ? 'none' : '';
     if (tab === 'classes') paintClassList();
     if (tab === 'all') loadAll(false);
     if (tab === 'att') loadAttTab(false);
     if (tab === 'res') loadResTab(false);
+    if (tab === 'ctrl') loadCtrlTab();
   }
   $('recTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showRecTab(b.dataset.tab); });
 
@@ -4672,14 +4677,13 @@
     if (tr.dataset.group) { $('rsG').value = tr.dataset.group; paintResTab(); window.scrollTo(0, 0); } else openStudent(tr.dataset.roll);
   });
 
-  /* ----- Faculty Profiles: Controller of Examinations ----- */
-  $('facCtrl').addEventListener('click', async () => {
-    const F = $('facCtrlForm');
-    if (F.style.display === 'block') { F.style.display = 'none'; return; }
-    F.style.display = 'block'; F.innerHTML = '<div class="empty">Loading…</div>';
+  /* ----- Student Records → 🎓 Controller of Examinations (admins) ----- */
+  async function loadCtrlTab() {
+    const F = $('recCtrlForm');
+    F.innerHTML = '<div class="empty">Loading…</div>';
     const paint = (roles) => {
       const ctrl = roles.filter((x) => x.role === 'Controller'), others = roles.filter((x) => x.role === 'Teacher').sort((a, b) => a.name.localeCompare(b.name));
-      F.innerHTML = '<p class="screen-title" style="margin-top:0">🎓 Controller of Examinations</p><p class="note" style="margin-top:0">The Controller signs in to <b>Student Records</b> with their own PIN and gets the <b>📝 Results</b> tab: every student’s marks in every class, month-wise, subject-wise and class-wise, and can change, add or delete marks (each change is logged). They do not get the other admin tools.</p>' +
+      F.innerHTML = '<p class="screen-title" style="margin-top:0">🎓 Controller of Examinations</p><p class="note" style="margin-top:0">The Controller signs in here to <b>Student Records</b> with their own PIN and gets the <b>📝 Results</b> tab: every student’s marks in every class, month-wise, subject-wise and class-wise, and can change, add or delete marks (each change is logged). They do not get the other admin tools.</p>' +
         (ctrl.length ? ctrl.map((x) => '<div class="ctrl-row"><b>' + esc(x.name) + '</b><button class="mini-btn" data-rm="' + esc(x.name) + '">Remove</button></div>').join('') : '<p class="note">No Controller yet.</p>') +
         '<div class="field" style="margin-top:8px"><label for="ctrlPick">Make Controller</label><select id="ctrlPick"><option value="">Choose a staff member with a sign-in…</option>' + others.map((x) => '<option>' + esc(x.name) + '</option>').join('') + '</select></div>' +
         '<button class="btn-primary" id="ctrlSet">Make Controller of Examinations</button><div class="tt-error" id="ctrlErr"></div>';
@@ -4688,10 +4692,10 @@
     };
     const setRole = async (name, role) => {
       try { await attApi('roleSet', { name, role }); toast(role === 'Controller' ? name + ' is now the Controller of Examinations ✓' : name + ' is a teacher again'); paint((await attApi('rolesList')).roles); }
-      catch (e) { if (!facAuthFail(e)) $('ctrlErr').textContent = e.offline ? 'You need internet.' : e.message; }
+      catch (e) { if (!recAuthFail(e)) $('ctrlErr').textContent = e.offline ? 'You need internet.' : e.message; }
     };
-    try { paint((await attApi('rolesList')).roles); } catch (e) { if (!facAuthFail(e)) F.innerHTML = '<div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div>'; }
-  });
+    try { paint((await attApi('rolesList')).roles); } catch (e) { if (!recAuthFail(e)) F.innerHTML = '<div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div>'; }
+  }
 
   $('recReload').addEventListener('click', () => loadAll(true));
   $('recRebuild').addEventListener('click', async () => {
