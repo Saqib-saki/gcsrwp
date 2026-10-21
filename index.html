@@ -876,25 +876,17 @@
       </div>
       <div id="mgTT" style="display:none">
         <div class="card pad">
-          <p class="screen-title" style="margin-top:0">What needs to change?</p>
+          <p class="screen-title" style="margin-top:0">Timetable</p>
           <div class="ttc-tasks" id="ttcTasks">
-            <button data-task="sheet" style="grid-column:1/-1"><span>📗</span><b>Timetable sheet — edit the whole timetable in Google Sheets</b><small>Groups &amp; roll numbers, Bright Star, 1st Year, 2nd Year, BS and DIT. Open the sheet, check it, use it now.</small></button>
-            <button data-task="master" style="grid-column:1/-1"><span>📋</span><b>Master timetable — see and change</b><small>Full timetable of 1st Year, 2nd Year and each BS semester. Tap any class to change it.</small></button>
-            <button data-task="left"><span>👤</span><b>A teacher has left / is on long leave</b><small>Give all their classes to another teacher, or mark them vacant (CTI)</small></button>
-            <button data-task="vacant"><span>🪑</span><b>Vacant classes (CTI)</b><small>Classes still waiting for a teacher — assign one</small></button>
-            <button data-task="teacher"><span>🔄</span><b>Change the teacher of a class</b><small>One class or section</small></button>
-            <button data-task="move"><span>⏱️</span><b>Move a class to another period</b><small>e.g. Period II → Period IV</small></button>
-            <button data-task="swap"><span>🔀</span><b>Swap two classes</b><small>Two classes of a group exchange periods</small></button>
-            <button data-task="merge"><span>🔗</span><b>Merge classes</b><small>e.g. Odd + Even, or two groups, taught together by one teacher</small></button>
-            <button data-task="add"><span>➕</span><b>Add an extra class</b></button>
-            <button data-task="cancel"><span>❌</span><b>Cancel a class</b></button>
+            <button data-task="sheet" style="grid-column:1/-1"><span>📗</span><b>Timetable sheet — the timetable incharge's Google Sheet</b><small>1st Year, 2nd Year, DIT and BS 1st / 3rd / 5th / 7th semester as printed. All timetable changes are made there. Open it, check it, use it now.</small></button>
+            <button data-task="master" style="grid-column:1/-1"><span>📋</span><b>Master timetable — view &amp; print</b><small>Full timetable of 1st Year, 2nd Year and each BS semester: empty (CTI) classes in red, find a teacher, print or Excel.</small></button>
           </div>
-          <p class="note" style="margin-bottom:0">Changes show at once in student timetables, teachers’ attendance &amp; marks lists and Faculty Profiles. The printed timetable stays as it is — delete a change to go back to it.</p>
+          <p class="note" style="margin-bottom:0">Changes made in the timetable sheet show in student timetables, teachers’ attendance &amp; marks lists and Faculty Profiles within about 5 minutes.</p>
           <div class="tt-error" id="ttcErr"></div>
         </div>
         <div class="card pad" id="ttcForm" style="display:none"></div>
-        <div class="section-title">Changes in use</div>
-        <div class="card" id="ttcList"></div>
+        <div id="ttcOld" style="display:none"><div class="section-title">Older changes made in the app (still in use — better delete them and change the sheet)</div>
+        <div class="card" id="ttcList"></div></div>
       </div>
       <div id="mgSafe" style="display:none">
         <div class="card pad">
@@ -5558,6 +5550,7 @@
       '<div class="s">' + (x.room ? '📍 ' + esc(x.room) + ' · ' : '') + (x.days ? 'days ' + esc(x.days) + ' · ' : '') + (x.from ? 'from ' + esc(fmtDate(x.from)) + (x.from > t ? ' (not started yet)' : '') : 'from the start') + (x.note ? ' · ' + esc(x.note) : '') + '</div>' +
       '<div class="b"><button class="mini-btn" data-del="' + esc(x.id) + '">🗑 Delete</button></div></div>').join('')
       : '<div class="empty">No changes — everyone follows the printed timetable.</div>';
+    $('ttcOld').style.display = list.length ? 'block' : 'none';
   }
   let ttcDelArm = {};
   $('ttcList').addEventListener('click', async (e) => {
@@ -5662,14 +5655,14 @@
   function ttcMaster(F, close) {
     F.innerHTML = '<p class="screen-title" style="margin-top:0">📋 Master timetable</p>' +
       '<div class="ms-bar"><div class="field"><label for="msYear">Class</label>' + yearSel('msYear', msYear) + '</div><div class="field"><label for="msFind">Find a teacher</label><input id="msFind" list="msStaff" value="' + esc(msFind) + '" placeholder="Highlight a teacher’s classes">' + staffList('msStaff', true) + '</div></div>' +
-      '<p class="note" style="margin:0 0 8px">Tap a class to change its teacher, move it, swap, merge or cancel it. Tap ＋ to add a class. <span style="background:#fff4d6;padding:0 4px;border-radius:4px">Yellow</span> = changed, <span style="background:#fde4e1;padding:0 4px;border-radius:4px">red</span> = no teacher (CTI). Periods VI–VII show their days (1 = Mon … 6 = Sat).</p>' +
+      '<p class="note" style="margin:0 0 8px">To change a class, change it in the timetable sheet. <span style="background:#fde4e1;padding:0 4px;border-radius:4px">red</span> = no teacher (CTI). Periods VI–VII show their days (1 = Mon … 6 = Sat).</p>' +
       '<div class="overflow-x" id="msWrap"></div>' +
       '<div class="btn-row"><button class="btn-secondary" id="msPrintBtn">🖨 Print / PDF</button><button class="btn-secondary" id="msCsv">⬇ Excel (CSV)</button><button class="btn-secondary" id="tcClose">Close</button></div><div class="tt-error" id="tcErr"></div>';
     let cur = null;
-    const paint = () => { msYear = $('msYear').value; msFind = $('msFind').value; cur = msGrid(msYear, false); $('msWrap').innerHTML = cur.html; };
+    const paint = () => { msYear = $('msYear').value; msFind = $('msFind').value; cur = msGrid(msYear, true); $('msWrap').innerHTML = cur.html; };   // v12.93: view only
     $('msYear').onchange = paint; $('msFind').oninput = paint; paint();
     $('tcClose').onclick = close;
-    $('msWrap').onclick = (e) => {
+    if (false) $('msWrap').onclick = (e) => {
       const b = e.target.closest('[data-e]'), a = e.target.closest('[data-add]');
       if (a) { const [g, p] = a.dataset.add.split('|'); ttcTask('add', { year: msYear, group: g, section: 'All', period: p }); return; }
       if (!b) return;
@@ -5706,7 +5699,7 @@
     const C = d.counts || {}, using = TTS && TTS.ver === d.ver;
     const probs = d.problems || [], unk = d.unknownTeachers || [];
     F.innerHTML = '<p class="screen-title" style="margin-top:0">📗 Timetable sheet</p>' +
-      '<p class="note" style="margin-top:0">The whole timetable is kept in the Google Sheet <b>GCS RWP — Timetable (edit here)</b>. Change a cell there and the app follows within about 5 minutes — or tap <b>Use the sheet now</b>. Changes made here (teacher left, move, merge…) still work on top of it. The sheet\'s first tab explains every column.</p>' +
+      '<p class="note" style="margin-top:0">The whole timetable is kept in the timetable incharge\'s Google Sheet, in the printed layout (1st Year, 2nd Year, DIT, BS 1st / 3rd / 5th / 7th Semester, Groups, Bright Star). Change a cell there and the app follows within about 5 minutes — or tap <b>Use the sheet now</b>. Its tab <b>How to edit</b> explains the layout. Share the sheet (Share button in Google Sheets) with whoever should edit it.</p>' +
       '<div class="ts-btns"><a class="btn-primary" href="' + esc(d.url) + '" target="_blank" rel="noopener">Open the timetable sheet ↗</a><button class="btn-secondary" id="tsNow">↻ Use the sheet now</button></div>' +
       '<p class="note">' + (using ? '✅ The app is using the sheet' : '⏳ The app will switch to the latest sheet on the next refresh') + ' · last edited ' + esc(d.updated || '') + '<br>Rows: 1st Year ' + (C.y1 || 0) + ' · 2nd Year ' + (C.y2 || 0) + ' · BS ' + (C.bs || 0) + ' · groups ' + (C.groups || 0) + '</p>' +
       (probs.length ? '<div class="section-title" style="margin-top:6px">⚠️ Rows the app could not read (' + probs.length + ') — fix them in the sheet</div><div class="ts-probs">' + probs.slice(0, 60).map((p) => '<div><b>' + esc(p.tab) + ' · row ' + p.row + '</b> — ' + esc(p.msg) + '</div>').join('') + '</div>' : '<p class="note">✅ Every row could be read.</p>') +
