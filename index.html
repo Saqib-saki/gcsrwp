@@ -4487,7 +4487,7 @@
     };
     const sel = (id) => { const e = $(pre + id); return e && e.options ? e.options[e.selectedIndex].text : ''; };
     const extra = [];
-    if (pre === 'rs') extra.push(sel('V') === 'Teacher-wise' ? 'Teacher-wise' + ($('rsW').value ? ' · ' + sel('W') : '') : '', sel('T'), $('rsU').value !== '' ? sel('U') : '');
+    if (pre === 'rs') extra.push(sel('V') === 'Teacher-wise' ? 'Teacher-wise' + ($('rsW').value ? ' · ' + $('rsW').value : '') : '', sel('T'), $('rsU').value !== '' ? sel('U') : '');
     else extra.push(sel('M'), $('atU').value !== '' ? sel('U') : '');
     if ($(pre + 'S') && $(pre + 'S').value !== 'All') extra.push(sel('S'));
     const title = pre === 'rs' ? 'RESULT SHEET' : 'ATTENDANCE SHEET';
@@ -4588,14 +4588,15 @@
     if (!$('rsG') || rebuild === true) {
       const curU = $('rsU') && $('rsU').value !== '' ? $('rsU').options[$('rsU').selectedIndex].text : '';
       const lastT = $('rsT') ? $('rsT').value : (withMarks[withMarks.length - 1] || d.tests[0]);
-      const curV = $('rsV') ? $('rsV').value : 'stu', curW = $('rsW') && $('rsW').value !== '' ? $('rsW').options[$('rsW').selectedIndex].text : '';
+      const curV = $('rsV') ? $('rsV').value : 'stu', curW = $('rsW') ? $('rsW').value : '';
       $('recRes').innerHTML = '<div class="seg rs-view" id="rsVseg"><button data-v="stu"' + (curV !== 'tch' ? ' class="on"' : '') + '>👥 Student-wise</button><button data-v="tch"' + (curV === 'tch' ? ' class="on"' : '') + '>👩‍🏫 Teacher-wise</button></div>' +
         tabFilters('rs', d, '<div class="field-row"><div class="field" style="display:none"><label for="rsV">Show</label><select id="rsV">' + selOpts([['stu', 'Student-wise'], ['tch', 'Teacher-wise']], curV) + '</select></div>' +
-        '<div class="field" id="rsWf"><label for="rsW">Teacher</label><select id="rsW">' + selOpts([['', 'All teachers']].concat((d.teachers || []).map((t, i) => [String(i), t])), String((d.teachers || []).indexOf(curW))) + '</select></div></div>' +
+        '<div class="field" id="rsWf"><label for="rsW">Find a teacher</label><input id="rsW" type="search" list="rsWl" autocomplete="off" placeholder="Type a name, e.g. Asghar" value="' + esc(curW) + '"><datalist id="rsWl"></datalist></div></div>' +
         '<div class="field-row"><div class="field"><label for="rsT">Test</label><select id="rsT">' + selOpts([['*', 'All tests (month-wise)']].concat(d.tests.map((t) => [t, t + (withMarks.indexOf(t) < 0 ? ' (no marks yet)' : '')])), lastT) + '</select></div>' +
         '<div class="field"><label for="rsU">Subject</label><select id="rsU">' + selOpts([['', 'All subjects']].concat(d.subjects.map((s, i) => [String(i), s])), String(d.subjects.indexOf(curU))) + '</select></div></div>') +
         '<div id="rsLog" style="display:' + (rsLogOpen ? 'block' : 'none') + '"></div><div id="rsEd"></div><div id="rsOut"></div>';
       wireTab('rs', paintResTab, loadResTab);
+      $('rsW').oninput = () => paintResTab(); $('rsW').onchange = null;   // typing already repaints; a repaint on blur would swallow the next tap
       $('rsVseg').onclick = (e) => { const b = e.target.closest('button[data-v]'); if (!b) return; $('rsV').value = b.dataset.v; document.querySelectorAll('#rsVseg button').forEach((x) => x.classList.toggle('on', x === b)); paintResTab(); };
       $('rsC').onclick = () => resCsv();
       $('rsL').onclick = () => toggleResLog();
@@ -4658,52 +4659,85 @@
   }
   /** v12.6: teacher-wise results — every class (group · section · subject) each teacher entered marks for */
   let rsTch = null;
-  function paintTeacherRes(d, base, tSel, all, uSel) {
-    const wSel = $('rsW').value, T = d.teachers || [], tis = all ? d.tests.map((t, i) => i) : [d.tests.indexOf(tSel)], K = {};
-    base.forEach((r) => r[5].forEach((c) => {
-      if (tis.indexOf(c[0]) < 0 || (uSel !== '' && c[1] !== Number(uSel)) || (wSel !== '' && c[5] !== Number(wSel))) return;
-      const sec = (d.secs || [])[c[6]] || 'All', k = c[5] + '|' + r[2] + '|' + sec + '|' + c[1];
-      const e = K[k] || (K[k] = { tj: c[5], g: r[2], sec, si: c[1], by: {} });
-      const b = e.by[c[0]] || (e.by[c[0]] = { ps: [], ab: 0 });
-      if (c[4]) b.ab++; else b.ps.push(100 * c[2] / c[3]);
-    }));
-    const st = (b) => { if (!b) return null; const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return { n, app: b.ps.length, avg: b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : null, pass: ok, fail: n - ok, pp: n ? Math.round(100 * ok / n) : null, hi: b.ps.length ? r1(Math.max(...b.ps)) : null, lo: b.ps.length ? r1(Math.min(...b.ps)) : null }; };
-    const merge = (list) => { const m = { ps: [], ab: 0 }; list.forEach((b) => { if (b) { m.ps.push(...b.ps); m.ab += b.ab; } }); return m; };
-    const go = groupOrder([...new Set(Object.values(K).map((e) => e.g))]);
-    const rows = Object.values(K).sort((a, b) => T[a.tj].localeCompare(T[b.tj]) || go.indexOf(a.g) - go.indexOf(b.g) || a.sec.localeCompare(b.sec) || d.subjects[a.si].localeCompare(d.subjects[b.si]));
-    const cls = (e) => e.g + (e.sec && e.sec !== 'All' ? ' · ' + e.sec : '');
-    const shownT = tis.filter((i) => rows.some((e) => e.by[i]));
-    rsTch = { rows, shownT, all, tSel };
-    const whole = st(merge(rows.map((e) => merge(Object.values(e.by)))));
-    const nT = new Set(rows.map((e) => e.tj)).size;
-    let h = '<div class="stat-grid g4"><div class="stat"><b>' + nT + '</b><span>Teachers</span></div><div class="stat"><b>' + rows.length + '</b><span>Classes</span></div><div class="stat"><b class="' + (whole && whole.avg !== null && whole.avg < PASS ? 'low' : '') + '">' + (whole && whole.avg !== null ? whole.avg + '%' : '—') + '</b><span>Average</span></div><div class="stat"><b class="' + (whole && whole.pp !== null && whole.pp < 50 ? 'low' : '') + '">' + (whole && whole.pp !== null ? whole.pp + '%' : '—') + '</b><span>Passed (40%+)</span></div></div>';
-    if (!rows.length) { $('rsOut').innerHTML = h + '<div class="card pad empty">No marks match these choices.</div>'; return; }
-    if (wSel !== '' && !all) h += '<div class="card chart-card"><h3>' + esc(T[Number(wSel)]) + ' · class averages</h3><div class="sub">' + esc(tSel) + ' · dashed line = 40% · red = below 40%</div>' +
-      barSvg(rows.map((e) => { const x = st(e.by[tis[0]]); return { label: cls(e) + ' ' + d.subjects[e.si], pct: x.avg === null ? 0 : x.avg, absent: x.avg === null, tip: cls(e) + ' · ' + d.subjects[e.si] + ': average ' + (x.avg === null ? '—' : x.avg + '%') + ' · passed ' + x.pass + ' of ' + x.n + ' · failed ' + x.fail }; })) + chartTipBox() + '</div>';
-    let lastT = -1;
-    h += '<div class="section-title">Teacher-wise · ' + esc(all ? 'all tests (average %)' : tSel) + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl tch-tbl"><thead><tr><th>Class</th><th>Subject</th>' +
-      (all ? shownT.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Passed</th>' : '<th class="num">Students</th><th class="num">Avg %</th><th class="num">Passed</th><th class="num">Failed</th><th class="num">Pass %</th><th class="num">High</th><th class="num">Low</th>') + '</tr></thead><tbody>';
-    const cols = all ? shownT.length + 3 : 9;
-    rows.forEach((e) => {
-      if (e.tj !== lastT) {
-        lastT = e.tj;
-        const mine = rows.filter((x) => x.tj === e.tj), tot = st(merge(mine.map((x) => merge(Object.values(x.by)))));
-        h += '<tr class="tch-head"><td colspan="' + cols + '"><b>' + esc(T[e.tj]) + '</b> <span class="ttnote" style="display:inline">' + mine.length + ' class' + (mine.length > 1 ? 'es' : '') + ' · average ' + (tot.avg === null ? '—' : tot.avg + '%') + ' · passed ' + tot.pass + ' of ' + tot.n + ' (' + (tot.pp === null ? '—' : tot.pp + '%') + ')</span></td></tr>';
-      }
-      const a = all ? st(merge(Object.values(e.by))) : st(e.by[tis[0]]);
-      h += '<tr class="click" data-tg="' + esc(e.g) + '" data-ts="' + esc(e.sec) + '" data-tsi="' + e.si + '"><td>' + esc(cls(e)) + '</td><td>' + esc(d.subjects[e.si]) + '</td>' +
-        (all ? shownT.map((i) => { const x = st(e.by[i]); return pctTd(x ? x.avg : null, PASS); }).join('') + '<td class="num' + (a.fail ? ' low' : '') + '">' + a.pass + '/' + a.n + '</td>'
-          : '<td class="num">' + a.n + '</td>' + pctTd(a.avg, PASS) + '<td class="num">' + a.pass + '</td><td class="num' + (a.fail ? ' low' : '') + '">' + a.fail + '</td><td class="num' + (a.pp !== null && a.pp < 50 ? ' low' : '') + '">' + (a.pp === null ? '—' : a.pp + '%') + '</td>' + pctTd(a.hi, PASS) + pctTd(a.lo, PASS)) + '</tr>';
+  /* v12.96: teacher-wise results from the TIMETABLE — every class a teacher teaches in this year (so only that year's teachers),
+     with how many students have marks, average, passed / failed. Classes still without marks show as missing. */
+  let rsTchCache = { k: '', list: [] };
+  function rsYearClasses() {
+    const k = String(recYear) + '|' + (TTS ? TTS.ver : 'b') + '|' + TTC.length;
+    if (rsTchCache.k === k) return rsTchCache.list;
+    const yv = String(yk(recYear)), seen = {}, list = [];
+    scanClasses(() => true).forEach((x) => {
+      if (x.year !== yv || /practical/i.test(x.subject) || x.group === 'ETH') return;
+      String(x.teacher || 'CTI').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+        const key = nameKey(t) + '|' + x.group + '|' + x.section + '|' + String(x.subject).toLowerCase(); if (seen[key]) return; seen[key] = 1;
+        list.push({ t: isVacant(t) ? 'CTI (no teacher yet)' : t, g: x.group, sec: x.section || 'All', subj: x.subject });
+      });
     });
-    h += '</tbody></table></div></div><p class="note">Teacher = who entered the marks. Pass = 40% or more in that subject; absent counts as failed. Tap a class to see its students.</p>';
+    rsTchCache = { k, list };
+    return list;
+  }
+  function paintTeacherRes(d, base, tSel, all, uSel) {
+    const tis = all ? d.tests.map((t, i) => i) : [d.tests.indexOf(tSel)], yNum = Number(yk(recYear)) === 2 ? 2 : 1;
+    const classes = rsYearClasses();
+    const names = [...new Set(classes.map((c) => c.t))].sort((a, b) => a.localeCompare(b));
+    $('rsWl').innerHTML = names.map((n) => '<option value="' + esc(n) + '">').join('');
+    const q = nameKey($('rsW').value), qWords = q.split(' ').filter(Boolean);
+    const tOk = (t) => !qWords.length || qWords.every((w) => nameKey(t).split(' ').some((x) => x.indexOf(w) === 0));
+    const subjIdx = (name) => { const n = String(name).toLowerCase(), m = n.replace(/\s*\(\d-\d\)\s*$/, ''); let i = d.subjects.findIndex((x) => x.toLowerCase() === n); if (i < 0) i = d.subjects.findIndex((x) => x.toLowerCase().replace(/\s*\(\d-\d\)\s*$/, '') === m); return i; };
+    const secOk = (sec, roll, g) => { if (!sec || sec === 'All') return true; if (g === 'STAR') return typeof starSecHas === 'function' && starSecHas(sec, starComboOf(roll, yNum)); return ttcSecHas(sec, roll, g, yNum); };
+    const rows = [];
+    classes.forEach((c) => {
+      if (!tOk(c.t)) return;
+      const si = subjIdx(c.subj); if (uSel !== '' && si !== Number(uSel)) return;
+      const studs = base.filter((r) => !r[4] && r[2] === c.g && secOk(c.sec, r[0], c.g)); if (!studs.length) return;
+      const by = {};
+      tis.forEach((ti) => { const b = { ps: [], ab: 0 }; if (si >= 0) studs.forEach((r) => { const cell = r[5].find((x) => x[0] === ti && x[1] === si); if (!cell) return; if (cell[4]) b.ab++; else b.ps.push(100 * cell[2] / cell[3]); }); by[ti] = b; });
+      rows.push({ t: c.t, g: c.g, sec: c.sec, subj: c.subj, si, N: studs.length, by });
+    });
+    const st = (b, N) => { const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return { N, n, miss: Math.max(0, N - n), avg: b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : null, pass: ok, fail: n - ok, pp: n ? Math.round(100 * ok / n) : null, hi: b.ps.length ? r1(Math.max(...b.ps)) : null, lo: b.ps.length ? r1(Math.min(...b.ps)) : null }; };
+    const merge = (list) => { const m = { ps: [], ab: 0 }; list.forEach((b) => { m.ps.push(...b.ps); m.ab += b.ab; }); return m; };
+    const go = groupOrder([...new Set(rows.map((e) => e.g))]);
+    rows.sort((a, b) => a.t.localeCompare(b.t) || go.indexOf(a.g) - go.indexOf(b.g) || a.sec.localeCompare(b.sec) || a.subj.localeCompare(b.subj));
+    const cls = (e) => e.g + (e.sec && e.sec !== 'All' ? ' · ' + e.sec : '');
+    rsTch = { rows, tis, all, tSel };
+    const ti0 = tis[0], one = (e) => st(e.by[ti0], e.N);
+    const done = all ? rows.filter((e) => tis.some((ti) => e.by[ti].ps.length + e.by[ti].ab)).length : rows.filter((e) => one(e).miss === 0).length;
+    const whole = st(merge(rows.map((e) => merge(tis.map((ti) => e.by[ti])))), 0);
+    const nT = new Set(rows.map((e) => e.t)).size;
+    let h = '<div class="stat-grid g4"><div class="stat"><b>' + nT + '</b><span>Teachers</span></div><div class="stat"><b>' + rows.length + '</b><span>Classes</span></div>' +
+      '<div class="stat"><b class="' + (done < rows.length ? 'low' : '') + '">' + done + '/' + rows.length + '</b><span>' + (all ? 'Classes with marks' : 'Marks complete') + '</span></div>' +
+      '<div class="stat"><b class="' + (whole.avg !== null && whole.avg < PASS ? 'low' : '') + '">' + (whole.avg !== null ? whole.avg + '%' : '—') + '</b><span>Average</span></div></div>';
+    if (!rows.length) { $('rsOut').innerHTML = h + '<div class="card pad empty">' + (qWords.length ? 'No ' + esc(yearLabel(recYear)) + ' teacher matches “' + esc($('rsW').value) + '”.' : 'No classes in the timetable match these choices.') + '</div>'; return; }
+    const oneT = new Set(rows.map((e) => e.t)).size === 1;
+    if (oneT && !all) h += '<div class="card chart-card"><h3>' + esc(rows[0].t) + ' · class averages</h3><div class="sub">' + esc(tSel) + ' · dashed line = 40% · red = below 40%</div>' +
+      barSvg(rows.map((e) => { const x = one(e); return { label: cls(e) + ' ' + e.subj, pct: x.avg === null ? 0 : x.avg, absent: x.avg === null, tip: cls(e) + ' · ' + e.subj + ': ' + (x.avg === null ? 'no marks yet' : 'average ' + x.avg + '% · passed ' + x.pass + ' of ' + x.n) }; })) + '</div>';
+    let lastT = '';
+    h += '<div class="section-title">Teacher-wise · ' + esc(yearLabel(recYear)) + ' · ' + esc(all ? 'all tests (average %)' : tSel) + (uSel !== '' ? ' · ' + esc(d.subjects[Number(uSel)]) : '') + '</div><div class="card"><div class="overflow-x"><table class="wl sum tab-tbl tch-tbl"><thead><tr><th>Class</th><th>Subject</th>' +
+      (all ? tis.map((i) => '<th class="num">' + esc(shortTest(d.tests[i])) + '</th>').join('') + '<th class="num">Passed</th>' : '<th class="num">Students</th><th class="num">Marks in</th><th class="num">Avg %</th><th class="num">Passed</th><th class="num">Failed</th><th class="num">Pass %</th><th class="num">High</th><th class="num">Low</th>') + '</tr></thead><tbody>';
+    const cols = all ? tis.length + 3 : 10;
+    rows.forEach((e) => {
+      if (e.t !== lastT) {
+        lastT = e.t;
+        const mine = rows.filter((x) => x.t === e.t), tot = st(merge(mine.map((x) => merge(tis.map((ti) => x.by[ti])))), 0);
+        const missC = all ? 0 : mine.filter((x) => one(x).miss > 0).length;
+        h += '<tr class="tch-head"><td colspan="' + cols + '"><b>' + esc(e.t) + '</b> <span class="ttnote" style="display:inline">' + mine.length + ' class' + (mine.length > 1 ? 'es' : '') + (tot.avg === null ? ' · no marks yet' : ' · average ' + tot.avg + '% · passed ' + tot.pass + ' of ' + tot.n) + (missC ? ' · <b style="color:#b42318">⚠️ marks missing in ' + missC + '</b>' : '') + '</span></td></tr>';
+      }
+      const a = all ? st(merge(tis.map((ti) => e.by[ti])), e.N) : one(e);
+      h += '<tr class="click" data-tg="' + esc(e.g) + '" data-ts="' + esc(e.sec) + '" data-tsi="' + (e.si >= 0 ? e.si : '') + '"><td>' + esc(cls(e)) + '</td><td>' + esc(e.subj) + '</td>' +
+        (all ? tis.map((i) => { const x = st(e.by[i], e.N); return pctTd(x.avg, PASS); }).join('') + '<td class="num' + (a.fail ? ' low' : '') + '">' + (a.n ? a.pass + '/' + a.n : '—') + '</td>'
+          : '<td class="num">' + a.N + '</td><td class="num' + (a.miss ? ' low' : '') + '">' + (a.n ? a.n + '/' + a.N : '<span class="low">none</span>') + '</td>' + pctTd(a.avg, PASS) + '<td class="num">' + (a.n ? a.pass : '—') + '</td><td class="num' + (a.fail ? ' low' : '') + '">' + (a.n ? a.fail : '—') + '</td><td class="num' + (a.pp !== null && a.pp < 50 ? ' low' : '') + '">' + (a.pp === null ? '—' : a.pp + '%') + '</td>' + pctTd(a.hi, PASS) + pctTd(a.lo, PASS)) + '</tr>';
+    });
+    h += '</tbody></table></div></div><p class="note">Classes and teachers come from the timetable, so only ' + esc(yearLabel(recYear)) + ' teachers are listed. “Marks in” = students with marks (or absent) of all students in that class; red = marks missing. Pass = 40% or more; absent counts as failed. Tap a class to see its students.</p>';
     $('rsOut').innerHTML = h;
   }
+
   function teacherCsv() {
     const d = rsData, X = rsTch; if (!X) return;
-    const T = d.teachers || [], st = (b) => { if (!b) return null; const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return { n, avg: b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : '', pass: ok, fail: n - ok }; };
-    const head = ['Teacher', 'Group', 'Section', 'Subject'].concat(...X.shownT.map((i) => [shortTest(d.tests[i]) + ' students', shortTest(d.tests[i]) + ' avg %', shortTest(d.tests[i]) + ' passed', shortTest(d.tests[i]) + ' failed']));
-    csvDownload('Teacher-wise_results_' + yearLabel(recYear).replace(/\s+/g, '_') + '.csv', [head].concat(X.rows.map((e) => [T[e.tj], e.g, e.sec, d.subjects[e.si]].concat(...X.shownT.map((i) => { const x = st(e.by[i]); return x ? [x.n, x.avg, x.pass, x.fail] : ['', '', '', '']; })))));
+    const st = (b, N) => { const n = b.ps.length + b.ab, ok = b.ps.filter((p) => p >= PASS).length; return [N, n, b.ps.length ? r1(b.ps.reduce((a, x) => a + x, 0) / b.ps.length) : '', ok, n - ok]; };
+    const head = ['Teacher', 'Group', 'Section', 'Subject'].concat(...X.tis.map((i) => [shortTest(d.tests[i]) + ' students', shortTest(d.tests[i]) + ' marks in', shortTest(d.tests[i]) + ' avg %', shortTest(d.tests[i]) + ' passed', shortTest(d.tests[i]) + ' failed']));
+    csvDownload('Teacher-wise_results_' + yearLabel(recYear).replace(/\s+/g, '_') + '.csv', [head].concat(X.rows.map((e) => [e.t, e.g, e.sec, e.subj].concat(...X.tis.map((i) => st(e.by[i], e.N))))));
   }
+
   function openResEditor(roll) {
     const d = rsData, tSel = $('rsT').value, ti = d.tests.indexOf(tSel), r = d.rows.find((x) => x[0] === Number(roll)); if (!r || ti < 0) return;
     const cells = rsCells(r, ti), grpSubs = {};
