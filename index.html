@@ -779,7 +779,7 @@
     </div>
     <div id="staffArea" style="display:none">
     <div class="section-title staff-head">🔒 Staff area <span class="lock-chip" id="staffWhoChip">teachers only · PIN</span></div>
-    <div class="grid-tiles grid-staff4">
+    <div class="grid-tiles grid-staff4 grid-staff">
       <button class="tile" id="markBtn" data-go="/attendance">
         <div class="emoji">✅</div>
         <div class="tlabel">Mark Attendance</div>
@@ -789,11 +789,6 @@
         <div class="emoji">✍️</div>
         <div class="tlabel">Enter Marks</div>
         <div class="tsub">Monthly tests</div>
-      </button>
-      <button class="tile" data-go="/records">
-        <div class="emoji">🗂️</div>
-        <div class="tlabel">Student Records</div>
-        <div class="tsub">Attendance &amp; results</div>
       </button>
       <button class="tile" data-go="/faculty">
         <div class="emoji">🎓</div>
@@ -807,9 +802,14 @@
       <span><div class="q-title">Principal’s Board</div><div class="q-sub">Admins · who marked attendance today, weekly report</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
+    <button class="mark-btn mark-btn-3" id="recordsBtn" data-go="/records" style="display:none">
+      <span style="font-size:1.4rem">🗂️</span>
+      <span><div class="q-title">Student Records</div><div class="q-sub">Admins · every student's attendance &amp; results, month-wise</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
     <button class="mark-btn mark-btn-3" id="manageBtn" data-go="/manage" style="display:none">
       <span style="font-size:1.4rem">🛠️</span>
-      <span><div class="q-title">Manage students &amp; timetable</div><div class="q-sub">Admins · admissions, students leaving, roll numbers, photos, teacher changes</div></span>
+      <span><div class="q-title">Manage students &amp; timetable</div><div class="q-sub">Admins · admissions, students leaving, roll numbers, photos, timetable sheet</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
     <button class="quick" id="quickRoll">
@@ -965,7 +965,7 @@
         <p class="note" id="attOffNote" style="margin-top:2px"></p>
         <button class="link-btn" id="attSummaryBtn" style="margin:6px 0 0; display:block">View attendance summary for this group</button>
         </div>
-        <button class="link-btn" data-go="/records" style="margin:6px 0 0; display:block">📊 Open student records (attendance &amp; results)</button>
+        <button class="link-btn" id="attRecLink" data-go="/records" style="margin:6px 0 0; display:none">📊 Open student records (attendance &amp; results)</button>
         <button class="link-btn" id="attBoardLink" data-go="/board" style="margin:6px 0 0; display:none">📋 Principal’s Board (admins)</button>
       </div>
 
@@ -1099,13 +1099,14 @@
 
   <section class="view" id="view-rec">
     <div class="card pad" id="recLogin">
-      <p class="screen-title" style="margin-top:0">Teachers &amp; admin only. Sign in with the same name and PIN you use for Mark Attendance.</p>
+      <p class="screen-title" style="margin-top:0">Admins only. Sign in with your admin name and PIN.</p>
       <div class="field"><label for="recName">Your name</label><input id="recName" autocomplete="username" placeholder="e.g. Prof. Saqib Munawar"></div>
       <div class="field"><label for="recPin">PIN</label><input id="recPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
       <button class="btn-primary" id="recLoginBtn">Sign in</button>
       <div class="tt-error" id="recLoginErr"></div>
     </div>
 
+    <div class="card pad empty" id="recDenied" style="display:none">🔒 Student Records are for admins only.<br><button class="link-btn" id="recDeniedOut" style="margin-top:8px">Sign in as an admin</button></div>
     <div id="recMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="recWho"></b> <span class="lock-chip" id="recRole"></span></span><button class="link-btn" id="recLogout">Sign out</button></div>
       <div class="seg yr-seg" id="recYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B1">BS 1st</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
@@ -1115,7 +1116,6 @@
         <button data-tab="all" id="recTabAll" style="display:none">🏫 All students</button>
         <button data-tab="att" id="recTabAtt" style="display:none">📅 Attendance</button>
         <button data-tab="res" id="recTabRes" style="display:none">📝 Results</button>
-        <button data-tab="ctrl" id="recTabCtrl" style="display:none">🎓 Controller of Examinations</button>
       </div>
 
       <!-- find a student -->
@@ -1162,8 +1162,6 @@
       <!-- v12.4: admin — attendance of every student, month-wise; admin + Controller — results -->
       <div id="recAtt" style="display:none"></div>
       <div id="recRes" style="display:none"></div>
-      <!-- admin: choose the Controller of Examinations -->
-      <div id="recCtrl" style="display:none"><div class="card pad" id="recCtrlForm"></div></div>
     </div>
     <button class="link-btn" id="recSheetsLink" data-go="/staff/records" style="margin:14px auto 0; display:none">📁 Google Sheets of all classes (admin)</button>
   </section>
@@ -1562,6 +1560,7 @@
 
   function renderHome() {
     if ($('boardBtn')) $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
+    if ($('recordsBtn')) $('recordsBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     // v10.6: students & public see only the 4 student tiles; signed-in teachers also see the Staff area; admins see everything
     const signedIn = !!attAuth;
     $('staffArea').style.display = signedIn ? 'block' : 'none';
@@ -2794,9 +2793,9 @@
     currentStaff = key;
     const sec = STAFF_SECTIONS[key];
     $('staffIntro').textContent = sec.intro;
-    const recRow = (DATA.attendanceApi && (key === 'records' || key === 'attendance'))
+    const recRow = (DATA.attendanceApi && isAdminUser() && (key === 'records' || key === 'attendance'))
       ? '<a class="res-row" href="#/records" data-go="/records"><span><div class="r-title">📊 Student records — attendance &amp; results</div>' +
-        '<div class="r-desc">Search by roll number, charts, class-wise (admin: all students). Sign in with your PIN.</div></span><span class="chev">&rsaquo;</span></a>'
+        '<div class="r-desc">Admins · search by roll number, charts, all students, month-wise attendance &amp; results.</div></span><span class="chev">&rsaquo;</span></a>'
       : '';
     if (!isAdminUser()) {
       $('staffList').innerHTML = recRow + '<div class="empty">🔒 The Google Sheets are for admins only. Sign in at <b>Student Records</b> with an admin PIN, then come back here.</div>';
@@ -3013,6 +3012,7 @@
       if (!v || v > todayISO() || v < BACK_FROM) { if (v && v !== todayISO()) dateWarnAt = Date.now(), dateWarn = v > todayISO() ? 'You can’t choose a future date.' : 'Records before 1 Sep 2026 can’t be entered.'; d.value = todayISO(); }
     } else { d.removeAttribute('min'); d.removeAttribute('max'); }
     $('attBoardLink').style.display = admin ? 'block' : 'none';
+    $('attRecLink').style.display = admin ? 'block' : 'none';
     if (admin) { el.style.display = 'block'; el.className = 'tnote'; el.textContent = 'Admin: you can enter or correct any date and period.'; return; }
     const lec = currentLecture();
     const t = timeState(lec ? lec.period : '', d.value);
@@ -3890,10 +3890,12 @@
   }
 
   async function renderRecords() {
-    const signed = !!attAuth;
+    const signed = !!attAuth, denied = signed && attAuth.role !== 'Admin';   // v12.95: admins only
     $('recLogin').style.display = signed ? 'none' : 'block';
-    $('recMain').style.display = signed ? 'block' : 'none';
+    $('recMain').style.display = signed && !denied ? 'block' : 'none';
+    $('recDenied').style.display = denied ? 'block' : 'none';
     if (!signed) { $('recName').value = store.get('attLastName') || ''; return; }
+    if (denied) return;
     $('recWho').textContent = attAuth.name;
     $('recRole').textContent = attAuth.role === 'Admin' ? 'Admin' : attAuth.role === 'Controller' ? 'Controller of Exams' : 'Teacher';
     applyRole();
@@ -3902,6 +3904,7 @@
         recScope = await attApi('scope', { year: recYear });
         attAuth.role = recScope.role; attAuth.teaches = recScope.teaches || attAuth.teaches; store.set('attAuth', JSON.stringify(attAuth));
         $('recRole').textContent = recScope.role === 'Controller' ? 'Controller of Exams' : recScope.role; applyRole();
+        if (recScope.role !== 'Admin') { renderRecords(); return; }
       } catch (e) {
         if (recAuthFail(e)) return;
         $('recRollErr').textContent = e.offline ? 'You need internet to see attendance records.' : e.message;
@@ -3918,7 +3921,6 @@
     const ctrl = attAuth && attAuth.role === 'Controller';
     $('recTabAtt').style.display = admin ? '' : 'none';
     $('recTabRes').style.display = admin || ctrl ? '' : 'none';
-    $('recTabCtrl').style.display = admin ? '' : 'none';
     if (admin && recTab === 'classes') recTab = 'all';
     if (!admin && (recTab === 'all' || recTab === 'att' || recTab === 'ctrl')) recTab = ctrl ? 'res' : 'classes';
     if (!admin && !ctrl && recTab === 'res') recTab = 'classes';
@@ -3936,13 +3938,10 @@
     $('recAtt').style.display = tab === 'att' ? 'block' : 'none';
     document.body.classList.toggle('wide', tab === 'att' || tab === 'res');
     $('recRes').style.display = tab === 'res' ? 'block' : 'none';
-    $('recCtrl').style.display = tab === 'ctrl' ? 'block' : 'none';
-    $('recYearSeg').style.display = tab === 'ctrl' ? 'none' : '';
     if (tab === 'classes') paintClassList();
     if (tab === 'all') loadAll(false);
     if (tab === 'att') loadAttTab(false);
     if (tab === 'res') loadResTab(false);
-    if (tab === 'ctrl') loadCtrlTab();
   }
   $('recTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) showRecTab(b.dataset.tab); });
 
@@ -3960,6 +3959,7 @@
   });
   $('recPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('recLoginBtn').click(); });
   $('recLogout').addEventListener('click', () => { recSignOut(); renderRecords(); });
+  $('recDeniedOut').addEventListener('click', () => { recSignOut(); renderRecords(); });
 
   /* one student */
   async function loadStudent(roll) {
@@ -4764,26 +4764,6 @@
     if (tr.dataset.group) { $('rsG').value = tr.dataset.group; paintResTab(); window.scrollTo(0, 0); } else openStudent(tr.dataset.roll);
   });
 
-  /* ----- Student Records → 🎓 Controller of Examinations (admins) ----- */
-  async function loadCtrlTab() {
-    const F = $('recCtrlForm');
-    F.innerHTML = '<div class="empty">Loading…</div>';
-    const paint = (roles) => {
-      const ctrl = roles.filter((x) => x.role === 'Controller'), others = roles.filter((x) => x.role === 'Teacher').sort((a, b) => a.name.localeCompare(b.name));
-      F.innerHTML = '<p class="screen-title" style="margin-top:0">🎓 Controller of Examinations</p><p class="note" style="margin-top:0">The Controller signs in here to <b>Student Records</b> with their own PIN and gets the <b>📝 Results</b> tab: every student’s marks in every class, month-wise, subject-wise and class-wise, and can change, add or delete marks (each change is logged). They do not get the other admin tools.</p>' +
-        (ctrl.length ? ctrl.map((x) => '<div class="ctrl-row"><b>' + esc(x.name) + '</b><button class="mini-btn" data-rm="' + esc(x.name) + '">Remove</button></div>').join('') : '<p class="note">No Controller yet.</p>') +
-        '<div class="field" style="margin-top:8px"><label for="ctrlPick">Make Controller</label><select id="ctrlPick"><option value="">Choose a staff member with a sign-in…</option>' + others.map((x) => '<option>' + esc(x.name) + '</option>').join('') + '</select></div>' +
-        '<button class="btn-primary" id="ctrlSet">Make Controller of Examinations</button><div class="tt-error" id="ctrlErr"></div>';
-      $('ctrlSet').onclick = () => { const n = $('ctrlPick').value; if (!n) { $('ctrlErr').textContent = 'Choose a name.'; return; } setRole(n, 'Controller'); };
-      F.querySelectorAll('[data-rm]').forEach((b) => { b.onclick = () => setRole(b.dataset.rm, 'Teacher'); });
-    };
-    const setRole = async (name, role) => {
-      try { await attApi('roleSet', { name, role }); toast(role === 'Controller' ? name + ' is now the Controller of Examinations ✓' : name + ' is a teacher again'); paint((await attApi('rolesList')).roles); }
-      catch (e) { if (!recAuthFail(e)) $('ctrlErr').textContent = e.offline ? 'You need internet.' : e.message; }
-    };
-    try { paint((await attApi('rolesList')).roles); } catch (e) { if (!recAuthFail(e)) F.innerHTML = '<div class="tt-error">' + esc(e.offline ? 'You need internet.' : e.message) + '</div>'; }
-  }
-
   $('recReload').addEventListener('click', () => loadAll(true));
   $('recRebuild').addEventListener('click', async () => {
     $('recRebuild').disabled = true; $('recRebuild').textContent = 'Recalculating…';
@@ -5184,6 +5164,7 @@
     $('aboutDev').textContent = dev || '—';
     $('markBtn').style.display = DATA.attendanceApi ? '' : 'none';
     $('boardBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
+    if ($('recordsBtn')) $('recordsBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('marksBtn').style.display = DATA.attendanceApi ? '' : 'none';
     $('footUpdated').textContent = DATA.updatedAt ? 'Data updated ' + fmtDate(DATA.updatedAt) : '';
   }
