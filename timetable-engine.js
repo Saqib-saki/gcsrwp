@@ -26,7 +26,8 @@ const GROUP_RANGES = [
 ];
 
 function codeForRoll(roll) {
-  for (const [code, lo, hi] of GROUP_RANGES) {
+  // v12.9: extra roll ranges of a group from the timetable sheet (GROUP_EXTRA_1, set by the app)
+  for (const [code, lo, hi] of GROUP_RANGES.concat(typeof GROUP_EXTRA_1 !== "undefined" ? GROUP_EXTRA_1 : [])) {
     if (roll >= lo && roll <= hi) return code;
   }
   return null;
@@ -61,6 +62,8 @@ function scienceCommon(roll) {
 }
 
 function buildSchedule(roll) {
+  // v12.9: when the app has the timetable from the Google Sheet, periods I–V come from there
+  if (typeof ttSheetSchedule === "function") { const fromSheet = ttSheetSchedule(roll, 1); if (fromSheet !== undefined) return fromSheet; }
   const code = codeForRoll(roll);
   if (!code) return null;
 

@@ -274,6 +274,10 @@
   #tabPrint .foot { font-size: 7.5pt; color: #444; margin-top: 6px; display: flex; justify-content: space-between; } #tabPrint .sign { display: flex; justify-content: space-between; margin-top: 30px; font-size: 9pt; } #tabPrint .sign div { border-top: 1px solid #000; width: 30%; text-align: center; padding-top: 2px; }
   .tab-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .grade-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: -4px 0 12px; font-size: .82rem; font-weight: 700; }
+  .ts-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+  .ts-btns > * { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; margin: 0; min-height: 46px; }
+  .ts-probs { max-height: 260px; overflow: auto; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
+  .ts-probs div { padding: 3px 0; border-bottom: 1px dashed var(--border); }
   .ctrl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
   table.tab-tbl td { white-space: nowrap; } table.tab-tbl td:nth-child(2) { white-space: normal; min-width: 120px; }
   table.rs-et { font-size: .86rem; } table.rs-et td, table.rs-et th { padding-left: 4px; padding-right: 4px; } table.rs-et input[type=number] { width: 54px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); font: inherit; text-align: right; }
@@ -874,6 +878,7 @@
         <div class="card pad">
           <p class="screen-title" style="margin-top:0">What needs to change?</p>
           <div class="ttc-tasks" id="ttcTasks">
+            <button data-task="sheet" style="grid-column:1/-1"><span>📗</span><b>Timetable sheet — edit the whole timetable in Google Sheets</b><small>Groups &amp; roll numbers, Bright Star, 1st Year, 2nd Year, BS and DIT. Open the sheet, check it, use it now.</small></button>
             <button data-task="master" style="grid-column:1/-1"><span>📋</span><b>Master timetable — see and change</b><small>Full timetable of 1st Year, 2nd Year and each BS semester. Tap any class to change it.</small></button>
             <button data-task="left"><span>👤</span><b>A teacher has left / is on long leave</b><small>Give all their classes to another teacher, or mark them vacant (CTI)</small></button>
             <button data-task="vacant"><span>🪑</span><b>Vacant classes (CTI)</b><small>Classes still waiting for a teacher — assign one</small></button>
@@ -1713,6 +1718,96 @@
     } catch (e) { return false; }
   }
   function setTTC(list) { TTC = list || []; store.set('ttc', JSON.stringify(TTC)); ttcApplyData(); }
+
+  /* ---------- v12.9: the whole timetable can live in a Google Sheet ("GCS RWP — Timetable (edit here)") ----------
+     Server action ttBase returns its rows; they replace the printed timetables built into the app (a tab left empty →
+     the built-in one is used). Timetable Changes are applied on top as before. */
+  let TTS = null;
+  const ttClone = (o) => JSON.parse(JSON.stringify(o));
+  const TT_BUILTIN = {
+    star: TT_PRISTINE.star && ttClone(TT_PRISTINE.star), six: TT_PRISTINE.six && ttClone(TT_PRISTINE.six), bs: TT_PRISTINE.bs && ttClone(TT_PRISTINE.bs),
+    r: { 1: typeof GROUP_RANGES !== 'undefined' ? ttClone(GROUP_RANGES) : [], 2: typeof GROUP_RANGES_2 !== 'undefined' ? ttClone(GROUP_RANGES_2) : [] },
+    x: { 1: [], 2: typeof GROUP_EXTRA_2 !== 'undefined' ? ttClone(GROUP_EXTRA_2) : [] },
+    bright: typeof BRIGHT_STAR !== 'undefined' ? ttClone(BRIGHT_STAR) : null, names: null };
+  window.GROUP_EXTRA_1 = window.GROUP_EXTRA_1 || [];
+  const ttsUses = (y) => !!(TTS && TTS.y && TTS.y[y] && TTS.y[y].length && TTS.groups && TTS.groups[y] && TTS.groups[y].length);
+  const ttsIsVI = (p) => p === 'VI' || p === 'VII';
+  function ttsStarList(rows) {
+    const out = [];
+    rows.forEach((x) => { if (ttsIsVI(x.p)) return; x.g.forEach((p) => { if (p[0] === 'STAR') out.push(Object.assign({ period: x.p, subject: x.s, room: x.r, teacher: x.t, sec: p[1] }, x.n ? { note: x.n } : {})); }); });
+    return out;
+  }
+  function ttsSixList(rows, y) {
+    const out = [], lbl = (g) => g.map((p) => (p[0] === 'STAR' ? 'B.Star' : p[0]) + (p[1] !== 'All' ? ' (' + p[1] + ')' : '')).join(' + ');
+    rows.forEach((x) => {
+      if (Number(y) === 1 && x.g.some((p) => p[0] === 'D')) { out.push({ period: x.p, days: x.d, subject: x.s, with: x.n || 'DIT (Semester 1)', room: x.r, teacher: x.t, parts: x.g.filter((p) => p[0] === 'D'), dit: true, time: x.tm }); return; }
+      if (!ttsIsVI(x.p)) return;
+      const eth = x.g.find((p) => p[0] === 'ETH');
+      if (eth) { out.push({ period: x.p, days: x.d, subject: x.s, with: x.n || 'Non-Muslim students', room: x.r, teacher: x.t, parts: [], everyone: true, cls: ['ETH', eth[1]] }); return; }
+      out.push({ period: x.p, days: x.d, subject: x.s, with: x.n || lbl(x.g), room: x.r, teacher: x.t, parts: x.g.map((p) => p.slice()) });
+    });
+    return out;
+  }
+  /** use the sheet (d) — or the built-in timetables (d = null) */
+  function ttsApply(d) {
+    TTS = d && d.has ? d : null;
+    const setArr = (a, v) => { a.length = 0; v.forEach((e) => a.push(e)); };
+    const N = { 1: typeof GROUP_NAMES !== 'undefined' ? GROUP_NAMES : {}, 2: typeof GROUP_NAMES_2 !== 'undefined' ? GROUP_NAMES_2 : {} };
+    if (!TT_BUILTIN.names) TT_BUILTIN.names = { 1: Object.assign({}, N[1]), 2: Object.assign({}, N[2]) };
+    [1, 2].forEach((y) => {
+      const R = y === 1 ? (typeof GROUP_RANGES !== 'undefined' ? GROUP_RANGES : null) : (typeof GROUP_RANGES_2 !== 'undefined' ? GROUP_RANGES_2 : null);
+      const X = y === 1 ? window.GROUP_EXTRA_1 : (typeof GROUP_EXTRA_2 !== 'undefined' ? GROUP_EXTRA_2 : []);
+      Object.keys(N[y]).forEach((k) => { delete N[y][k]; }); Object.assign(N[y], TT_BUILTIN.names[y]);
+      if (ttsUses(y)) {
+        const seen = {}, main = [], extra = [];
+        TTS.groups[y].forEach((g) => { (seen[g[0]] ? extra : main).push([g[0], g[1], g[2]]); seen[g[0]] = 1; if (g[3]) N[y][g[0]] = g[3]; });
+        if (R) setArr(R, main); setArr(X, extra);
+      } else { if (R) setArr(R, ttClone(TT_BUILTIN.r[y])); setArr(X, ttClone(TT_BUILTIN.x[y])); }
+      if (typeof BRIGHT_STAR !== 'undefined' && TT_BUILTIN.bright) {
+        const B = TTS && TTS.star && TTS.star[y] && Object.keys(TTS.star[y]).length ? TTS.star[y] : TT_BUILTIN.bright[y];
+        Object.keys(BRIGHT_STAR[y]).forEach((k) => { delete BRIGHT_STAR[y][k]; }); Object.keys(B).forEach((k) => { BRIGHT_STAR[y][k] = B[k].slice(); });
+      }
+      if (TT_PRISTINE.star) TT_PRISTINE.star[y] = ttsUses(y) ? ttsStarList(TTS.y[y]) : ttClone(TT_BUILTIN.star[y]);
+      if (TT_PRISTINE.six) TT_PRISTINE.six[y] = ttsUses(y) ? ttsSixList(TTS.y[y], y) : ttClone(TT_BUILTIN.six[y]);
+    });
+    if (TT_PRISTINE.bs) TT_PRISTINE.bs = TTS && TTS.bs && TTS.bs.length ? ttClone(TTS.bs) : ttClone(TT_BUILTIN.bs);
+  }
+  /** a 1st / 2nd Year student's periods I–V from the sheet (undefined = use the built-in engine) */
+  window.ttSheetSchedule = function (roll, y) {
+    if (!ttsUses(y)) return undefined;
+    roll = Number(roll);
+    const code = y === 1 ? codeForRoll(roll) : (!roll || roll < 1 || roll > 1500 ? undefined : codeForRoll2(roll));
+    if (y === 1 && !code) return null;
+    if (y === 2 && code === undefined) return null;
+    if (y === 1 && code === 'D') return undefined;   // DIT: the engine's own page from the DIT classes
+    if (!code) {
+      const R = GROUP_RANGES_2.concat(GROUP_EXTRA_2).map((g) => [g[1], g[2]]).sort((a, b) => a[0] - b[0]), M = [];
+      R.forEach((r) => { const L = M[M.length - 1]; if (L && r[0] <= L[1] + 1) L[1] = Math.max(L[1], r[1]); else M.push(r.slice()); });
+      return { code: null, group: '', sheet: '', rows: [], rotating: [], note: 'Roll number ' + roll + ' is not in the 2nd Year roll-number series (' + M.map((r) => r[0] + '–' + r[1]).join(', ') + '). Please check with the college office.' };
+    }
+    const meta = TTS.groups[y].find((g) => g[0] === code) || [];
+    const rows = TTS.y[y].filter((x) => !ttsIsVI(x.p) && x.g.some((p) => p[0] === code && ttcSecHas(p[1], roll, code, y)))
+      .map((x) => ({ period: x.p, subject: x.s, room: x.r, teacher: x.t, note: String(x.n || '').replace(/\{roll\}/g, roll) }))
+      .map((w, i) => [w, i]).sort((a, b) => periodIndex(a[0].period) - periodIndex(b[0].period) || a[1] - b[1]).map((z) => z[0]);
+    return { code, group: meta[4] || '', sheet: meta[5] || '', rows, rotating: [] };
+  };
+  function ttsInit() { let d = null; try { d = JSON.parse(store.get('ttbase') || 'null'); } catch (e) { d = null; } if (d && d.has) ttsApply(d); }
+  let ttsAt = 0;
+  async function refreshTTS(force) {
+    if (!DATA.attendanceApi || !navigator.onLine) return false;
+    if (!force && Date.now() - ttsAt < 5 * 60000) return false;
+    ttsAt = Date.now();
+    try {
+      const res = await fetch(DATA.attendanceApi, { method: 'POST', body: JSON.stringify({ action: 'ttBase' }) });
+      const j = await res.json(); if (!j.ok) return false;
+      return setTTS(j.has ? j : null);
+    } catch (e) { return false; }
+  }
+  function setTTS(j) {
+    if ((TTS ? TTS.ver : '') === (j ? j.ver : '')) return false;
+    try { store.set('ttbase', j ? JSON.stringify(j) : ''); } catch (e) {}
+    ttsApply(j); ttcApplyData(); return true;
+  }
 
   let wlIndex = null;
   /** {teacherName: [{year, period, klass, subject, room, rotating}]} built from the 1st and 2nd Year timetables */
@@ -3211,7 +3306,7 @@
   }
 
   function renderAttendance() {
-    refreshTTC();
+    refreshTTC(); refreshTTS();
     renderPending();
     refreshAllCounts(false);
     const signed = !!attAuth;
@@ -3622,7 +3717,7 @@
   const mkSubjectVal = () => ($('mkSubject').value === '__other' ? $('mkOther').value.trim() : $('mkSubject').value);
 
   async function renderMarks() {
-    refreshTTC();
+    refreshTTC(); refreshTTS();
     renderPending();
     refreshAllCounts(false);
     const signed = !!attAuth;
@@ -5600,9 +5695,29 @@
     };
     $('msCsv').onclick = () => csvDownload('Timetable_' + yearLabel(yk(msYear)).replace(/\s+/g, '_') + '.csv', [['Group', 'Section', 'Period', 'Subject', 'Teacher', 'Room', 'Days']].concat(cur.E.slice().sort((a, b) => a.group.localeCompare(b.group) || periodIndex(a.period) - periodIndex(b.period)).map((x) => [x.group, x.section, x.period, x.subject, x.teacher, x.room, x.days || ''])));
   }
+  /* v12.9: the timetable Google Sheet — link, what it holds, rows it couldn't read, use it now */
+  async function ttcSheet(F, fresh) {
+    F.innerHTML = '<p class="screen-title" style="margin-top:0">📗 Timetable sheet</p><div class="empty">Checking the sheet…</div>';
+    let d;
+    try { d = await attApi('ttSheetInfo', { fresh: !!fresh }); }
+    catch (e) { F.innerHTML = '<p class="screen-title" style="margin-top:0">📗 Timetable sheet</p><div class="tt-error">' + esc(e.offline ? 'You need internet.' : /unknown|action/i.test(e.message) ? 'The server needs the v12.9 update first.' : e.message) + '</div>'; return; }
+    if (!d.has) { F.innerHTML = '<p class="screen-title" style="margin-top:0">📗 Timetable sheet</p><p class="note">The timetable sheet has not been made yet, so the app uses the timetable built into it.</p>'; return; }
+    if (fresh) { try { await refreshTTS(true); } catch (e) {} }
+    const C = d.counts || {}, using = TTS && TTS.ver === d.ver;
+    const probs = d.problems || [], unk = d.unknownTeachers || [];
+    F.innerHTML = '<p class="screen-title" style="margin-top:0">📗 Timetable sheet</p>' +
+      '<p class="note" style="margin-top:0">The whole timetable is kept in the Google Sheet <b>GCS RWP — Timetable (edit here)</b>. Change a cell there and the app follows within about 5 minutes — or tap <b>Use the sheet now</b>. Changes made here (teacher left, move, merge…) still work on top of it. The sheet\'s first tab explains every column.</p>' +
+      '<div class="ts-btns"><a class="btn-primary" href="' + esc(d.url) + '" target="_blank" rel="noopener">Open the timetable sheet ↗</a><button class="btn-secondary" id="tsNow">↻ Use the sheet now</button></div>' +
+      '<p class="note">' + (using ? '✅ The app is using the sheet' : '⏳ The app will switch to the latest sheet on the next refresh') + ' · last edited ' + esc(d.updated || '') + '<br>Rows: 1st Year ' + (C.y1 || 0) + ' · 2nd Year ' + (C.y2 || 0) + ' · BS ' + (C.bs || 0) + ' · groups ' + (C.groups || 0) + '</p>' +
+      (probs.length ? '<div class="section-title" style="margin-top:6px">⚠️ Rows the app could not read (' + probs.length + ') — fix them in the sheet</div><div class="ts-probs">' + probs.slice(0, 60).map((p) => '<div><b>' + esc(p.tab) + ' · row ' + p.row + '</b> — ' + esc(p.msg) + '</div>').join('') + '</div>' : '<p class="note">✅ Every row could be read.</p>') +
+      (unk.length ? '<div class="section-title" style="margin-top:6px">Teacher names not found in Faculty Profiles (' + unk.length + ')</div><p class="note" style="margin-top:0">Check the spelling — a class shows in a teacher\'s profile and attendance only when the name matches.</p><div class="ts-probs">' + unk.map((t) => '<div>' + esc(t) + '</div>').join('') + '</div>' : '');
+    $('tsNow').onclick = () => ttcSheet(F, true);
+    if (fresh) toast(using ? 'Timetable updated from the sheet ✓' : 'Sheet read ✓');
+  }
   function ttcTask(task, preset) {
     const F = $('ttcForm'); F.style.display = 'block';
     const close = () => { F.style.display = 'none'; document.querySelectorAll('#ttcTasks button').forEach((x) => x.classList.remove('on')); };
+    if (task === 'sheet') { ttcSheet(F, false); return; }
     const from = () => $('tcFrom').value, note = () => $('tcNote').value.trim();
     if (task === 'left') {
       F.innerHTML = '<p class="screen-title" style="margin-top:0">👤 A teacher has left / is on long leave</p>' +
@@ -5728,11 +5843,12 @@
   netStatus();
   if (!history.state) history.replaceState({ depth: 0 }, '', location.hash || '#/');
   loadData().then(() => {
+    try { ttsInit(); } catch (e) { console.warn('timetable sheet', e); }
     try { ttcApplyData(); } catch (e) { console.warn('timetable changes', e); }
     applyChrome();
     render();
     fetchLiveNotices();
-    refreshTTC(true).then((changed) => { if (changed && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
+    Promise.all([refreshTTC(true), refreshTTS(true)]).then((ch) => { if ((ch[0] || ch[1]) && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
 </script>

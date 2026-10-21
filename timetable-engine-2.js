@@ -52,6 +52,8 @@ function codeForRoll2(roll) {
 
 function buildSchedule2(roll) {
   roll = Number(roll);
+  // v12.9: when the app has the timetable from the Google Sheet, periods I–V come from there
+  if (typeof ttSheetSchedule === "function") { const fromSheet = ttSheetSchedule(roll, 2); if (fromSheet !== undefined) return fromSheet; }
   if (!roll || roll < 1 || roll > 1500) return null;
   const code = codeForRoll2(roll);
   const odd = roll % 2 === 1;
