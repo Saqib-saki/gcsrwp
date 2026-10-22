@@ -2907,7 +2907,24 @@
     set(q) { store.set('attQueue', JSON.stringify(q)); }
   };
 
+  /* v12.97: Bright Star classes held only for some combinations (Chemistry = Medical + Engineering, Computer Science = ICS …)
+     always use that part of Bright Star, even when "All" was chosen — so ICS students never get Chemistry attendance or marks. */
+  function starOnlySec(y, subject) {
+    if (isBS(y) || !subject || typeof STAR_TT === 'undefined') return null;
+    const yy = Number(yk(y)) === 2 ? 2 : 1, n = ttNorm(String(subject).replace(/\s*\(\d-\d\)\s*$/, '')), secs = [];
+    (STAR_TT[yy] || []).forEach((e) => { if (ttNorm(e.subject) === n && secs.indexOf(e.sec) < 0) secs.push(e.sec); });
+    (typeof SIX7 !== 'undefined' ? SIX7[yy] || [] : []).forEach((e) => { if (ttNorm(e.subject) === n) (e.parts || []).forEach((q) => { if (q[0] === 'STAR' && secs.indexOf(q[1]) < 0) secs.push(q[1]); }); });
+    return secs.length === 1 && secs[0] !== 'All' ? secs[0] : null;
+  }
+  function starGuard(action, p) {
+    if (!p || ['roster', 'getSession', 'submit', 'marksSheet', 'submitMarks', 'rosterMulti', 'submitMulti'].indexOf(action) < 0 || !p.subject) return p;
+    const y = p.year || 1, fix = (g, sec) => (g === 'STAR' && (sec || 'All') === 'All' ? starOnlySec(y, p.subject) || sec : sec);
+    if (Array.isArray(p.parts)) return Object.assign({}, p, { parts: p.parts.map((q) => Object.assign({}, q, { section: fix(q.group, q.section) })) });
+    return p.group === 'STAR' ? Object.assign({}, p, { section: fix(p.group, p.section) }) : p;
+  }
+  window.__starGuard = starGuard;
   async function attApi(action, payload, auth) {
+    payload = starGuard(action, payload);
     const url = DATA.attendanceApi;
     if (!url) throw new Error('Attendance service is not set up yet.');
     if (!navigator.onLine) { const e = new Error('offline'); e.offline = true; throw e; }
