@@ -276,6 +276,7 @@
   .grade-row { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: -4px 0 12px; font-size: .82rem; font-weight: 700; }
   .rs-view { margin-bottom: 10px; flex-wrap: wrap; overflow: visible; }
   .rs-view button { flex: 1; font-weight: 700; }
+  .dob-row { display: grid; grid-template-columns: 1fr 1.6fr 1.2fr; gap: 8px; }
   .ts-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
   .ts-btns > * { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; margin: 0; min-height: 46px; }
   .ts-probs { max-height: 260px; overflow: auto; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
@@ -1046,7 +1047,7 @@
       <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
       <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B1">BS · 1st Semester</option><option value="B3">BS · 3rd Semester</option><option value="B5">BS · 5th Semester</option><option value="B7">BS · 7th Semester</option></select></div>
       <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
-      <div class="field" id="myDobRow"><label for="myDob">Date of birth</label><input id="myDob" type="date" max="2015-12-31"></div>
+      <div class="field" id="myDobRow"><label for="myDobD">Date of birth (day · month · year)</label><div class="dob-row"><select id="myDobD" aria-label="Day"></select><select id="myDobM" aria-label="Month"></select><select id="myDobY" aria-label="Year"></select></div><input id="myDob" type="hidden"></div>
       <div class="field" id="myCnicRow" style="display:none"><label for="myCnic">Last 4 digits of your CNIC / B-Form</label><input id="myCnic" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="e.g. 3924" autocomplete="off"></div>
       <button class="btn-primary" id="myGo">Show my record</button>
       <div class="tt-error" id="myErr"></div>
@@ -4300,11 +4301,22 @@
     $('myForm').style.display = myLast ? 'none' : 'block';
     $('myOut').style.display = myLast ? 'block' : 'none';
   }
+  /* v12.97: date of birth as Day · Month · Year lists — a phone's date box often expects month first (05/03 = 3 May), so day-first typing failed */
+  (function () {
+    const MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    $('myDobD').innerHTML = '<option value="">Day</option>' + Array.from({ length: 31 }, (_, i) => '<option value="' + (i + 1) + '">' + (i + 1) + '</option>').join('');
+    $('myDobM').innerHTML = '<option value="">Month</option>' + MON.map((m, i) => '<option value="' + (i + 1) + '">' + m + '</option>').join('');
+    const ys = []; for (let y = 2014; y >= 1995; y--) ys.push(y);
+    $('myDobY').innerHTML = '<option value="">Year</option>' + ys.map((y) => '<option>' + y + '</option>').join('');
+    const sync = () => { const d = $('myDobD').value, m = $('myDobM').value, y = $('myDobY').value; $('myDob').value = d && m && y ? y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0') : ''; };
+    ['myDobD', 'myDobM', 'myDobY'].forEach((id) => $(id).addEventListener('change', sync));
+  })();
   async function loadMy() {
     const roll = parseInt($('myRoll').value, 10), dob = $('myDob').value, myY = yk($('myYear').value), cnic4 = $('myCnic').value.replace(/\D/g, '');
     $('myErr').textContent = '';
     if (!roll) { $('myErr').textContent = 'Enter your college roll number.'; return; }
-    if (isBS(myY) ? cnic4.length !== 4 : !dob) { $('myErr').textContent = isBS(myY) ? 'Enter the last 4 digits of your CNIC / B-Form number.' : 'Enter your date of birth.'; return; }
+    if (isBS(myY) ? cnic4.length !== 4 : !dob) { $('myErr').textContent = isBS(myY) ? 'Enter the last 4 digits of your CNIC / B-Form number.' : 'Choose your date of birth: day, month and year.'; return; }
+    if (!isBS(myY)) { const dd = new Date(dob + 'T00:00:00'); if (isNaN(dd) || dd.getDate() !== Number(dob.slice(8))) { $('myErr').textContent = 'That date does not exist — check the day and month.'; return; } }
     const url = DATA.attendanceApi;
     if (!url) { $('myErr').textContent = 'This service is not set up yet.'; return; }
     if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
@@ -4320,7 +4332,6 @@
     $('myGo').disabled = false; $('myGo').textContent = 'Show my record';
   }
   $('myGo').addEventListener('click', loadMy);
-  $('myDob').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
   function paintMyKind() {
     const bs = isBS(yk($('myYear').value));
     $('myDobRow').style.display = bs ? 'none' : ''; $('myCnicRow').style.display = bs ? '' : 'none';
@@ -4328,7 +4339,7 @@
   }
   $('myYear').addEventListener('change', paintMyKind); paintMyKind();
   $('myCnic').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
-  $('myAgain').addEventListener('click', () => { myLast = null; $('myDob').value = ''; $('myCnic').value = ''; $('myStudent').innerHTML = ''; renderMy(); });
+  $('myAgain').addEventListener('click', () => { myLast = null; $('myDob').value = ''; ['myDobD', 'myDobM', 'myDobY'].forEach((id) => { $(id).value = ''; }); $('myCnic').value = ''; $('myStudent').innerHTML = ''; renderMy(); });
 
   function openStudent(roll) { showRecTab('find'); loadStudent(roll); window.scrollTo(0, 0); }
 
