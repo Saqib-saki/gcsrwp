@@ -3689,10 +3689,22 @@
     BS_READY.forEach((b) => bsLectures(b).forEach((l) => { if (pred(l.teacher)) out.push({ year: b, group: l.group, section: 'All', period: l.period, subject: l.subject, teacher: l.teacher, room: l.room || '', days: l.days && l.days.length ? l.days[0] + '-' + l.days[l.days.length - 1] : '' }); }));
     return out;
   }
+  /* v12.98: every class the timetable sheet gives this teacher (exact name) counts as theirs — e.g. a new group like A8 —
+     without also adding it to the Teachers sheet. (The server allows the same since v12.9.) */
+  let ttMineCache = {};
+  function ttSheetMine(me, y) {
+    if (!TTS) return [];
+    const yv = String(yk(y)), k = me + '|' + yv + '|' + TTS.ver + '|' + TTC.length;
+    if (ttMineCache[yv] && ttMineCache[yv].k === k) return ttMineCache[yv].list;
+    const list = [];
+    scanClasses((t) => String(t || '').split('+').some((x) => nameKey(x) === me)).forEach((x) => { if (x.year === yv && !list.some((u) => u.group === x.group && u.subject === x.subject)) list.push({ group: x.group, subject: x.subject }); });
+    ttMineCache[yv] = { k, list };
+    return list;
+  }
   function myTeaches(y) {
     const me = nameKey(attAuth && attAuth.name);
     // v12: classes given by an admin's timetable change
-    const base = myTeachesBase(y).concat(!me ? [] : ttcMine(me, y)).filter((t, i, a) => a.findIndex((u) => u.group === t.group && u.subject === t.subject) === i);
+    const base = myTeachesBase(y).concat(!me ? [] : ttcMine(me, y)).concat(!me ? [] : ttSheetMine(me, y)).filter((t, i, a) => a.findIndex((u) => u.group === t.group && u.subject === t.subject) === i);
     if (!me || isBS(y)) return base;
     const star = [];
     starLectures(y).forEach((l) => { if (String(l.teacher || '').split('+').some((t) => { const k = nameKey(t); return k && nearSame(k, me); }) && !star.some((x) => x.subject === l.subject)) star.push({ group: 'STAR', subject: l.subject }); });
