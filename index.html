@@ -2087,14 +2087,14 @@
         const multi = e.parts && e.parts.length > 1;
         const path = multi ? regPath({ year: e.year, group: 'MULTI', section: e.parts.map((q) => q[0] + ':' + q[1]).join('|'), subject: e.subject })
           : regPath({ year: e.year, group: e.parts ? e.parts[0][0] : String(e.klass).split(/[ ,(]/)[0], section: e.parts ? e.parts[0][1] : 'All', subject: e.subject });
-        items.push({ href: path + '/' + encodeURIComponent(p.name) + '/last30', cls: (e.year === 2 ? '2nd Year' : '1st Year') + ' · ' + e.klass, subject: e.subject, when: 'Period ' + e.period + (e.days ? ' · ' + e.days : '') });
+        items.push({ href: path + '/' + encodeURIComponent(p.name) + '/month', cls: (e.year === 2 ? '2nd Year' : '1st Year') + ' · ' + e.klass, subject: e.subject, when: 'Period ' + e.period + (e.days ? ' · ' + e.days : '') });
       });
       bs.forEach((r) => {
         const y = 'B' + r.sem;
         if (BS_READY.indexOf(y) < 0) return;
-        (r.progs || []).map((pg) => BS_CODE_OF[pg]).filter(Boolean).forEach((g) => items.push({ href: regPath({ year: y, group: g, section: 'All', subject: r.course }) + '/' + encodeURIComponent(p.name) + '/last30', cls: (SEM_LABEL[r.sem] || 'BS') + ' · ' + g, subject: r.course, when: 'Period ' + r.period }));
+        (r.progs || []).map((pg) => BS_CODE_OF[pg]).filter(Boolean).forEach((g) => items.push({ href: regPath({ year: y, group: g, section: 'All', subject: r.course }) + '/' + encodeURIComponent(p.name) + '/month', cls: (SEM_LABEL[r.sem] || 'BS') + ' · ' + g, subject: r.course, when: 'Period ' + r.period }));
       });
-      if (items.length) h += '<button class="pf-r30 no-print" id="pfR30Btn" aria-expanded="false"><span class="ic">📅</span><span><b>30-Day Register</b><small>Day-by-day P · A · L of every student, last 30 days</small></span><span class="chev">&rsaquo;</span></button>' +
+      if (items.length) h += '<button class="pf-r30 no-print" id="pfR30Btn" aria-expanded="false"><span class="ic">📅</span><span><b>Monthly Register</b><small>Day-by-day P · A · L of every student — this month (any earlier month too)</small></span><span class="chev">&rsaquo;</span></button>' +
         '<div class="card r30-list no-print" id="pfR30List" style="display:none">' + items.map((x) => '<a href="#' + esc(x.href) + '"><span><b>' + esc(x.cls) + '</b><br>' + esc(x.subject) + '</span><span class="t">' + esc(x.when) + ' ›</span></a>').join('') + '</div>';
     }
     h += '<div class="pf-wl-title">📚 Workload</div>' + (canRec && (fixed.length || bs.length) ? '<p class="note no-print wl-hint">👆 Tap a <span class="wl-cls demo">blue class</span> to open its attendance and test record — the whole session so far, and month by month.</p>' : '');
@@ -2196,8 +2196,10 @@
     if (group === 'MULTI') ctx.parts = String(section || '').split('|').map((x) => { const i = x.indexOf(':'); return { group: i < 0 ? x : x.slice(0, i), section: i < 0 ? 'All' : x.slice(i + 1) || 'All' }; }).filter((p) => p.group);
     const months = regMonths();
     const ck = [ctx.year, group, ctx.section, subject.toLowerCase()].join('|');
-    if (ck !== regClassKey) { regClassKey = ck; regMonth = parts[5] === 'last30' ? 'last30' : 'all'; }
-    if (!regMonth || (regMonth !== 'all' && regMonth !== 'last30' && months.indexOf(regMonth) < 0)) regMonth = 'all';
+    // v13.1: the register opens on the current month (October, then November …); earlier months stay in the list
+    if (ck !== regClassKey) { regClassKey = ck; regMonth = parts[5] === 'month' || parts[5] === 'last30' ? (months[0] || 'all') : 'all'; }
+    if (regMonth === 'last30') regMonth = months[0] || 'all';
+    if (!regMonth || (regMonth !== 'all' && months.indexOf(regMonth) < 0)) regMonth = 'all';
     const key = [ctx.year, group, ctx.section, subject.toLowerCase(), regMonth, attAuth.name].join('|');
     if (regCache[key]) paintRegister(ctx, regCache[key]);
     else { paintRegisterShell(ctx, '<div class="card pad empty">Loading the ' + esc(regMonth === 'all' ? 'whole-session' : regMonth === 'last30' ? 'last 30 days' : monthLabel(regMonth)) + ' record…</div>'); loadRegister(ctx, key); }
@@ -2215,8 +2217,8 @@
     }
   }
   function regControls(ctx, ready) {
-    return '<div class="reg-bar no-print"><label>Show <select id="regMonthSel"><option value="all"' + (regMonth === 'all' ? ' selected' : '') + '>Whole session (till now)</option><option value="last30"' + (regMonth === 'last30' ? ' selected' : '') + '>Last 30 days (day by day)</option>' + regMonths().map((m) => '<option value="' + m + '"' + (m === regMonth ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('') + '</select></label>' +
-      (ready ? '<button class="btn-go" id="regPrint">🖨 Print / PDF</button><button class="btn-go alt" id="regCsv">⬇ CSV</button>' : '') + '<button class="btn-go alt" id="regRefresh" aria-label="Refresh">↻</button></div>';
+    return '<div class="reg-bar no-print"><label>Show <select id="regMonthSel"><option value="all"' + (regMonth === 'all' ? ' selected' : '') + '>Whole session (till now)</option>' + regMonths().map((m) => '<option value="' + m + '"' + (m === regMonth ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('') + '</select></label>' +
+      (ready ? '<button class="btn-go" id="regPrint">🖨 Print / PDF' + (regMonth !== 'all' ? ' (whole month)' : '') + '</button><button class="btn-go alt" id="regCsv">⬇ Save as Excel (CSV)</button>' : '') + '<button class="btn-go alt" id="regRefresh" aria-label="Refresh">↻</button></div>';
   }
   function wireRegister(ctx, j) {
     $('regMonthSel').onchange = (e) => { regMonth = e.target.value; render(); };
