@@ -277,6 +277,7 @@
   .rs-view { margin-bottom: 10px; flex-wrap: wrap; overflow: visible; }
   .rs-view button { flex: 1; font-weight: 700; }
   .dob-row { display: grid; grid-template-columns: 1fr 1.6fr 1.2fr; gap: 8px; }
+  body.viewer .owner-only { display: none !important; }
   .ts-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
   .ts-btns > * { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; margin: 0; min-height: 46px; }
   .ts-probs { max-height: 260px; overflow: auto; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
@@ -876,7 +877,7 @@
             <div class="field"><label for="mgGroup">Group</label><select id="mgGroup"><option value="">All groups</option></select></div>
             <div class="field"><label for="mgShow">Show</label><select id="mgShow"><option value="">All students</option><option value="active">Active only</option><option value="inactive">⏸ Inactive only</option></select></div>
           </div>
-          <button class="btn-primary" id="mgAdd">＋ Add a student</button>
+          <button class="owner-only btn-primary" id="mgAdd">＋ Add a student</button>
           <div class="tt-error" id="mgErr"></div>
           <p class="note" id="mgSum" style="margin-bottom:0"></p>
         </div>
@@ -901,7 +902,7 @@
         <div class="card pad">
           <p class="screen-title" style="margin-top:0">💾 Weekly backup</p>
           <div id="bkStatus"><div class="empty">Loading…</div></div>
-          <div class="sf-btns"><button class="btn-go" id="bkNow">Back up now</button><button class="btn-go alt" id="bkToggle">Refresh</button></div>
+          <div class="sf-btns"><button class="owner-only btn-go" id="bkNow">Back up now</button><button class="owner-only btn-go alt" id="bkToggle">Refresh</button></div>
           <p class="note" style="margin-bottom:0">A full copy of every app spreadsheet (student lists and photos, attendance, marks, teachers and PINs, staff profiles, notices) goes into the folder <b>GCS RWP Backups</b> in your Google Drive. The newest 8 backups are kept; older ones go to the Drive bin, where Google keeps them for 30 days. Keep this folder private — don’t share it.</p>
           <div class="tt-error" id="bkErr"></div>
         </div>
@@ -1161,9 +1162,9 @@
           </div>
           <div class="btn-row" style="margin-top:4px">
             <button class="btn-secondary" id="recReload">↻ Refresh</button>
-            <button class="btn-secondary" id="recRebuild">Recalculate totals</button>
+            <button class="owner-only btn-secondary" id="recRebuild">Recalculate totals</button>
           </div>
-          <button class="btn-secondary" id="recArchive" style="margin-top:8px;width:100%">📦 Archive old attendance</button>
+          <button class="owner-only btn-secondary" id="recArchive" style="margin-top:8px;width:100%">📦 Archive old attendance</button>
           <div class="tt-error" id="recAllErr"></div>
         </div>
         <div id="recAllOut" style="margin-top:6px"></div>
@@ -1187,14 +1188,14 @@
     </div>
     <div id="facMain" style="display:none">
       <div class="signed-in">👤 <span>Signed in as <b id="facWho"></b> <span class="lock-chip">Admin</span></span><button class="link-btn" id="facLogout">Sign out</button></div>
-      <div class="card pad gate-card" id="facGate" style="display:none"><div><b>Teacher sign-in</b><div class="tt-menu-sub" id="facGateSub"></div></div><button class="btn-go" id="facGateBtn"></button></div>
+      <div class="owner-only card pad gate-card" id="facGate" style="display:none"><div><b>Teacher sign-in</b><div class="tt-menu-sub" id="facGateSub"></div></div><button class="btn-go" id="facGateBtn"></button></div>
       <div class="fac-tools">
         <input type="search" class="search" id="facultySearch" placeholder="Search name, subject or designation…" autocomplete="off">
-        <button class="btn-go" id="facAdd">＋ Add</button>
+        <button class="owner-only btn-go" id="facAdd">＋ Add</button>
       </div>
       <div class="fac-pin-tools">
-        <button class="btn-go" id="facNewT">🆕 New teacher — sign-in &amp; PIN</button>
-        <button class="btn-go alt" id="facPins">🔑 PIN slips (all staff)</button>
+        <button class="owner-only btn-go" id="facNewT">🆕 New teacher — sign-in &amp; PIN</button>
+        <button class="owner-only btn-go alt" id="facPins">🔑 PIN slips (all staff)</button>
       </div>
       <div class="card pad" id="facNewForm" style="display:none"></div>
       <div class="tt-error" id="facErr"></div>
@@ -1318,8 +1319,8 @@
   <!-- NOTICES -->
   <section class="view" id="view-notices">
     <div id="ntAdmin" style="display:none">
-      <button class="btn-primary" id="ntNewBtn" style="margin-bottom:12px">＋ Post notice</button>
-      <div class="card pad" id="ntForm" style="display:none;margin-bottom:12px">
+      <button class="owner-only btn-primary" id="ntNewBtn" style="margin-bottom:12px">＋ Post notice</button>
+      <div class="owner-only card pad" id="ntForm" style="display:none;margin-bottom:12px">
         <p class="screen-title" style="margin-top:0" id="ntFormTitle">New notice</p>
         <div class="field"><label for="ntTitle">Title</label><input id="ntTitle" maxlength="200" placeholder="e.g. Mid-term exams start on 20 October"></div>
         <div class="field"><label for="ntBody">Message</label><textarea id="ntBody" rows="5" maxlength="5000" placeholder="Write the notice here. Web links become clickable."></textarea></div>
@@ -1494,6 +1495,7 @@
 
   let lastRouteKey = '';
   function render() {
+    try { document.body.classList.toggle('viewer', isAdminUser() && !isOwnerUser()); } catch (e) {}
     const r = parseHash();
     const route = ROUTES[r.key];
     let ok = true;
@@ -1577,7 +1579,8 @@
     $('manageBtn').style.display = DATA.attendanceApi && isAdminUser() ? 'flex' : 'none';
     $('staffSigninRow').style.display = signedIn || !DATA.attendanceApi ? 'none' : 'block';
     $('staffSignoutRow').style.display = signedIn ? 'block' : 'none';
-    if (signedIn) { $('staffSignedAs').textContent = '👤 ' + attAuth.name + (isAdminUser() ? ' (admin)' : ''); $('staffWhoChip').textContent = isAdminUser() ? 'admin · full access' : 'signed in'; }
+    if (signedIn) { $('staffSignedAs').textContent = '👤 ' + attAuth.name + (isAdminUser() ? ' (admin)' : ''); $('staffWhoChip').textContent = isAdminUser() ? (isOwnerUser() ? 'owner · full access' : 'admin · view only') : 'signed in'; }
+    document.body.classList.toggle('viewer', isAdminUser() && !isOwnerUser());
     const hr = new Date().getHours();
     $('greetLine').textContent = hr >= 5 && hr < 12 ? 'Good Morning ☀️' : hr >= 12 && hr < 17 ? 'Good Afternoon 🌤️' : 'Good Evening 🌙';
     $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1985,7 +1988,7 @@
     $('facLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('facPin').value = ''; recScope = null; recAllRows = null; facReset();
       if (isAdminUser()) render(); else { history.replaceState(history.state, '', '#/faculty/me'); render(); }
     } catch (e) { $('facLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -3004,6 +3007,8 @@
   }
   const nowMinLocal = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const isAdminUser = () => !!(attAuth && attAuth.role === 'Admin');
+  // v13.0: only the owner changes data; other admins see everything (view only)
+  const isOwnerUser = () => isAdminUser() && (!!attAuth.owner || nameKey(attAuth.name) === 'saqib munawar');
   /* v11.6/11.7: no "Late" and, for now, no time limit — any day from 1 Sep 2026 up to today can be saved at any time.
      1 Sep – 8 Oct 2026 (before the app started) is labelled as an earlier record. */
   const BACK_FROM = '2026-09-01', BACK_TO = '2026-10-08';
@@ -3352,7 +3357,7 @@
     $('attLoginBtn').disabled = true; $('attLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell);
       $('attPin').value = ''; recScope = null; recAllRows = null; renderAttendance();
     } catch (e) { $('attLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
@@ -3773,7 +3778,7 @@
     $('mkLoginBtn').disabled = true; $('mkLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       $('mkPin').value = ''; recScope = null; recAllRows = null; renderMarks();
     } catch (e) { $('mkLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('mkLoginBtn').disabled = false; $('mkLoginBtn').textContent = 'Sign in';
@@ -3998,7 +4003,7 @@
     $('recLoginBtn').disabled = true; $('recLoginBtn').textContent = 'Signing in…';
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       $('recPin').value = ''; recScope = null; recTab = 'find'; renderRecords();
     } catch (e) { $('recLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('recLoginBtn').disabled = false; $('recLoginBtn').textContent = 'Sign in';
@@ -5045,7 +5050,7 @@
     $('bdLoginBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('bdPin').value = ''; recScope = null; recAllRows = null; renderBoard();
     } catch (e) { $('bdLoginErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
     $('bdLoginBtn').disabled = false;
@@ -5068,7 +5073,7 @@
     $('siBtn').disabled = true;
     try {
       const j = await attApi('login', {}, { name, pin });
-      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
+      attAuth = { name: j.teacher, pin, role: j.role || 'Teacher', owner: !!j.owner, ctrl: j.ctrl || '', teaches: j.teaches || [], teaches2: j.teaches2 || [], teachesBS: j.teachesBS || [] }; store.set('attAuth', JSON.stringify(attAuth)); store.set('attLastName', j.teacher); offerInstallAfterSignIn(); refreshAllCounts(true);
       setBell(j.bell); $('siPin').value = ''; recScope = null; recAllRows = null; myClassesCache = {};
       history.replaceState({ depth: 0 }, '', '#/'); render(); offerInstallAfterSignIn();
     } catch (e) { $('siErr').textContent = e.offline ? 'You need internet to sign in.' : e.message; }
