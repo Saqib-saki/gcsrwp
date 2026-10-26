@@ -878,7 +878,7 @@
             <div class="field"><label for="mgGroup">Group</label><select id="mgGroup"><option value="">All groups</option></select></div>
             <div class="field"><label for="mgShow">Show</label><select id="mgShow"><option value="">All students</option><option value="active">Active only</option><option value="inactive">⏸ Inactive only</option></select></div>
           </div>
-          <button class="owner-only btn-primary" id="mgAdd">＋ Add a student</button>
+          <div class="btn-row" style="margin-top:0"><button class="owner-only btn-primary" id="mgAdd">＋ Add a student</button><button class="owner-only btn-secondary" id="mgBulk">📋 Class list by roll numbers</button></div>
           <div class="tt-error" id="mgErr"></div>
           <p class="note" id="mgSum" style="margin-bottom:0"></p>
         </div>
@@ -5506,6 +5506,87 @@
     const s = mgData.students.find((x) => x.roll === Number(row.dataset.roll)); if (s) mgOpenForm(s);
   });
   $('mgAdd').addEventListener('click', () => mgOpenForm(null));
+  /* v13.2: keep only the students on a list (e.g. promoted to 2nd Year) — everyone else becomes inactive; uses rosterPatch status, no server change */
+  const mgParseRolls = (t) => {
+    const out = new Set(), bad = [];
+    String(t || '').split(/[\s,;]+/).filter(Boolean).forEach((w) => {
+      const m = w.match(/^(\d{1,5})(?:-(\d{1,5}))?$/);
+      if (!m) { bad.push(w); return; }
+      const a = Number(m[1]), b = m[2] ? Number(m[2]) : a;
+      if (b < a || b - a > 2000) { bad.push(w); return; }
+      for (let r = a; r <= b; r++) out.add(r);
+    });
+    return { rolls: out, bad };
+  };
+  let mgBulkPlan = null;
+  function mgBulkOpen() {
+    if (!mgData) return;
+    mgEdit = null; mgBulkPlan = null;
+    $('mgForm').innerHTML = '<p class="screen-title" style="margin-top:0">📋 Class list by roll numbers · ' + esc(yearLabel(mgData.y)) + '</p>' +
+      '<p class="note" style="margin-top:0">Paste the roll numbers of the students who are in this class now (e.g. the promoted list). Students on the list stay <b>active</b>; every other student of ' + esc(yearLabel(mgData.y)) + ' becomes <b>⏸ inactive</b> — left out of attendance and marks lists. Nothing is deleted: their old attendance and marks stay, and any student can be made active again.</p>' +
+      '<div class="field"><label for="mgBulkRolls">Roll numbers (separated by commas, spaces or new lines; ranges like 301-310 are fine)</label><textarea id="mgBulkRolls" rows="6" style="width:100%;font:inherit;padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:inherit"></textarea></div>' +
+      '<div class="field"><label for="mgBulkWhy">Reason for the others</label><input id="mgBulkWhy" value="Not on promoted list"></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="mgBulkCheck">🔎 Check</button><button class="btn-secondary" id="mgCancel">Close</button></div>' +
+      '<div id="mgBulkOut"></div><div class="tt-error" id="mgFErr"></div>';
+    $('mgForm').style.display = 'block';
+    $('mgCancel').onclick = () => { $('mgForm').style.display = 'none'; };
+    $('mgForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function mgBulkCheck() {
+    const { rolls, bad } = mgParseRolls($('mgBulkRolls').value);
+    const out = $('mgBulkOut'); $('mgFErr').textContent = '';
+    if (!rolls.size) { out.innerHTML = ''; $('mgFErr').textContent = 'Paste the roll numbers first.'; return; }
+    const st = mgData.students, have = new Set(st.map((s) => s.roll));
+    const keep = st.filter((s) => rolls.has(s.roll)), off = st.filter((s) => !rolls.has(s.roll));
+    const reAct = keep.filter((s) => s.inactive), newOff = off.filter((s) => !s.inactive), already = off.length - newOff.length;
+    const missing = Array.from(rolls).filter((r) => !have.has(r)).sort((a, b) => a - b);
+    const byG = {}; keep.forEach((s) => { byG[s.group] = (byG[s.group] || 0) + 1; });
+    const lst = (arr) => arr.map((s) => '<span style="display:inline-block;margin:2px 8px 2px 0">' + s.roll + ' ' + esc(s.name) + ' <small>(' + esc(s.group) + ')</small></span>').join('');
+    mgBulkPlan = { y: mgData.y, reAct: reAct.map((s) => s.roll), newOff: newOff.map((s) => s.roll) };
+    out.innerHTML = '<div class="mg-act">' +
+      '<p style="margin:0 0 6px"><b>' + rolls.size + '</b> roll numbers pasted · <b>' + st.length + '</b> students in ' + esc(yearLabel(mgData.y)) + '</p><ul style="margin:0 0 6px;padding-left:20px">' +
+      '<li>✅ Stay active: <b>' + keep.length + '</b>' + (reAct.length ? ' (' + reAct.length + ' made active again)' : '') + '<br><small>' + Object.keys(byG).sort().map((g) => esc(g) + ' ' + byG[g]).join(' · ') + '</small></li>' +
+      '<li>⏸ Become inactive: <b>' + newOff.length + '</b>' + (already ? ' (+' + already + ' already inactive)' : '') + '</li>' +
+      (missing.length ? '<li class="tt-error" style="list-style:disc">⚠️ Not in ' + esc(yearLabel(mgData.y)) + ' records: <b>' + missing.length + '</b> — ' + missing.join(', ') + '<br><small>Add them in the Student Google Sheet if they are new / changed roll numbers.</small></li>' : '') +
+      (bad.length ? '<li class="tt-error" style="list-style:disc">Not understood: ' + esc(bad.slice(0, 20).join(' ')) + '</li>' : '') + '</ul>' +
+      (newOff.length ? '<details><summary>Students who will become inactive (' + newOff.length + ')</summary><div style="margin-top:6px;font-size:.9em">' + lst(newOff) + '</div></details>' : '') +
+      (reAct.length ? '<details><summary>Made active again (' + reAct.length + ')</summary><div style="margin-top:6px;font-size:.9em">' + lst(reAct) + '</div></details>' : '') +
+      (newOff.length || reAct.length ? '<button class="btn-primary mg-danger" id="mgBulkGo" style="margin-top:10px;width:100%">Apply: ' + newOff.length + ' inactive' + (reAct.length ? ', ' + reAct.length + ' active again' : '') + '</button>' : '<p class="note" style="margin:8px 0 0">Nothing to change — the class already matches this list.</p>') +
+      '</div>';
+  }
+  let mgBulkArm = 0;
+  async function mgBulkGo() {
+    const P = mgBulkPlan; if (!P || P.y !== mgData.y) return;
+    const b = $('mgBulkGo');
+    if (Date.now() - mgBulkArm > 4000) { mgBulkArm = Date.now(); b.textContent = 'Tap again to confirm'; return; }
+    mgBulkArm = 0;
+    const why = $('mgBulkWhy').value.trim();
+    const offSt = 'Inactive — ' + (why ? why + ' ' : '') + '(since ' + fmtDate(todayISO()) + ', by ' + (attAuth ? attAuth.name : 'admin') + ')';
+    const ups = P.newOff.map((roll) => ({ roll, status: offSt })).concat(P.reAct.map((roll) => ({ roll, status: 'Active' })));
+    b.disabled = true; $('mgFErr').textContent = '';
+    let done = 0;
+    try {
+      for (let i = 0; i < ups.length; i += 40) {
+        b.textContent = 'Saving… ' + done + ' of ' + ups.length;
+        const j = await attApi('rosterPatch', { year: P.y, update: ups.slice(i, i + 40) });
+        done += Math.min(40, ups.length - i);
+        if (j && j.skipped && j.skipped.length) console.warn('skipped', j.skipped);
+      }
+      toast('✓ Class list applied — ' + P.newOff.length + ' students inactive' + (P.reAct.length ? ', ' + P.reAct.length + ' active again' : ''));
+      $('mgForm').style.display = 'none'; mgBulkPlan = null;
+      mgClassCountsStale(P.y);
+      await mgLoad(true);
+    } catch (e) {
+      $('mgFErr').textContent = (e.offline ? 'You need internet.' : e.message) + (done ? ' — ' + done + ' of ' + ups.length + ' were saved; tap Check and Apply again for the rest.' : '');
+      b.disabled = false; b.textContent = 'Try again';
+    }
+  }
+  $('mgBulk').addEventListener('click', mgBulkOpen);
+  $('mgForm').addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.id === 'mgBulkCheck') mgBulkCheck();
+    else if (t.id === 'mgBulkGo') mgBulkGo();
+  });
   function mgOpenForm(s) {
     const y = mgYk(), bs = isBS(y), isNew = !s;
     mgEdit = s; mgPhotoNew = null; mgRemoveArm = 0;
