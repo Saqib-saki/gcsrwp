@@ -1050,11 +1050,11 @@
       <p class="screen-title" style="margin-top:0">See your own attendance and monthly test results.</p>
       <div class="field"><label for="myYear">Class</label><select id="myYear"><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B1">BS · 1st Semester</option><option value="B3">BS · 3rd Semester</option><option value="B5">BS · 5th Semester</option><option value="B7">BS · 7th Semester</option></select></div>
       <div class="field"><label for="myRoll">College roll number</label><input id="myRoll" type="number" inputmode="numeric" min="1" placeholder="e.g. 433"></div>
-      <div class="field" id="myDobRow"><label for="myDobD">Date of birth (day · month · year)</label><div class="dob-row"><select id="myDobD" aria-label="Day"></select><select id="myDobM" aria-label="Month"></select><select id="myDobY" aria-label="Year"></select></div><input id="myDob" type="hidden"></div>
-      <div class="field" id="myCnicRow" style="display:none"><label for="myCnic">Last 4 digits of your CNIC / B-Form</label><input id="myCnic" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="e.g. 3924" autocomplete="off"></div>
+      <div class="field" id="myDobRow" style="display:none"><label for="myDobD">Date of birth (day · month · year)</label><div class="dob-row"><select id="myDobD" aria-label="Day"></select><select id="myDobM" aria-label="Month"></select><select id="myDobY" aria-label="Year"></select></div><input id="myDob" type="hidden"></div>
+      <div class="field" id="myCnicRow"><label for="myCnic">Last 4 digits of your B-Form / CNIC number</label><input id="myCnic" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]*" placeholder="e.g. 3924" autocomplete="off"></div>
       <button class="btn-primary" id="myGo">Show my record</button>
       <div class="tt-error" id="myErr"></div>
-      <p class="note" id="myHint">Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.</p>
+      <p class="note" id="myHint"></p>
     </div>
     <div id="myOut" style="display:none">
       <div class="signed-in">🎯 <span>Your record</span><button class="link-btn" id="myAgain">Check another roll no.</button></div>
@@ -4341,14 +4341,14 @@
     const roll = parseInt($('myRoll').value, 10), dob = $('myDob').value, myY = yk($('myYear').value), cnic4 = $('myCnic').value.replace(/\D/g, '');
     $('myErr').textContent = '';
     if (!roll) { $('myErr').textContent = 'Enter your college roll number.'; return; }
-    if (isBS(myY) ? cnic4.length !== 4 : !dob) { $('myErr').textContent = isBS(myY) ? 'Enter the last 4 digits of your CNIC / B-Form number.' : 'Choose your date of birth: day, month and year.'; return; }
-    if (!isBS(myY)) { const dd = new Date(dob + 'T00:00:00'); if (isNaN(dd) || dd.getDate() !== Number(dob.slice(8))) { $('myErr').textContent = 'That date does not exist — check the day and month.'; return; } }
+    // v13.2: every class signs in with the last 4 digits of the B-Form / CNIC (date of birth no longer asked)
+    if (cnic4.length !== 4) { $('myErr').textContent = 'Enter the last 4 digits of your B-Form / CNIC number.'; return; }
     const url = DATA.attendanceApi;
     if (!url) { $('myErr').textContent = 'This service is not set up yet.'; return; }
     if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
     $('myGo').disabled = true; $('myGo').textContent = 'Checking…';
     try {
-      const res = await fetch(url, { method: 'POST', body: JSON.stringify(isBS(myY) ? { action: 'myRecord', roll, cnic4, year: myY } : { action: 'myRecord', roll, dob, year: myY }) });
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, cnic4, year: myY }) });
       const j = await res.json();
       if (!j.ok) throw new Error(/PIN|sign in/i.test(j.error || '') ? 'This service is being updated — please try again a little later.' : (j.error || 'Something went wrong.'));
       store.set('roll', String(roll));
@@ -4360,8 +4360,8 @@
   $('myGo').addEventListener('click', loadMy);
   function paintMyKind() {
     const bs = isBS(yk($('myYear').value));
-    $('myDobRow').style.display = bs ? 'none' : ''; $('myCnicRow').style.display = bs ? '' : 'none';
-    $('myHint').textContent = bs ? 'BS students: use the last 4 digits of the CNIC / B-Form number given at admission. If it doesn’t work, ask your teacher or the department to check your record.' : 'Use the date of birth written on your admission form. If it doesn’t work, ask your class teacher to check your record.';
+    $('myDobRow').style.display = 'none'; $('myCnicRow').style.display = '';
+    $('myHint').innerHTML = 'Type the <b>last 4 digits</b> of the ' + (bs ? 'CNIC / B-Form' : 'B-Form / CNIC') + ' number given at admission — e.g. 37405-1234<b>567-8</b> → <b>5678</b>. If it doesn’t work, ask your ' + (bs ? 'teacher or the department' : 'class teacher') + ' to check your record.';
   }
   $('myYear').addEventListener('change', paintMyKind); paintMyKind();
   $('myCnic').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMy(); });
