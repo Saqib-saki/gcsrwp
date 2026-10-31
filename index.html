@@ -3033,6 +3033,8 @@
   const dutyTT = () => isOwnerUser() || !!myDuty().tt;
   const dutyStu = (y) => isOwnerUser() || !!(isBS(y) ? myDuty().bs : myDuty().inter);
   const dutyAnyStu = () => isOwnerUser() || !!(myDuty().inter || myDuty().bs);
+  /* v13.4: enter marks for any class group / subject (Prof. Muhammad Naseer-ul-Hassan) — a Controller only for his own classes */
+  const marksAny = (y) => isOwnerUser() || (!!myDuty().marks && (!attAuth || attAuth.role !== 'Controller' || (attAuth.ctrl === 'bs' ? isBS(y) : !isBS(y))));
   // v13.0: only the owner changes data; other admins see everything (view only)
   const isOwnerUser = () => isAdminUser() && (!!attAuth.owner || nameKey(attAuth.name) === 'saqib munawar');
   /* v11.6/11.7: no "Late" and, for now, no time limit — any day from 1 Sep 2026 up to today can be saved at any time.
@@ -3418,7 +3420,7 @@
     const sel = $(pre + 'Class'), who = attAuth ? attAuth.name : '';
     if (!attAuth || sel.dataset.who === who) return;
     sel.dataset.who = who;
-    const has = (y) => (pre === 'att' ? myClasses(y).length : myTeaches(y).length);
+    const has = (y) => (pre === 'att' ? myClasses(y).length : myTeaches(y).length || marksAny(y));
     const first = attAuth.role === 'Admin' || has(1) ? 1 : (ALL_YEARS.find((y) => has(y)) || 1);
     const want = yearOptValue(first);
     if (sel.value !== want) { sel.value = want; classSoon(pre); }
@@ -3747,11 +3749,11 @@
   }
 
   function fillMkGroups() {
-    const admin = isAdmin(), y = mkYear(), all = yrCfg(y).groups;
+    const any = marksAny(mkYear()), admin = isAdmin() || any, y = mkYear(), all = yrCfg(y).groups;
     const groups = (admin ? all : all.filter((g) => myTeaches(y).some((t) => t.group === g))).filter((g) => hasStudents(y, g, 'All'));
     $('mkGroup').innerHTML = groups.map((g) => '<option value="' + g + '">' + esc(groupLabel(g, y)) + '</option>').join('');
     const last = store.get('mkLastGroup' + ysfx(y)); if (last && groups.indexOf(last) >= 0) $('mkGroup').value = last;
-    $('mkNote').textContent = admin ? 'As admin you can enter marks for any group and subject.'
+    $('mkNote').textContent = any && !isAdmin() ? '✏️ You can enter ' + yearLabel(y) + ' marks for any group and subject, as that class’s teacher would. Marks you enter show “(Controller)”; marks a teacher already entered keep the teacher’s name.' : admin ? 'As admin you can enter marks for any group and subject.'
       : groups.length ? 'You can enter ' + yearLabel(y) + ' marks for: ' + myTeaches(y).map((t) => t.group + ' · ' + t.subject).join(', ') + '.'
       : isBS(y) ? 'No ' + yearLabel(y) + ' courses are listed against your name in the BS timetable. For a class whose timetable is not in the app yet, mark its attendance once (Mark Attendance → Other subject) and you can then enter its marks.'
       : 'No ' + yearLabel(y) + ' subjects are listed against your name. Ask the admin to add them in the Teachers sheet (column "' + (y === 2 ? 'Teaches 2nd Year' : 'Teaches') + '").';
@@ -3761,8 +3763,9 @@
   function fillMkSubjects() {
     const g = $('mkGroup').value;
     const y = mkYear();
-    const list = isAdmin() ? groupSubjects(g, y) : myTeaches(y).filter((t) => t.group === g).map((t) => t.subject);
-    $('mkSubject').innerHTML = list.map((s) => '<option>' + esc(s) + '</option>').join('') + (isAdmin() ? '<option value="__other">Other subject…</option>' : '');
+    const any = isAdmin() || marksAny(y);
+    const list = any ? groupSubjects(g, y) : myTeaches(y).filter((t) => t.group === g).map((t) => t.subject);
+    $('mkSubject').innerHTML = list.map((s) => '<option>' + esc(s) + '</option>').join('') + (any ? '<option value="__other">Other subject…</option>' : '');
     const last = store.get('mkLastSubject'); if (last && list.indexOf(last) >= 0) $('mkSubject').value = last;
     $('mkOtherWrap').style.display = $('mkSubject').value === '__other' ? 'block' : 'none';
     fillMkSections();
@@ -3770,7 +3773,7 @@
   function fillMkSections() {
     const g = $('mkGroup').value, subj = normSubj(mkSubjectVal()).toLowerCase(), y = mkYear();
     const base = isBS(y) ? ['All'] : g === 'ETH' ? ['All'] : g === 'STAR' ? starSectionsFor(y) : y === 2 ? (typeof GROUP_SECTIONS_2 !== 'undefined' && GROUP_SECTIONS_2[g] ? ['All'].concat(GROUP_SECTIONS_2[g]) : ['All']) : SECTIONS_ALL;
-    const secs = limitToMine(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
+    const secs = limitToMine(y) && !marksAny(y) ? base.filter((s) => myClasses(y).some((c) => c.group === g && c.section === s && c.lectures.some((l) => normSubj(l.subject).toLowerCase() === subj))) : [];
     const use0 = secs.length ? secs : base, use1 = use0.filter((sx) => hasStudents(y, g, sx)), use = use1.length ? use1 : use0;
     const prev = $('mkSection').value;
     $('mkSection').innerHTML = use.map((s) => '<option>' + s + '</option>').join('');
@@ -4665,7 +4668,7 @@
       const curU = $('rsU') && $('rsU').value !== '' ? $('rsU').options[$('rsU').selectedIndex].text : '';
       const lastT = $('rsT') ? $('rsT').value : (withMarks[withMarks.length - 1] || d.tests[0]);
       const curV = $('rsV') ? $('rsV').value : 'stu', curW = $('rsW') ? $('rsW').value : '';
-      $('recRes').innerHTML = '<div class="seg rs-view" id="rsVseg"><button data-v="stu"' + (curV !== 'tch' ? ' class="on"' : '') + '>👥 Student-wise</button><button data-v="tch"' + (curV === 'tch' ? ' class="on"' : '') + '>👩‍🏫 Teacher-wise</button></div>' +
+      $('recRes').innerHTML = (marksAny(recYear) ? '<div style="display:flex;justify-content:flex-end;margin:0 0 6px"><button class="mini-btn" id="rsEnterMk" title="Enter marks for any class">✏️ Enter marks</button></div>' : '') + '<div class="seg rs-view" id="rsVseg"><button data-v="stu"' + (curV !== 'tch' ? ' class="on"' : '') + '>👥 Student-wise</button><button data-v="tch"' + (curV === 'tch' ? ' class="on"' : '') + '>👩‍🏫 Teacher-wise</button></div>' +
         tabFilters('rs', d, '<div class="field-row"><div class="field" style="display:none"><label for="rsV">Show</label><select id="rsV">' + selOpts([['stu', 'Student-wise'], ['tch', 'Teacher-wise']], curV) + '</select></div>' +
         '<div class="field" id="rsWf"><label for="rsW">Find a teacher</label><input id="rsW" type="search" list="rsWl" autocomplete="off" placeholder="Type a name, e.g. Asghar" value="' + esc(curW) + '"><datalist id="rsWl"></datalist></div></div>' +
         '<div class="field-row"><div class="field"><label for="rsT">Test</label><select id="rsT">' + selOpts([['*', 'All tests (month-wise)']].concat(d.tests.map((t) => [t, t + (withMarks.indexOf(t) < 0 ? ' (no marks yet)' : '')])), lastT) + '</select></div>' +
@@ -4675,6 +4678,7 @@
       $('rsW').oninput = () => paintResTab(); $('rsW').onchange = null;   // typing already repaints; a repaint on blur would swallow the next tap
       $('rsVseg').onclick = (e) => { const b = e.target.closest('button[data-v]'); if (!b) return; $('rsV').value = b.dataset.v; document.querySelectorAll('#rsVseg button').forEach((x) => x.classList.toggle('on', x === b)); paintResTab(); };
       $('rsC').onclick = () => resCsv();
+      if ($('rsEnterMk')) $('rsEnterMk').onclick = () => { const v = yearOptValue(isBS(recYear) ? recYear : Number(recYear)); if ($('mkClass')) { $('mkClass').value = v; $('mkClass').dataset.who = attAuth ? attAuth.name : ''; } go('/marks'); };
       $('rsL').onclick = () => toggleResLog();
     }
     const tSel = $('rsT').value, uSel = $('rsU').value, g = $('rsG').value, q = $('rsQ').value.trim(), all = tSel === '*', ti = d.tests.indexOf(tSel);
