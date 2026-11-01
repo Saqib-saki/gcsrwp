@@ -304,6 +304,52 @@
   .ms-act button.opt { display: block; width: 100%; text-align: left; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 10px; padding: 11px 12px; margin-top: 8px; font: inherit; font-weight: 700; cursor: pointer; }
   @media print { body.print-ms > *:not(#msPrint) { display: none !important; } body.print-ms #msPrint { display: block !important; } #msPrint table.ms { min-width: 0; font-size: 7pt; } @page { size: landscape; margin: 8mm; } }
   #msPrint { display: none; }
+  /* v13.5: Principal's dashboard */
+  .ds-hero { background: linear-gradient(135deg, #17784a, #0b4429); color: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; }
+  .ds-hero-t { font-weight: 800; font-size: 1.05rem; } .ds-hero-s { opacity: .85; font-size: .8rem; margin-top: 2px; }
+  .ds-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  @media (min-width: 760px) { .ds-kpis { grid-template-columns: repeat(6, 1fr); } }
+  .ds-kpi { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px 8px; text-align: center; border-top: 4px solid var(--navy); }
+  .ds-kpi > b { display: block; font-size: 1.35rem; line-height: 1.2; } .ds-kpi > span { font-size: .72rem; color: var(--muted); }
+  .ds-kpi.good { border-top-color: #1a7f4e; } .ds-kpi.good b { color: #1a7f4e; } .ds-kpi.mid { border-top-color: #d9a400; } .ds-kpi.bad { border-top-color: var(--red); } .ds-kpi.bad b { color: var(--red); }
+  .ds-kpis.sm { grid-template-columns: repeat(3, 1fr); } .ds-kpi.sm { padding: 6px; border-top-width: 3px; } .ds-kpi.sm > b { font-size: 1.05rem; }
+  .ds-row2 { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; } .ds-row2 > .card { margin: 0; }
+  @media (min-width: 900px) { .ds-row2 { grid-template-columns: 1fr 1.4fr; } }
+  .ds-h { font-weight: 800; color: var(--accent); margin-bottom: 6px; } .ds-h small { font-weight: 500; color: var(--muted); font-size: .72rem; margin-left: 6px; } .ds-h2 { margin: 6px 2px; }
+  .ds-h3 { font-weight: 700; font-size: .85rem; margin: 10px 0 4px; }
+  .ds-dn-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .ds-donut { width: 150px; height: 150px; flex: none; }
+  .ds-dn-big { font-size: 24px; font-weight: 800; fill: var(--text); } .ds-dn-sm { font-size: 10px; fill: var(--muted); }
+  .ds-legend { flex: 1; min-width: 170px; font-size: .8rem; } .ds-legend div { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+  .ds-legend i { width: 12px; height: 12px; border-radius: 3px; flex: none; } .ds-legend b { margin-left: auto; } .ds-legend small { width: 34px; text-align: right; color: var(--muted); }
+  .ds-scroll { overflow-x: auto; } .ds-cols { display: block; } .ds-ax { font-size: 9px; fill: var(--muted); } .ds-ax2 { font-size: 8px; } .ds-dayhit { cursor: pointer; }
+  .ds-bars { display: grid; gap: 6px; } .ds-bar { display: grid; grid-template-columns: 110px 1fr 70px; align-items: center; gap: 8px; font-size: .78rem; }
+  .ds-bl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-bv { text-align: right; font-weight: 700; } .ds-bv small { color: var(--red); font-weight: 600; }
+  .ds-bt, .ds-mini { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--chip-bg); } .ds-bt i, .ds-mini i { display: block; height: 100%; }
+  .ds-mini { height: 6px; margin-top: 4px; width: 100%; max-width: 220px; }
+  .ds-stars { position: relative; display: inline-block; color: #c9ced6; letter-spacing: 1px; font-size: .95rem; line-height: 1; white-space: nowrap; }
+  .ds-sf { position: absolute; left: 0; top: 0; overflow: hidden; color: #f2b01e; }
+  .ds-podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .ds-pod { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: inherit; cursor: pointer; text-align: center; }
+  .ds-pod b { font-size: .78rem; } .ds-pod small { font-size: .68rem; color: var(--muted); } .ds-medal { font-size: 1.4rem; }
+  .ds-av { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; color: #fff; background: #8a94a6; flex: none; }
+  .ds-av.b-ex { background: #1a7f4e; } .ds-av.b-gd { background: #2f6fb0; } .ds-av.b-fr { background: #d9a400; } .ds-av.b-na { background: var(--red); }
+  .ds-t { border-top: 1px solid var(--border); } .ds-t:first-child { border-top: none; }
+  .ds-tr { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 2px; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .ds-rank { width: 18px; color: var(--muted); font-size: .75rem; text-align: right; flex: none; }
+  .ds-tn { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ds-tn b { font-size: .88rem; } .ds-tn small { color: var(--muted); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ds-tsc { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; } .ds-tsc small { font-size: .7rem; color: var(--muted); }
+  .ds-band { font-weight: 700; } .ds-band.b-ex { color: #1a7f4e; } .ds-band.b-gd { color: #2f6fb0; } .ds-band.b-fr { color: #b38600; } .ds-band.b-na { color: var(--red); }
+  .ds-det { padding: 4px 0 12px 28px; } .ds-strip { display: flex; flex-wrap: wrap; gap: 3px; } .ds-strip i { width: 14px; height: 14px; border-radius: 3px; }
+  .ds-ul { margin: 4px 0; padding-left: 18px; font-size: .78rem; max-height: 260px; overflow: auto; }
+  #dsPrint { display: none; }
+  @media print { body.print-ds > *:not(#dsPrint) { display: none !important; } body.print-ds #dsPrint { display: block !important; } }
+  .dsp { font-size: 9.5pt; color: #000; } .dsp-head { display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #10345c; padding-bottom: 6px; margin-bottom: 8px; }
+  .dsp-head img { width: 46px; height: 46px; } .dsp-head b { font-size: 12pt; } .dsp-head div div { font-weight: 700; font-size: 11pt; color: #b3261e; }
+  .dsp-sum { margin: 4px 0 8px; } .dsp-t { width: 100%; border-collapse: collapse; margin-bottom: 10px; } .dsp-t th, .dsp-t td { border: 1px solid #999; padding: 3px 5px; text-align: left; } .dsp-t th { background: #eef2f7; }
+  .dsp-one { margin: 6px 0; page-break-inside: avoid; } .dsp-one ol { margin: 3px 0 0 18px; padding: 0; font-size: 8.5pt; }
+  .dsp-sign { display: flex; justify-content: space-between; margin-top: 40px; } .dsp-sign span { border-top: 1px solid #000; padding-top: 3px; width: 28%; text-align: center; }
+  .dsp-note { font-size: 7.5pt; color: #444; margin-top: 10px; }
+
   .ttc-tasks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   .ttc-tasks button { text-align: left; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 12px; padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; font: inherit; }
   .ttc-tasks button span { font-size: 1.2rem; } .ttc-tasks button b { font-size: .82rem; } .ttc-tasks button small { font-size: .7rem; color: var(--muted); }
@@ -1090,8 +1136,24 @@
       <div id="bdAdmin">
         <div class="seg yr-seg" id="bdYearSeg"><button data-y="1" class="on">1st Year</button><button data-y="2">2nd Year</button><button data-y="B1">BS 1st</button><button data-y="B3">BS 3rd</button><button data-y="B5">BS 5th</button><button data-y="B7">BS 7th</button></div>
         <div class="seg" id="bdTabs">
-          <button data-tab="day" class="on">📋 Day board</button>
+          <button data-tab="dash" class="on">📊 At a glance</button>
+          <button data-tab="day">📋 Day board</button>
           <button data-tab="week">📅 Weekly report</button>
+        </div>
+        <div id="bdDash">
+          <div class="card pad">
+            <div class="field-row">
+              <div class="field"><label for="dsClass">Classes</label><select id="dsClass"><option value="all">All classes</option><option value="1">1st Year</option><option value="2">2nd Year</option><option value="B1">BS 1st Semester</option><option value="B3">BS 3rd Semester</option><option value="B5">BS 5th Semester</option><option value="B7">BS 7th Semester</option></select></div>
+              <div class="field"><label for="dsRange">Period</label><select id="dsRange"><option value="week">This week</option><option value="7">Last 7 days</option><option value="month" selected>This month</option><option value="lastmonth">Last month</option><option value="session">Since the app started (8 Oct)</option><option value="custom">Choose dates…</option></select></div>
+            </div>
+            <div class="field-row" id="dsCustom" style="display:none">
+              <div class="field"><label for="dsFrom">From</label><input id="dsFrom" type="date"></div>
+              <div class="field"><label for="dsTo">To</label><input id="dsTo" type="date"></div>
+            </div>
+            <button class="btn-primary" id="dsGo">↻ Refresh</button>
+            <div class="tt-error" id="dsErr"></div>
+          </div>
+          <div id="dsOut" style="margin-top:12px"></div>
         </div>
         <div id="bdDay">
           <div class="card pad">
@@ -1530,7 +1592,7 @@
     if (r.key === 'about') renderAbout();
     if (r.key === 'staff') renderStaff(r.arg);
     if (r.key === 'attendance') renderAttendance();
-    document.body.classList.toggle('wide', r.key === 'records' && (recTab === 'att' || recTab === 'res'));   // v12.7: wide tables on computers
+    document.body.classList.toggle('wide', (r.key === 'records' && (recTab === 'att' || recTab === 'res')) || (r.key === 'board' && bdTab === 'dash'));   // v12.7: wide tables on computers
     if (r.key === 'records') renderRecords();
     if (r.key === 'marks') renderMarks();
     if (r.key === 'board') renderBoard();
@@ -5042,7 +5104,7 @@
   }
   const roomLabel = (r) => { r = String(r || '').trim(); return !r || r === '—' ? '' : /^(room|lab|lt\d)/i.test(r) ? r : 'Room ' + r; };
   const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·' };
-  let bdTab = 'day', bdData = null;
+  let bdTab = 'dash', bdData = null;
   function renderBoard() {
     refreshAllCounts(false);
     const signed = !!attAuth;
@@ -5063,7 +5125,10 @@
     document.querySelectorAll('#bdTabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     $('bdDay').style.display = tab === 'day' ? 'block' : 'none';
     $('bdWeek').style.display = tab === 'week' ? 'block' : 'none';
+    $('bdDash').style.display = tab === 'dash' ? 'block' : 'none';
+    $('bdYearSeg').style.display = tab === 'dash' ? 'none' : '';
     if (tab === 'day') loadBoardDay();
+    if (tab === 'dash') { document.body.classList.add('wide'); if (!dsLast) dsLoad(false); } else document.body.classList.remove('wide');
   }
   $('bdYearSeg').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b || yk(b.dataset.y) === bdYear) return;
@@ -5279,6 +5344,258 @@
     $('bdWeekCsv').addEventListener('click', () => csvDownload('Attendance_marking_' + yearLabel(j.year).replace(/\s+/g, '_') + '_' + from + '_to_' + to + '.csv',
       [['Teacher', 'Due', 'On time', 'Late', 'Sent later (offline)', 'Not marked', 'On time %', 'Not marked (details)']].concat(list.map((e) => [e.name, e.due, e.ok, e.late, e.off, e.miss, pct(e) + '%', e.missed.join('; ')]))));
   }
+
+  /* ---------- v13.5: Principal's dashboard — at a glance, teacher ratings, irregular-teachers report ---------- */
+  const APP_LAUNCH = '2026-10-08';
+  const DS_COL = { ok: '#1a7f4e', same: '#d9a400', later: '#e8710a', miss: '#b3261e' };
+  const DS_LBL = { ok: 'In class (on time)', same: 'Same day, after the period', later: 'On a later day', miss: 'Not marked' };
+  const DS_ICON = { ok: '✅', same: '🕐', later: '📅', miss: '❌' };
+  let dsCache = {}, dsLast = null, dsOpen = '', dsBusy = false, dsShowAll = false;
+  function dsRange(kind) {
+    const t = todayISO(), d = new Date(t + 'T12:00:00Z'), iso = (x) => x.toISOString().slice(0, 10);
+    if (kind === 'week') { const b = new Date(d); b.setUTCDate(b.getUTCDate() - ((b.getUTCDay() + 6) % 7)); return [iso(b), t]; }
+    if (kind === '7') { const b = new Date(d); b.setUTCDate(b.getUTCDate() - 6); return [iso(b), t]; }
+    if (kind === 'month') return [t.slice(0, 8) + '01', t];
+    if (kind === 'lastmonth') return [iso(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1))), iso(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 0)))];
+    if (kind === 'session') return [APP_LAUNCH, t];
+    return [$('dsFrom').value || t, $('dsTo').value || t];
+  }
+  const dsNotPerson = (t) => /\bdep(t|artment)\b|to be announced|^\s*(tba|tbd|vacant)\b/i.test(String(t));
+  const dsYears = () => ($('dsClass').value === 'all' ? ['1', '2'].concat(BS_READY) : [$('dsClass').value]);
+  /** how one timetable lecture was handled: ok (saved during / just after the period), same (later that day), later (another day), miss */
+  function dsSt(L, date) {
+    if (L.st === 'cti' || L.st === 'up' || L.st === 'now') return null;
+    if (L.st === 'miss') return 'miss';
+    const h = L.hit || {};
+    if (h.status === 'Offline') return 'ok';
+    if ((h.firstDay && h.firstDay > date) || h.status === 'Back entry') return 'later';
+    const w = periodWin(L.period, date), hm = /^(\d{1,2}):(\d{2})/.exec(h.first || '');
+    if (w && hm && Number(hm[1]) * 60 + Number(hm[2]) > w[1] + 15) return 'same';
+    return 'ok';
+  }
+  function dsResults(y, d) {
+    const out = {}; if (!d || !d.rows || !d.subjects) return out;
+    const yv = String(yk(y)), yNum = Number(yk(y)) === 2 ? 2 : 1, seen = {};
+    const subjIdx = (name) => { const n = String(name).toLowerCase(), m = n.replace(/\s*\(\d-\d\)\s*$/, ''); let i = d.subjects.findIndex((x) => x.toLowerCase() === n); if (i < 0) i = d.subjects.findIndex((x) => x.toLowerCase().replace(/\s*\(\d-\d\)\s*$/, '') === m); return i; };
+    const secOk = (sec, roll, g) => { if (isBS(y) || !sec || sec === 'All') return true; if (g === 'STAR') return typeof starSecHas === 'function' && starSecHas(sec, starComboOf(roll, yNum)); return ttcSecHas(sec, roll, g, yNum); };
+    scanClasses(() => true).forEach((x) => {
+      if (x.year !== yv || /practical/i.test(x.subject) || x.group === 'ETH') return;
+      const si = subjIdx(x.subject); if (si < 0) return;
+      String(x.teacher || '').split('+').map((t) => t.trim()).filter((t) => t && !isVacant(t)).forEach((t) => {
+        const key = nameKey(t) + '|' + x.group + '|' + x.section + '|' + si; if (seen[key]) return; seen[key] = 1;
+        const ps = []; let ab = 0;
+        d.rows.forEach((r) => { if (r[4] || r[2] !== x.group || !secOk(x.section, r[0], x.group)) return; r[5].forEach((c) => { if (c[1] !== si) return; if (c[4]) ab++; else if (c[3]) ps.push(100 * c[2] / c[3]); }); });
+        if (!ps.length && !ab) return;
+        const o = out[nameKey(t)] || (out[nameKey(t)] = { ps: [], ab: 0, classes: [] });
+        o.ps.push(...ps); o.ab += ab;
+        o.classes.push({ y: yv, cls: x.group + (x.section && x.section !== 'All' ? ' ' + x.section : ''), subj: x.subject, n: ps.length, ab, avg: ps.length ? r1(ps.reduce((a, b) => a + b, 0) / ps.length) : null, pass: ps.length ? Math.round(100 * ps.filter((p) => p >= PASS).length / ps.length) : null });
+      });
+    });
+    return out;
+  }
+  function dsRate(e, res) {
+    const done = e.ok + e.same + e.later, taken = e.due ? 100 * done / e.due : null, ontime = e.due ? 100 * e.ok / e.due : null;
+    const ra = res && res.ps.length ? res.ps.reduce((a, b) => a + b, 0) / res.ps.length : null;
+    const rp = res && res.ps.length ? 100 * res.ps.filter((p) => p >= PASS).length / res.ps.length : null;
+    let score = null;
+    if (taken !== null) { const att = 0.6 * taken + 0.4 * ontime; score = ra !== null ? 0.7 * att + 0.3 * (0.5 * ra + 0.5 * rp) : att; }
+    const band = score === null ? '' : score >= 85 ? 'ex' : score >= 70 ? 'gd' : score >= 55 ? 'fr' : 'na';
+    return { taken, ontime, ra, rp, score, stars: score === null ? 0 : Math.round(score / 10) / 2, band };
+  }
+  const DS_BAND = { ex: 'Excellent', gd: 'Good', fr: 'Fair', na: 'Needs attention' };
+  const dsStars = (n) => '<span class="ds-stars" role="img" aria-label="' + n + ' of 5 stars"><span>★★★★★</span><span class="ds-sf" style="width:' + (20 * n) + '%">★★★★★</span></span>';
+  const dsPct = (x) => (x === null || x === undefined ? '—' : Math.round(x) + '%');
+  const dsInit = (n) => nameKey(n).split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+
+  async function dsLoad(force) {
+    if (dsBusy) return;
+    const kind = $('dsRange').value; $('dsCustom').style.display = kind === 'custom' ? '' : 'none';
+    let [from, to] = dsRange(kind); const years = dsYears();
+    if (from < APP_LAUNCH) from = APP_LAUNCH;   // no attendance was kept in the app before launch day
+    if (!from || !to || from > to) { $('dsErr').textContent = 'Choose a valid date range.'; return; }
+    $('dsErr').textContent = ''; dsBusy = true; $('dsGo').disabled = true; $('dsGo').textContent = 'Loading…';
+    $('dsOut').innerHTML = '<div class="card pad empty">Loading lectures and results…</div>';
+    try {
+      const get = async (key, fn) => { if (!force && dsCache[key]) return dsCache[key]; const v = await fn(); dsCache[key] = v; return v; };
+      const lect = {}, res = {};
+      await Promise.all(years.map(async (y) => {
+        lect[y] = await get('L|' + y + '|' + from + '|' + to, () => attApi('lectures', { from, to, year: yk(y) }));
+        try { res[y] = await get('R|' + y, () => attApi('resultsAll', { year: yk(y) })); } catch (e) { res[y] = null; }
+      }));
+      const any = lect[years[0]]; if (any) setBell({ rule: any.rule, periods: any.periods, today: any.today, nowMin: any.nowMin, weekday: any.weekday });
+      dsLast = dsCompute(from, to, years, lect, res);
+      dsPaint();
+    } catch (e) { if (!recAuthFail(e)) { $('dsOut').innerHTML = ''; $('dsErr').textContent = e.offline ? 'You need internet.' : e.message; } }
+    dsBusy = false; $('dsGo').disabled = false; $('dsGo').textContent = '↻ Refresh';
+  }
+  function dsCompute(from, to, years, lect, res) {
+    const today = (lect[years[0]] || {}).today || todayISO();
+    const marked = new Set(); years.forEach((y) => (lect[y].rows || []).forEach((r) => marked.add(r.date)));
+    const days = [];
+    for (let d = new Date(from + 'T12:00:00Z'); d.toISOString().slice(0, 10) <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+      const iso = d.toISOString().slice(0, 10);
+      if (d.getUTCDay() !== 0 && iso <= today && marked.has(iso)) days.push(iso);
+    }
+    const blank = () => ({ due: 0, ok: 0, same: 0, later: 0, miss: 0 });
+    const tot = blank(), byDay = {}, byPer = {}, byDept = {}, T = {};
+    days.forEach((d) => { byDay[d] = blank(); });
+    years.forEach((y) => {
+      const j = lect[y], yy = yk(y);
+      days.forEach((iso) => {
+        byTeacher(boardDay(iso, j.rows, j, yy).items).forEach((L) => {
+          const s = dsSt(L, iso); if (!s) return;
+          [tot, byDay[iso], byPer[L.period] || (byPer[L.period] = blank()), byDept[normSubj(L.subject)] || (byDept[normSubj(L.subject)] = blank())].forEach((b) => { b.due++; b[s]++; });
+          String(L.teacher || '').split('+').map((t) => t.trim()).filter((t) => t && !noLogin(t) && !dsNotPerson(t)).forEach((t) => {
+            const k = nameKey(t), e = T[k] || (T[k] = Object.assign(blank(), { name: t, subj: {}, days: {}, list: [] }));
+            e.due++; e[s]++; e.subj[normSubj(L.subject)] = 1;
+            const rank = { miss: 3, later: 2, same: 1, ok: 0 }; if (!(iso in e.days) || rank[s] > rank[e.days[iso]]) e.days[iso] = s;
+            if (s !== 'ok') e.list.push({ d: iso, s, y: yy, p: L.period, subj: L.subject, cls: compactGroups(s === 'miss' ? L.parts.filter((p) => p.st === 'miss') : L.parts, yy), part: L.nDone && L.nDone < L.parts.length ? L.nDone + ' of ' + L.parts.length + ' groups marked' : '' });
+          });
+        });
+      });
+    });
+    const R = {}; years.forEach((y) => { const r = dsResults(y, res[y]); Object.keys(r).forEach((k) => { const o = R[k] || (R[k] = { ps: [], ab: 0, classes: [] }); o.ps.push(...r[k].ps); o.ab += r[k].ab; o.classes.push(...r[k].classes); }); });
+    const teachers = Object.keys(T).map((k) => { const e = T[k]; return Object.assign(e, { k, res: R[k] || null, rate: dsRate(e, R[k]) }); });
+    return { from, to, years, days, tot, byDay, byPer, byDept, teachers, today, cls: $('dsClass').options[$('dsClass').selectedIndex].text };
+  }
+
+  /* ---- charts (inline SVG, colours from DS_COL) ---- */
+  function dsDonut(b) {
+    const parts = ['ok', 'same', 'later', 'miss'].filter((k) => b[k]), R = 54, C = 2 * Math.PI * R; let off = 0;
+    const taken = b.due ? Math.round(100 * (b.ok + b.same + b.later) / b.due) : 0;
+    const arcs = parts.map((k) => { const len = C * b[k] / b.due, s = '<circle r="' + R + '" cx="70" cy="70" fill="none" stroke="' + DS_COL[k] + '" stroke-width="22" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 70 70)"><title>' + DS_LBL[k] + ': ' + b[k] + '</title></circle>'; off += len; return s; }).join('');
+    return '<svg viewBox="0 0 140 140" class="ds-donut" role="img" aria-label="' + taken + '% of lectures marked"><circle r="' + R + '" cx="70" cy="70" fill="none" stroke="var(--border)" stroke-width="22"/>' + arcs +
+      '<text x="70" y="68" text-anchor="middle" class="ds-dn-big">' + taken + '%</text><text x="70" y="86" text-anchor="middle" class="ds-dn-sm">classes taken</text></svg>';
+  }
+  function dsLegend(b) {
+    return '<div class="ds-legend">' + ['ok', 'same', 'later', 'miss'].map((k) => '<div><i style="background:' + DS_COL[k] + '"></i>' + DS_ICON[k] + ' ' + DS_LBL[k] + '<b>' + b[k] + '</b><small>' + (b.due ? Math.round(100 * b[k] / b.due) : 0) + '%</small></div>').join('') + '</div>';
+  }
+  function dsColumns(days, byDay) {
+    if (!days.length) return '<p class="note">No working days in this range yet.</p>';
+    const W = Math.max(300, days.length * 26 + 30), H = 150, base = 120, mx = Math.max(1, ...days.map((d) => byDay[d].due)), bw = Math.min(18, (W - 30) / days.length - 6);
+    let g = '';
+    days.forEach((d, i) => {
+      const b = byDay[d], x = 24 + i * ((W - 30) / days.length); let y = base;
+      ['ok', 'same', 'later', 'miss'].forEach((k) => { if (!b[k]) return; const h = (base - 12) * b[k] / mx; y -= h; g += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="' + DS_COL[k] + '" rx="2"><title>' + fmtDate(d) + ' · ' + DS_LBL[k] + ': ' + b[k] + '</title></rect>'; });
+      const wd = 'SMTWTFS'[new Date(d + 'T12:00:00Z').getUTCDay()];
+      g += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (base + 13) + '" text-anchor="middle" class="ds-ax">' + Number(d.slice(8)) + '</text><text x="' + (x + bw / 2).toFixed(1) + '" y="' + (base + 25) + '" text-anchor="middle" class="ds-ax ds-ax2">' + wd + '</text>';
+      g += '<rect x="' + (x - 2).toFixed(1) + '" y="4" width="' + (bw + 4).toFixed(1) + '" height="' + (base + 24) + '" fill="transparent" class="ds-dayhit" data-day="' + d + '"><title>' + fmtDate(d) + ': ' + b.due + ' lectures · ' + b.miss + ' not marked — tap to open the day board</title></rect>';
+    });
+    return '<div class="ds-scroll"><svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="ds-cols" role="img" aria-label="Lectures per day">' +
+      '<line x1="20" x2="' + (W - 4) + '" y1="' + base + '" y2="' + base + '" stroke="var(--border)"/>' + g + '</svg></div>';
+  }
+  function dsBars(rows, label) {
+    if (!rows.length) return '';
+    return '<div class="ds-bars">' + rows.map((r) => {
+      const b = r.b, seg = (k) => (b[k] ? '<i style="width:' + (100 * b[k] / b.due).toFixed(1) + '%;background:' + DS_COL[k] + '" title="' + DS_LBL[k] + ': ' + b[k] + '"></i>' : '');
+      return '<div class="ds-bar"><span class="ds-bl">' + esc(label(r)) + '</span><span class="ds-bt">' + seg('ok') + seg('same') + seg('later') + seg('miss') + '</span><span class="ds-bv">' + Math.round(100 * (b.ok + b.same + b.later) / b.due) + '%' + (b.miss ? ' <small>❌' + b.miss + '</small>' : '') + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  function dsPaint() {
+    const D = dsLast; if (!D) return;
+    const t = D.tot, taken = t.due ? Math.round(100 * (t.ok + t.same + t.later) / t.due) : 0, ontime = t.due ? Math.round(100 * t.ok / t.due) : 0;
+    const rated = D.teachers.filter((e) => e.rate.score !== null), avgR = rated.length ? rated.reduce((a, e) => a + e.rate.score, 0) / rated.length : null;
+    const full = D.teachers.filter((e) => e.due && !e.miss).length, attn = D.teachers.filter((e) => e.rate.band === 'na').length;
+    const kpi = (v, l, cls) => '<div class="ds-kpi ' + (cls || '') + '"><b>' + v + '</b><span>' + l + '</span></div>';
+    let h = '<div class="ds-hero"><div class="ds-hero-t">' + esc(D.cls) + ' · ' + esc(fmtDate(D.from)) + (D.to !== D.from ? ' – ' + esc(fmtDate(D.to)) : '') + '</div><div class="ds-hero-s">' + D.days.length + ' working day' + (D.days.length === 1 ? '' : 's') + ' · ' + D.teachers.length + ' teachers · updated ' + fmtHM(nowMinLocal()) + '</div></div>';
+    h += '<div class="ds-kpis">' + kpi(t.due, 'Lectures due') + kpi(taken + '%', 'Classes taken', taken >= 90 ? 'good' : taken >= 75 ? 'mid' : 'bad') + kpi(ontime + '%', 'Marked in class', ontime >= 80 ? 'good' : ontime >= 60 ? 'mid' : 'bad') +
+      kpi(t.miss, 'Not marked', t.miss ? 'bad' : 'good') + kpi(full, 'Teachers with no miss', 'good') + kpi(avgR === null ? '—' : dsStars(Math.round(avgR / 10) / 2), 'Average rating' + (avgR === null ? '' : ' · ' + Math.round(avgR)), '') + '</div>';
+    h += '<div class="ds-row2"><div class="card pad ds-card"><div class="ds-h">How lectures were marked</div><div class="ds-dn-wrap">' + dsDonut(t) + dsLegend(t) + '</div></div>' +
+      '<div class="card pad ds-card"><div class="ds-h">Day by day <small>tap a day to open its board</small></div>' + dsColumns(D.days, D.byDay) + '</div></div>';
+    const per = Object.keys(D.byPer).sort((a, b) => periodIndex(a) - periodIndex(b)).map((p) => ({ p, b: D.byPer[p] }));
+    const dept = Object.keys(D.byDept).map((s) => ({ s, b: D.byDept[s] })).filter((r) => r.b.due >= 3).sort((a, b) => (a.b.ok + a.b.same + a.b.later) / a.b.due - (b.b.ok + b.b.same + b.b.later) / b.b.due).slice(0, 10);
+    h += '<div class="ds-row2"><div class="card pad ds-card"><div class="ds-h">By period</div>' + dsBars(per, (r) => (/^[IVX]+$/.test(r.p) ? 'Period ' + r.p : r.p)) + '</div>' +
+      '<div class="card pad ds-card"><div class="ds-h">Subjects needing attention <small>lowest first</small></div>' + (dsBars(dept, (r) => r.s) || '<p class="note">Not enough lectures yet.</p>') + '</div></div>';
+    // leaderboard
+    const top = rated.slice().sort((a, b) => b.rate.score - a.rate.score).slice(0, 3);
+    if (top.length) h += '<div class="ds-h ds-h2">🏆 Top teachers</div><div class="ds-podium">' + top.map((e, i) => '<button class="ds-pod" data-t="' + esc(e.k) + '"><span class="ds-medal">' + ['🥇', '🥈', '🥉'][i] + '</span><span class="ds-av b-' + e.rate.band + '">' + esc(dsInit(e.name)) + '</span><b>' + esc(e.name) + '</b>' + dsStars(e.rate.stars) + '<small>' + dsPct(e.rate.taken) + ' taken · ' + (e.rate.ra === null ? 'no results yet' : 'results ' + dsPct(e.rate.ra)) + '</small></button>').join('') + '</div>';
+    h += '<div class="card pad"><div class="ds-h" style="margin-bottom:8px">👩‍🏫 Teacher ratings <small>tap a teacher for the full record</small></div>' +
+      '<div class="field-row"><div class="field"><label for="dsQ">Find</label><input id="dsQ" type="search" placeholder="Teacher or subject"></div>' +
+      '<div class="field"><label for="dsSort">Sort</label><select id="dsSort"><option value="rate">Rating — best first</option><option value="low">Rating — lowest first</option><option value="miss">Most not marked</option><option value="name">A – Z</option></select></div>' +
+      '<div class="field"><label for="dsBand">Show</label><select id="dsBand"><option value="">All teachers</option><option value="ex">⭐ Excellent</option><option value="gd">Good</option><option value="fr">Fair</option><option value="na">⚠️ Needs attention (' + attn + ')</option></select></div></div>' +
+      '<div id="dsList"></div>' +
+      '<p class="note" style="margin-bottom:0"><b>Rating</b> (out of 5 ★, score 0–100): 70% class-taking — classes taken (60%) and marked during the class (40%) — and 30% results of the teacher’s classes in the tests so far (average % and pass %, pass = ' + PASS + '%). Without results yet, class-taking only. Excellent ≥ 85 · Good ≥ 70 · Fair ≥ 55 · below that: needs attention. A class counts as taken when its attendance is marked in the app.</p></div>';
+    h += '<div class="card pad ds-rep"><div class="ds-h">📄 Report: teachers not taking regular classes</div><div class="field-row">' +
+      '<div class="field"><label for="dsRepRule">Include teachers with</label><select id="dsRepRule"><option value="t90">Classes taken below 90%</option><option value="t80" selected>Classes taken below 80%</option><option value="t70">Classes taken below 70%</option><option value="m3">3 or more lectures not marked</option><option value="m1">Any lecture not marked</option><option value="na">Rating: needs attention</option></select></div></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="dsRepGo">🖨 Make the report (print / PDF)</button><button class="btn-secondary" id="dsRepCsv">⬇ Excel (CSV)</button></div><p class="note" id="dsRepNote" style="margin-bottom:0"></p></div>';
+    h += '<p class="note">Counted: timetable lectures whose period has ended, one per teacher per period (a class taught to several groups together is one lecture; it counts as not marked if any group was missed). Days on which nobody in the college marked attendance are treated as holidays; CTI classes are left out. ' + DS_ICON.ok + ' saved during the period (or within 15 min after it / offline on the phone) · ' + DS_ICON.same + ' saved later the same day · ' + DS_ICON.later + ' saved on a later day.</p>';
+    $('dsOut').innerHTML = h;
+    ['dsQ', 'dsSort', 'dsBand'].forEach((id) => $(id).addEventListener(id === 'dsQ' ? 'input' : 'change', dsPaintList));
+    $('dsRepRule').onchange = dsRepCount; dsRepCount();
+    $('dsRepGo').onclick = dsReport; $('dsRepCsv').onclick = dsReportCsv;
+    $('dsOut').querySelectorAll('.ds-pod').forEach((b) => { b.onclick = () => { dsOpen = b.dataset.t; $('dsQ').value = ''; $('dsBand').value = ''; dsPaintList(); const r = $('dsList').querySelector('[data-t="' + CSS.escape(dsOpen) + '"]'); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; });
+    $('dsOut').querySelectorAll('.ds-dayhit').forEach((r) => { r.onclick = () => { const d = r.dataset.day; $('bdDate').value = d; if (D.years.length === 1) { bdYear = yk(D.years[0]); document.querySelectorAll('#bdYearSeg button').forEach((x) => x.classList.toggle('on', yk(x.dataset.y) === bdYear)); } showBdTab('day'); window.scrollTo(0, 0); }; });
+    dsPaintList();
+  }
+  function dsPaintList() {
+    const D = dsLast; if (!D || !$('dsList')) return;
+    const q = $('dsQ').value.trim().toLowerCase(), band = $('dsBand').value, sort = $('dsSort').value;
+    let L = D.teachers.filter((e) => (!band || e.rate.band === band) && (!q || (e.name + ' ' + Object.keys(e.subj).join(' ')).toLowerCase().indexOf(q) >= 0));
+    const sc = (e) => (e.rate.score === null ? -1 : e.rate.score);
+    L.sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'miss' ? (a, b) => b.miss - a.miss || sc(a) - sc(b) : sort === 'low' ? (a, b) => sc(a) - sc(b) : (a, b) => sc(b) - sc(a) || a.name.localeCompare(b.name));
+    const nAll = L.length; if (!dsShowAll && !q && !band && nAll > 25) L = L.slice(0, 25);
+    $('dsList').innerHTML = L.length ? L.map((e, i) => {
+      const r = e.rate, open = dsOpen === e.k;
+      const seg = (k) => (e[k] ? '<i style="width:' + (100 * e[k] / e.due).toFixed(1) + '%;background:' + DS_COL[k] + '"></i>' : '');
+      return '<div class="ds-t' + (open ? ' open' : '') + '" data-t="' + esc(e.k) + '"><button class="ds-tr"><span class="ds-rank">' + (sort === 'rate' || sort === 'low' ? i + 1 : '') + '</span><span class="ds-av b-' + r.band + '">' + esc(dsInit(e.name)) + '</span>' +
+        '<span class="ds-tn"><b>' + esc(e.name) + '</b><small>' + esc(Object.keys(e.subj).slice(0, 3).join(', ')) + '</small><span class="ds-mini">' + seg('ok') + seg('same') + seg('later') + seg('miss') + '</span></span>' +
+        '<span class="ds-tsc">' + dsStars(r.stars) + '<small class="ds-band b-' + r.band + '">' + (DS_BAND[r.band] || '—') + '</small><small>' + dsPct(r.taken) + ' taken' + (e.miss ? ' · <b class="low">❌ ' + e.miss + '</b>' : '') + '</small></span></button>' +
+        (open ? dsDetail(e) : '') + '</div>';
+    }).join('') + (L.length < nAll ? '<button class="btn-secondary" id="dsMore" style="margin-top:8px">Show all ' + nAll + ' teachers</button>' : '') : '<div class="empty">No teachers match.</div>';
+    if ($('dsMore')) $('dsMore').onclick = () => { dsShowAll = true; dsPaintList(); };
+    $('dsList').querySelectorAll('.ds-tr').forEach((b) => { b.onclick = () => { const k = b.parentNode.dataset.t; dsOpen = dsOpen === k ? '' : k; dsPaintList(); }; });
+    $('dsList').querySelectorAll('[data-print-t]').forEach((b) => { b.onclick = () => dsReport(null, b.dataset.printT); });
+  }
+  function dsDetail(e) {
+    const D = dsLast, r = e.rate, chip = (v, l) => '<div class="ds-kpi sm"><b>' + v + '</b><span>' + l + '</span></div>';
+    let h = '<div class="ds-det"><div class="ds-kpis sm">' + chip(e.due, 'Lectures due') + chip(e.ok, DS_ICON.ok + ' In class') + chip(e.same, DS_ICON.same + ' Same day') + chip(e.later, DS_ICON.later + ' Later day') + chip('<span class="' + (e.miss ? 'low' : '') + '">' + e.miss + '</span>', DS_ICON.miss + ' Not marked') +
+      chip(r.score === null ? '—' : Math.round(r.score), 'Score / 100') + '</div>';
+    h += '<div class="ds-h3">Day by day</div><div class="ds-strip">' + D.days.map((d) => { const s = e.days[d]; return '<i title="' + fmtDate(d) + (s ? ' · ' + DS_LBL[s] : ' · no lecture') + '" style="background:' + (s ? DS_COL[s] : 'var(--chip-bg)') + '"></i>'; }).join('') + '</div>';
+    const res = e.res;
+    h += '<div class="ds-h3">Results of their classes' + (res && res.ps.length ? ' · average ' + dsPct(r.ra) + ' · pass ' + dsPct(r.rp) : '') + '</div>' +
+      (res && res.classes.length ? '<div style="overflow-x:auto"><table class="wl sum"><thead><tr><th>Class</th><th>Subject</th><th class="num">Marks</th><th class="num">Avg</th><th class="num">Pass</th></tr></thead><tbody>' +
+        res.classes.map((c) => '<tr><td>' + esc(yearLabel(yk(c.y)) + ' · ' + c.cls) + '</td><td>' + esc(c.subj) + '</td><td class="num">' + c.n + (c.ab ? ' <small>+' + c.ab + ' abs</small>' : '') + '</td><td class="num' + (c.avg !== null && c.avg < PASS ? ' low' : '') + '">' + dsPct(c.avg) + '</td><td class="num">' + dsPct(c.pass) + '</td></tr>').join('') + '</tbody></table></div>'
+        : '<p class="note" style="margin:0">No test marks for their classes yet.</p>');
+    const L = e.list.slice().sort((a, b) => b.d.localeCompare(a.d) || periodIndex(a.p) - periodIndex(b.p));
+    h += '<div class="ds-h3">Lectures not marked or marked late (' + L.length + ')</div>' + (L.length ? '<ul class="ds-ul">' + L.slice(0, 80).map((x) => '<li>' + DS_ICON[x.s] + ' ' + esc(fmtDate(x.d)) + ' · Period ' + esc(x.p) + ' · ' + esc(yearLabel(x.y)) + ' ' + esc(x.cls) + ' · ' + esc(x.subj) + (x.part ? ' <small>(' + esc(x.part) + ')</small>' : '') + '</li>').join('') + '</ul>' : '<p class="note" style="margin:0">✅ Every lecture marked in class.</p>');
+    h += '<button class="btn-secondary" data-print-t="' + esc(e.k) + '" style="margin-top:8px">🖨 Print this teacher’s record</button></div>';
+    return h;
+  }
+  function dsRepList() {
+    const D = dsLast, rule = $('dsRepRule').value;
+    const ok = (e) => { const t = e.rate.taken; if (!e.due) return false; return rule === 't90' ? t < 90 : rule === 't80' ? t < 80 : rule === 't70' ? t < 70 : rule === 'm3' ? e.miss >= 3 : rule === 'm1' ? e.miss >= 1 : e.rate.band === 'na'; };
+    return D.teachers.filter(ok).sort((a, b) => (a.rate.taken || 0) - (b.rate.taken || 0) || b.miss - a.miss);
+  }
+  function dsRepCount() { if (!dsLast) return; const n = dsRepList().length; $('dsRepNote').textContent = n ? n + ' teacher' + (n === 1 ? '' : 's') + ' will be in the report.' : 'No teacher matches — everyone is above this level. 👍'; }
+  function dsReport(ev, onlyKey) {
+    const D = dsLast; if (!D) return;
+    const list = onlyKey ? D.teachers.filter((e) => e.k === onlyKey) : dsRepList();
+    if (!list.length) { toast('No teacher matches this rule.'); return; }
+    const rule = onlyKey ? '' : $('dsRepRule').options[$('dsRepRule').selectedIndex].text;
+    const t = D.tot;
+    let h = '<div class="dsp"><div class="dsp-head"><img src="icons/college-logo.png" alt=""><div><b>' + esc(DATA.collegeName || 'Govt. Graduate College Satellite Town, Rawalpindi') + '</b><div>' + (onlyKey ? 'Teacher’s class-taking record' : 'Report: teachers not taking regular classes') + '</div><small>' + esc(D.cls) + ' · ' + esc(fmtDate(D.from)) + ' – ' + esc(fmtDate(D.to)) + ' · ' + D.days.length + ' working days' + (rule ? ' · ' + esc(rule) : '') + '</small></div></div>';
+    if (!onlyKey) h += '<p class="dsp-sum">College overall in this period: ' + t.due + ' lectures due · ' + (t.due ? Math.round(100 * (t.ok + t.same + t.later) / t.due) : 0) + '% taken · ' + (t.due ? Math.round(100 * t.ok / t.due) : 0) + '% marked in class · ' + t.miss + ' not marked. Teachers in this report: <b>' + list.length + '</b> of ' + D.teachers.length + '.</p>' +
+      '<table class="dsp-t"><thead><tr><th>#</th><th>Teacher</th><th>Subject</th><th>Due</th><th>Taken</th><th>In class</th><th>Not marked</th><th>Results avg</th><th>Rating</th></tr></thead><tbody>' +
+      list.map((e, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(e.name) + '</td><td>' + esc(Object.keys(e.subj).slice(0, 2).join(', ')) + '</td><td>' + e.due + '</td><td>' + dsPct(e.rate.taken) + '</td><td>' + dsPct(e.rate.ontime) + '</td><td><b>' + e.miss + '</b></td><td>' + dsPct(e.rate.ra) + '</td><td>' + (e.rate.score === null ? '—' : e.rate.stars + ' ★ · ' + (DS_BAND[e.rate.band] || '')) + '</td></tr>').join('') + '</tbody></table>';
+    h += list.map((e) => { const L = e.list.filter((x) => x.s === 'miss').sort((a, b) => a.d.localeCompare(b.d) || periodIndex(a.p) - periodIndex(b.p));
+      return '<div class="dsp-one"><b>' + esc(e.name) + '</b> — ' + e.due + ' due · ' + dsPct(e.rate.taken) + ' taken · ' + e.miss + ' not marked · ' + e.same + ' marked later the same day · ' + e.later + ' on a later day' + (e.rate.ra !== null ? ' · results average ' + dsPct(e.rate.ra) + ', pass ' + dsPct(e.rate.rp) : '') +
+        (L.length ? '<ol>' + L.map((x) => '<li>' + esc(fmtDate(x.d)) + ' · Period ' + esc(x.p) + ' · ' + esc(yearLabel(x.y)) + ' ' + esc(x.cls) + ' · ' + esc(x.subj) + (x.part ? ' (' + esc(x.part) + ')' : '') + '</li>').join('') + '</ol>' : '<div><small>No lecture left unmarked.</small></div>') + '</div>'; }).join('');
+    h += '<div class="dsp-sign"><span>Prepared by</span><span>Vice Principal</span><span>Principal</span></div><p class="dsp-note">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. A lecture counts as taken when its attendance was marked in the app; days on which nobody marked attendance are treated as holidays.</p></div>';
+    let box = $('dsPrint'); if (!box) { box = document.createElement('div'); box.id = 'dsPrint'; document.body.appendChild(box); }
+    box.innerHTML = h;
+    const st = document.createElement('style'); st.textContent = '@page { size: A4 portrait; margin: 10mm; }'; document.head.appendChild(st);
+    document.body.classList.add('print-ds');
+    const done = () => { document.body.classList.remove('print-ds'); st.remove(); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done); setTimeout(() => window.print(), 250);
+  }
+  function dsReportCsv() {
+    const D = dsLast; if (!D) return; const list = dsRepList();
+    csvDownload('Irregular_classes_' + D.from + '_to_' + D.to + '.csv', [['Teacher', 'Subjects', 'Lectures due', 'Taken %', 'Marked in class %', 'Same day (after period)', 'Later day', 'Not marked', 'Results average %', 'Pass %', 'Score', 'Rating', 'Not marked (details)']].concat(list.map((e) => [e.name, Object.keys(e.subj).join('; '), e.due, dsPct(e.rate.taken), dsPct(e.rate.ontime), e.same, e.later, e.miss, dsPct(e.rate.ra), dsPct(e.rate.rp), e.rate.score === null ? '' : Math.round(e.rate.score), DS_BAND[e.rate.band] || '', e.list.filter((x) => x.s === 'miss').map((x) => x.d + ' P' + x.p + ' ' + x.cls + ' ' + x.subj).join('; ')])));
+  }
+  $('dsGo').addEventListener('click', () => dsLoad(true));
+  $('dsRange').addEventListener('change', () => { $('dsCustom').style.display = $('dsRange').value === 'custom' ? '' : 'none'; if ($('dsRange').value !== 'custom') dsLoad(false); });
+  $('dsClass').addEventListener('change', () => dsLoad(false));
 
   function applyChrome() {
     $('footCollege').textContent = DATA.collegeName || '';
