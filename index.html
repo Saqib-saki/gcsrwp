@@ -342,6 +342,12 @@
   .ds-det { padding: 4px 0 12px 28px; } .ds-strip { display: flex; flex-wrap: wrap; gap: 3px; } .ds-strip i { width: 14px; height: 14px; border-radius: 3px; }
   .ds-ul { margin: 4px 0; padding-left: 18px; font-size: .78rem; max-height: 260px; overflow: auto; }
   #dsPrint { display: none; }
+  .att-arr { background: #fff7e0; border: 1px solid #f2c14e; border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; font-size: .85rem; color: #1a1a1a; }
+  .att-arr-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px dashed #e8d48a; } .att-arr-row span { flex: 1; } .att-arr-row small { display: block; color: #6b5a1f; }
+  .att-rem { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; margin-top: 8px; } .att-rem-t { font-weight: 700; margin: 0 0 6px; font-size: .88rem; }
+  .rem-chips { display: flex; flex-wrap: wrap; gap: 6px; } .chip-btn { border: 1px solid var(--border); background: var(--chip-bg); color: var(--chip-text); border-radius: 999px; padding: 6px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
+  .chip-btn.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .bd-b.b-rem { background: #efe6fa; color: #5b2f99; }
   @media print { body.print-ds > *:not(#dsPrint) { display: none !important; } body.print-ds #dsPrint { display: block !important; } }
   .dsp { font-size: 9.5pt; color: #000; } .dsp-head { display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #10345c; padding-bottom: 6px; margin-bottom: 8px; }
   .dsp-head img { width: 46px; height: 46px; } .dsp-head b { font-size: 12pt; } .dsp-head div div { font-weight: 700; font-size: 11pt; color: #b3261e; }
@@ -1014,6 +1020,7 @@
           <div class="field"><label for="attClass">Class</label><select id="attClass"><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="BS 1st Semester">BS · 1st Semester</option><option value="BS 3rd Semester">BS · 3rd Semester</option><option value="BS 5th Semester">BS · 5th Semester</option><option value="BS 7th Semester">BS · 7th Semester</option></select></div>
         </div>
         <div class="soon-card" id="attSoon" style="display:none"></div>
+        <div id="attArr" class="att-arr" style="display:none"></div>
         <div id="attBody">
         <div class="seg att-mode" id="attModeSeg" style="display:none"><button data-m="whole" class="on">📚 Whole class</button><button data-m="group">One group</button></div>
         <div class="field" id="attComboRow" style="display:none"><label for="attCombo">Lecture — all groups together</label><select id="attCombo"></select></div>
@@ -1030,6 +1037,8 @@
         </div>
         <div class="tnote" id="attTimeNote" style="display:none"></div>
         <button class="btn-primary" id="attLoad">Load students</button>
+        <button class="link-btn" id="attRemBtn" style="margin:8px 0 0;display:block">📝 Class not held? Give the reason / arrange another teacher</button>
+        <div id="attRemBox" class="att-rem" style="display:none"></div>
         <div class="tt-error" id="attErr"></div>
         <p class="note" id="attScopeNote" style="margin-top:6px"></p>
         <p class="note" id="attOffNote" style="margin-top:2px"></p>
@@ -1046,6 +1055,7 @@
         <div class="card" id="attList"></div>
         <div class="att-bar">
           <button class="btn-secondary" id="attAllP" style="flex:0 0 auto">All present</button>
+          <button class="btn-secondary" id="attAllA" style="flex:0 0 auto">All absent</button>
           <button class="btn-primary" id="attSubmit">Save attendance</button>
         </div>
       </div>
@@ -3438,7 +3448,77 @@
     paintTimeNote();
     flushQueue(true);
     paintOffNote(); setTimeout(rcPrefetch, 2500);
+    loadArranged(false);
   }
+  /* ---------- v13.7: class remarks (class not held: reason) + another teacher arranged ---------- */
+  var attArranged = [], attArrAt = 0, attArrFor = '';
+  const REM_REASONS = ['On leave', 'Official duty', 'No class work / test', 'Holiday / college event', 'Students not present', 'Other'];
+  async function loadArranged(force) {
+    if (attAuth && attArrFor !== attAuth.name) { attArranged = []; attArrAt = 0; attArrFor = attAuth.name; force = true; }
+    if (!attAuth || !navigator.onLine || (!force && Date.now() - attArrAt < 10 * 60 * 1000)) { paintArranged(); return; }
+    try { const j = await attApi('remarksMine', {}); attArranged = j.arranged || []; attArrAt = Date.now(); } catch (e) { /* older server */ }
+    paintArranged(); if (attAuth) fillAttCombos();
+  }
+  function paintArranged() {
+    const box = $('attArr'), t = todayISO(), L = attArranged.filter((a) => a.date >= t).sort((a, b) => a.date.localeCompare(b.date) || periodIndex(a.period) - periodIndex(b.period));
+    if (!L.length) { box.style.display = 'none'; return; }
+    box.innerHTML = '<b>📌 Classes arranged for you</b>' + L.map((a, i) => '<div class="att-arr-row"><span>' + esc(fmtDate(a.date)) + ' · Period ' + esc(a.period) + ' · ' + esc(yearLabel(yk(a.year))) + ' ' + esc(compactGroups(a.parts.map((p) => ({ group: p[0], section: p[1] })), yk(a.year))) + ' · ' + esc(a.subject) + '<small>for ' + esc(a.teacher) + ' (' + esc(a.reason) + ')' + (a.note ? ' — ' + esc(a.note) : '') + '</small></span><button class="mini-btn" data-arr="' + attArranged.indexOf(a) + '">Mark</button></div>').join('');
+    box.style.display = 'block';
+  }
+  $('attArr').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-arr]'); if (!b) return;
+    const a = attArranged[Number(b.dataset.arr)]; if (!a) return;
+    $('attClass').value = yearOptValue(yk(a.year)); classSoon('att');
+    $('attDate').value = a.date; attMode = 'whole';
+    fillSubjects(); fillAttCombos();
+    const i = attCombos.findIndex((c) => c.arranged && c.arranged.id === a.id);
+    if (i >= 0) { $('attCombo').value = String(i); applyAttMode(); }
+    paintTimeNote(); $('attLoad').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast('Arranged class selected — tap Load students when the class starts');
+  });
+  function remLecture() {
+    const y = attYear(), lec = currentLecture(); if (!lec || !lec.subject) return null;
+    if (attWhole()) { const c = curCombo(); return { y, period: c.period, subject: c.subject, parts: c.parts.map((p) => [p.group, p.section]), own: !c.arranged }; }
+    return { y, period: lec.period, subject: lec.subject, parts: [[$('attGroup').value, $('attSection').value]], own: true };
+  }
+  async function openRemark() {
+    const box = $('attRemBox'), date = $('attDate').value, L = remLecture();
+    if (box.style.display === 'block') { box.style.display = 'none'; return; }
+    if (!date || !L) { $('attErr').textContent = 'Choose the date and the lecture first.'; return; }
+    $('attErr').textContent = '';
+    const label = yearLabel(L.y) + ' · ' + compactGroups(L.parts.map((p) => ({ group: p[0], section: p[1] })), L.y) + ' · Period ' + L.period + ' · ' + L.subject + ' · ' + fmtDate(date);
+    box.innerHTML = '<div class="empty">Checking…</div>'; box.style.display = 'block';
+    let old = null;
+    try { const j = await attApi('remarks', { year: L.y, from: date, to: date }); old = (j.remarks || []).find((r) => r.period === L.period && r.parts.some((p) => L.parts.some((q) => q[0] === p[0] && secCompat(q[1], p[1])))) || null; }
+    catch (e) { if (/Unknown action/.test(e.message)) { box.innerHTML = '<p class="note">The server needs the v13.7 update first.</p>'; return; } if (e.offline) { box.innerHTML = '<p class="note">You need internet to add a remark.</p>'; return; } }
+    const r0 = old ? old.reason : '';
+    box.innerHTML = '<p class="att-rem-t">📝 ' + esc(label) + '</p>' +
+      (old ? '<p class="note" style="margin:0 0 6px">Saved ' + esc(old.at) + ' by ' + esc(old.by) + (old.sub ? ' · arranged: <b>' + esc(old.sub) + '</b>' : '') + '</p>' : '') +
+      '<div class="field"><label>Why is the class not held?</label><div class="rem-chips">' + REM_REASONS.map((x) => '<button type="button" class="chip-btn' + (x === r0 || (r0 && x === 'Other' && REM_REASONS.indexOf(r0) < 0) ? ' on' : '') + '" data-r="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div></div>' +
+      '<div class="field"><label for="remNote">Details (optional)</label><input id="remNote" maxlength="200" placeholder="e.g. on duty at BISE, class given work" value="' + esc(old ? (REM_REASONS.indexOf(old.reason) < 0 ? old.reason + (old.note ? ' — ' + old.note : '') : old.note) : '') + '"></div>' +
+      '<div class="field"><label for="remSub">Arrange another teacher to take it (optional)</label><input id="remSub" list="remStaff" placeholder="Start typing a name" value="' + esc(old ? old.sub : '') + '">' + staffList('remStaff') + '<small class="note">The teacher sees this class under “📌 Classes arranged for you” in Mark Attendance and marks it as usual.</small></div>' +
+      '<div class="btn-row"><button class="btn-primary" id="remSave">Save remark</button>' + (old ? '<button class="btn-secondary mg-danger" id="remDel">Remove</button>' : '') + '<button class="btn-secondary" id="remClose">Close</button></div><div class="tt-error" id="remErr"></div>';
+    box.querySelectorAll('.chip-btn').forEach((b) => { b.onclick = () => { box.querySelectorAll('.chip-btn').forEach((x) => x.classList.toggle('on', x === b)); }; });
+    $('remClose').onclick = () => { box.style.display = 'none'; };
+    $('remSave').onclick = async () => {
+      const on = box.querySelector('.chip-btn.on'), note = $('remNote').value.trim();
+      if (!on) { $('remErr').textContent = 'Choose a reason.'; return; }
+      let reason = on.dataset.r; if (reason === 'Other') { if (!note) { $('remErr').textContent = 'Write the reason in Details.'; return; } }
+      $('remSave').disabled = true; $('remSave').textContent = 'Saving…';
+      try {
+        const j = await attApi('remarkSave', { year: L.y, date, period: L.period, subject: L.subject, parts: L.parts, reason, note, sub: $('remSub').value.trim(), id: old ? old.id : '' });
+        toast('Remark saved ✓' + (j.sub ? ' · ' + j.sub + ' will see this class' : ''));
+        box.style.display = 'none';
+      } catch (e) { $('remErr').textContent = e.offline ? 'You need internet.' : e.message; }
+      if ($('remSave')) { $('remSave').disabled = false; $('remSave').textContent = 'Save remark'; }
+    };
+    if (old) $('remDel').onclick = async () => {
+      const b = $('remDel'); if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Tap again to remove'; return; }
+      try { await attApi('remarkDelete', { year: L.y, id: old.id }); toast('Remark removed'); box.style.display = 'none'; } catch (e) { $('remErr').textContent = e.message; }
+    };
+  }
+  $('attRemBtn').addEventListener('click', openRemark);
+  ['attCombo', 'attSubject', 'attGroup', 'attSection', 'attDate', 'attClass'].forEach((id) => $(id).addEventListener('change', () => { $('attRemBox').style.display = 'none'; }));
 
   $('attLoginBtn').addEventListener('click', async () => {
     const name = $('attName').value.trim(), pin = $('attPin').value.trim();
@@ -3515,17 +3595,18 @@
     const wd = weekdayOf($('attDate').value);
     // v12.2: the day's classes first, then the teacher's other classes (marked with their timetable days) for a class held on another day
     const allC = attAuth && attAuth.role !== 'Admin' && limitToMine(y) ? myCombos(y) : [];
-    attCombos = allC.filter((c) => onDay(c, wd)).concat(allC.filter((c) => !onDay(c, wd)).map((c) => Object.assign({}, c, { otherDay: true })));
+    const arr = (attArranged || []).filter((a) => a.date === $('attDate').value && String(yk(a.year)) === String(y)).map((a) => ({ period: a.period, subject: a.subject, parts: a.parts.map((p) => ({ group: p[0], section: p[1] })), days: null, arranged: a }));
+    attCombos = arr.concat(allC.filter((c) => onDay(c, wd)), allC.filter((c) => !onDay(c, wd)).map((c) => Object.assign({}, c, { otherDay: true })));
     const show = attCombos.length > 0;
     $('attModeSeg').style.display = show ? 'flex' : 'none';
     const prev = $('attCombo').value;
     const dl = (c) => (c.days && c.days.length ? c.days.map((d) => BS_DAY[d]).join(' & ') : '');
     $('attCombo').innerHTML = attCombos.map((c, i) => (c.otherDay && !(i && attCombos[i - 1].otherDay) ? '<optgroup label="Other days in the timetable">' : '') +
-      '<option value="' + i + '">' + esc(c.period) + ' · ' + esc(c.subject) + ' · ' + esc(compactGroups(c.parts, y)) + (c.parts.length > 1 ? ' (' + c.parts.length + ' groups)' : '') + (c.otherDay && dl(c) ? ' · ' + esc(dl(c)) : '') + '</option>' +
+      '<option value="' + i + '">' + (c.arranged ? '📌 ' : '') + esc(c.period) + ' · ' + esc(c.subject) + ' · ' + esc(compactGroups(c.parts, y)) + (c.arranged ? ' — for ' + esc(c.arranged.teacher) : '') + (c.parts.length > 1 ? ' (' + c.parts.length + ' groups)' : '') + (c.otherDay && dl(c) ? ' · ' + esc(dl(c)) : '') + '</option>' +
       (c.otherDay && i === attCombos.length - 1 ? '</optgroup>' : '')).join('');
     if (prev && attCombos[Number(prev)]) $('attCombo').value = prev;
     if (BELL && $('attDate').value === todayISO()) {
-      const n = nowMinLocal(); attCombos.forEach((c, i) => { const w = periodWin(c.period, todayISO()); if (!c.otherDay && w && n >= w[0] && n < w[1]) $('attCombo').value = String(i); });
+      const n = nowMinLocal(); attCombos.forEach((c, i) => { const w = periodWin(c.period, todayISO()); if (!c.otherDay && w && n >= w[0] && n < w[1] && !(attCombos[Number($('attCombo').value)] || {}).arranged) $('attCombo').value = String(i); });
     }
     applyAttMode();
   }
@@ -3574,7 +3655,7 @@
     });
     $('attListTitle').textContent = compactGroups(attMulti.parts, y) + ' · Period ' + attMulti.period + ' · ' + attMulti.subject + ' · ' + fmtDate(date);
     $('attList').innerHTML = attMulti.parts.map((p, i) => '<div class="att-ghead"><span>' + esc(p.group + (p.section !== 'All' ? ' (' + p.section + ')' : '')) + ' · ' + (p.students || []).length + ' students</span>' +
-      ((p.students || []).length ? '<button class="link-btn att-gallp" data-part="' + i + '">All present</button>' : '') + '</div>' +
+      ((p.students || []).length ? '<span><button class="link-btn att-gallp" data-part="' + i + '">All present</button> · <button class="link-btn att-galla" data-part="' + i + '">All absent</button></span>' : '') + '</div>' +
       ((p.students || []).length ? p.students.map((st) => '<div class="att-row"><span class="roll">' + st.roll + '</span>' + avatar(st.roll) + '<span class="nm">' + esc(st.name) + '</span><button class="st-btn st-' + attMarks[st.roll] + '" data-roll="' + st.roll + '">' + LABEL[attMarks[st.roll]] + '</button></div>').join('')
         : '<div class="empty">No students listed for ' + esc(p.group) + ' yet — it will be skipped.</div>')).join('');
     $('attListWrap').style.display = 'block'; paintList(); fillPhotos($('attList'), y);
@@ -3662,10 +3743,14 @@
   $('attList').addEventListener('click', (e) => {
     const g = e.target.closest('.att-gallp');
     if (g) { const i = Number(g.dataset.part); attStudents.forEach((s) => { if (s.part === i) attMarks[s.roll] = 'P'; }); $('attList').querySelectorAll('.st-btn').forEach((x) => { if (attMarks[Number(x.dataset.roll)] === 'P') { x.className = 'st-btn st-P'; x.textContent = 'Present'; } }); paintList(); return; }
+    const ga = e.target.closest('.att-galla');
+    if (ga) { const i = Number(ga.dataset.part); attStudents.forEach((s) => { if (s.part === i) attMarks[s.roll] = 'A'; }); attRepaintBtns(); return; }
     const b = e.target.closest('.st-btn'); if (!b) return;
     const r = Number(b.dataset.roll); attMarks[r] = NEXT[attMarks[r]];
     b.className = 'st-btn st-' + attMarks[r]; b.textContent = LABEL[attMarks[r]]; paintList();
   });
+  function attRepaintBtns() { $('attList').querySelectorAll('.st-btn').forEach((b) => { const m = attMarks[Number(b.dataset.roll)]; b.className = 'st-btn st-' + m; b.textContent = LABEL[m]; }); paintList(); }
+  $('attAllA').addEventListener('click', () => { attStudents.forEach((s) => { attMarks[s.roll] = 'A'; }); attRepaintBtns(); });
   $('attAllP').addEventListener('click', () => { attStudents.forEach((s) => { attMarks[s.roll] = 'P'; }); $('attList').querySelectorAll('.st-btn').forEach((b) => { b.className = 'st-btn st-P'; b.textContent = 'Present'; }); paintList(); });
 
   $('attSubmit').addEventListener('click', async () => {
@@ -5030,7 +5115,7 @@
   const sameSubj = (a, b) => normSubj(a).toLowerCase() === normSubj(b).toLowerCase();
   /** match the lectures saved on one date to the timetable; returns {items, extra} */
   function boardDay(date, rows, info, y) {
-    const day = rows.filter((r) => r.date === date), used = new Set();
+    const day = rows.filter((r) => r.date === date), used = new Set(), rems = (info.remarks || []).filter((r) => r.date === date);
     const wd = new Date(date + 'T12:00:00Z').getUTCDay();
     const items = wd === 0 ? [] : allLectures(y).filter((e) => onDay(e, wd) && hasStudents(y, e.group, e.section)).map((e) => {
       const slot = day.filter((r) => r.period === e.period && r.group === e.group && secCompat(r.section, e.section));
@@ -5038,12 +5123,14 @@
       if (hit) used.add(hit);
       const win = periodWin(e.period, date);
       let st;
+      const rem = hit ? null : rems.find((r) => r.period === e.period && r.parts.some((p) => p[0] === e.group && secCompat(p[1], e.section)));
       if (hit) st = hit.status === 'Late' ? 'late' : hit.status === 'Offline' ? 'off' : hit.status === 'Admin' ? 'adm' : 'ok';
+      else if (rem) st = 'rem';
       else if (noLogin(e.teacher)) st = 'cti';
       else if (date < info.today) st = 'miss';
       else if (date > info.today || !win) st = 'up';
       else st = info.nowMin >= win[1] ? 'miss' : info.nowMin >= win[0] ? 'now' : 'up';
-      return Object.assign({}, e, { hit, st, win });
+      return Object.assign({}, e, { hit, st, win, rem });
     });
     const extra = day.filter((r) => !used.has(r));
     return { items, extra };
@@ -5056,10 +5143,11 @@
     miss: () => '<span class="bd-b b-miss">❌ Not marked</span>',
     now: () => '<span class="bd-b b-now">⏳ On now</span>',
     up: () => '<span class="bd-b b-up">Upcoming</span>',
-    cti: () => '<span class="bd-b b-up">CTI · no login</span>'
+    cti: () => '<span class="bd-b b-up">CTI · no login</span>',
+    rem: (h, L) => { const r = (L && (L.rem || (L.parts || []).map((p) => p.rem).find(Boolean))) || {}; return '<span class="bd-b b-rem" title="' + esc((r.note || '') + (r.sub ? ' · arranged: ' + r.sub : '')) + '">📝 ' + esc(r.reason || 'Remark') + (r.sub ? ' → ' + esc(r.sub.replace(/^(Prof|Dr)\.\s*/, '')) : '') + '</span>'; }
   };
   /** merge a period's group rows into one row per teacher (a combined class = one lecture) */
-  const ST_RANK = { miss: 0, now: 1, up: 2, late: 3, off: 4, adm: 5, ok: 6, cti: 7 };
+  const ST_RANK = { miss: 0, now: 1, up: 2, rem: 2.5, late: 3, off: 4, adm: 5, ok: 6, cti: 7 };
   function byTeacher(items) {
     const out = [], idx = {};
     items.forEach((x) => {
@@ -5074,6 +5162,7 @@
       L.st = sts.reduce((a, b) => (ST_RANK[b] < ST_RANK[a] ? b : a));
       L.nDone = sts.filter((v) => v !== 'miss' && v !== 'now' && v !== 'up' && v !== 'cti').length;
       const hits = L.parts.map((p) => p.hit).filter(Boolean);
+      L.rem = L.parts.map((p) => p.rem).find(Boolean) || null;
       L.hit = hits.length ? hits.slice().sort((a, b) => String(a.first).localeCompare(String(b.first)))[0] : null;
       if (L.st === 'late' || L.st === 'off') L.hit = hits.find((h) => h.status === (L.st === 'late' ? 'Late' : 'Offline')) || L.hit;
     });
@@ -5083,7 +5172,7 @@
     const n = L.parts.length;
     if (n > 1 && L.nDone && L.nDone < n && (L.st === 'miss' || L.st === 'now' || L.st === 'up'))
       return '<span class="bd-b ' + (L.st === 'miss' ? 'b-miss' : 'b-now') + '">' + (L.st === 'miss' ? '❌ ' : '⏳ ') + L.nDone + ' of ' + n + ' marked</span>';
-    return BADGE[L.st](L.hit || {});
+    return BADGE[L.st](L.hit || {}, L);
   }
   const partLabel = (x) => esc(x.group) + (x.section !== 'All' ? ' ' + esc(x.section) : '');
   /** "A1 A2 … A7 F1 … F5 (Even)" → "A + F (Even)": a letter stands for every group of that family */
@@ -5103,7 +5192,7 @@
     return out.sort((a, b) => key(a).localeCompare(key(b))).join(' + ') + sec;
   }
   const roomLabel = (r) => { r = String(r || '').trim(); return !r || r === '—' ? '' : /^(room|lab|lt\d)/i.test(r) ? r : 'Room ' + r; };
-  const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·' };
+  const PART_ICON = { ok: '✅', adm: '🛠', late: '⏰', off: '📵', miss: '❌', now: '⏳', up: '·', cti: '·', rem: '📝' };
   let bdTab = 'dash', bdData = null;
   function renderBoard() {
     refreshAllCounts(false);
@@ -5279,6 +5368,7 @@
             if (!cto && nameKey(h.teacher) !== nameKey(L.teacher)) extraInfo.push(partLabel(x) + ' marked by ' + esc(h.teacher));
           });
           const notes = [...new Set(L.parts.map((x) => x.hit && x.hit.note).filter(Boolean))];
+          if (L.rem && (L.rem.note || L.rem.sub)) notes.push('📝 ' + [L.rem.note, L.rem.sub ? 'arranged: ' + L.rem.sub : ''].filter(Boolean).join(' · '));
           const line1 = (cto ? esc(L.teacher || 'CTI') : '<b class="bd-cls">' + esc(cls) + '</b>') + (rooms.length ? ' · 📍 ' + esc(rooms.join(', ')) : '') +
             (hits.length ? ' · P ' + sum[0] + ' · A ' + sum[1] + (sum[2] ? ' · L ' + sum[2] : '') : '');
           const sub = line1 + (missing.length ? '<br>❌ Not marked: ' + esc(compactGroups(missing, yr)) : '') +
@@ -5321,6 +5411,7 @@
     days.forEach((iso) => {
       byTeacher(boardDay(iso, j.rows, j, j.year).items).forEach((x) => {
         if (x.st === 'cti' || x.st === 'up' || x.st === 'now') return;
+        if (x.st === 'rem') { String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => { const e = add(t); e.rem = (e.rem || 0) + 1; e.missed.push('📝 ' + fmtDate(iso) + ' · ' + x.period + ' · ' + x.subject + ' — ' + ((x.rem && x.rem.reason) || 'remark') + (x.rem && x.rem.sub ? ' (arranged: ' + x.rem.sub + ')' : '')); }); return; }
         String(x.teacher || '').split('+').map((t) => t.trim()).filter(Boolean).forEach((t) => {
           const e = add(t); e.due++;
           if (x.st === 'ok' || x.st === 'adm') e.ok++; else if (x.st === 'late') e.late++; else if (x.st === 'off') e.off++;
@@ -5349,7 +5440,7 @@
   const APP_LAUNCH = '2026-10-08';
   const DS_COL = { ok: '#1a7f4e', same: '#d9a400', later: '#e8710a', miss: '#b3261e' };
   const DS_LBL = { ok: 'In class (on time)', same: 'Same day, after the period', later: 'On a later day', miss: 'Not marked' };
-  const DS_ICON = { ok: '✅', same: '🕐', later: '📅', miss: '❌' };
+  const DS_ICON = { ok: '✅', same: '🕐', later: '📅', miss: '❌', rem: '📝' };
   let dsCache = {}, dsLast = null, dsOpen = '', dsBusy = false, dsShowAll = false;
   function dsRange(kind) {
     const t = todayISO(), d = new Date(t + 'T12:00:00Z'), iso = (x) => x.toISOString().slice(0, 10);
@@ -5365,6 +5456,7 @@
   /** how one timetable lecture was handled: ok (saved during / just after the period), same (later that day), later (another day), miss */
   function dsSt(L, date) {
     if (L.st === 'cti' || L.st === 'up' || L.st === 'now') return null;
+    if (L.st === 'rem') return 'rem';
     if (L.st === 'miss') return 'miss';
     const h = L.hit || {};
     if (h.status === 'Offline') return 'ok';
@@ -5444,6 +5536,11 @@
       days.forEach((iso) => {
         byTeacher(boardDay(iso, j.rows, j, yy).items).forEach((L) => {
           const s = dsSt(L, iso); if (!s) return;
+          if (s === 'rem') {   // a reason was given (leave, official duty …): listed, not counted as due
+            tot.rem = (tot.rem || 0) + 1;
+            String(L.teacher || '').split('+').map((t) => t.trim()).filter((t) => t && !noLogin(t) && !dsNotPerson(t)).forEach((t) => { const k = nameKey(t), e = T[k] || (T[k] = Object.assign(blank(), { name: t, subj: {}, days: {}, list: [] })); e.rem = (e.rem || 0) + 1; e.subj[normSubj(L.subject)] = 1; e.list.push({ d: iso, s: 'rem', y: yy, p: L.period, subj: L.subject, cls: compactGroups(L.parts, yy), part: ((L.rem && L.rem.reason) || 'remark') + (L.rem && L.rem.sub ? ' · arranged: ' + L.rem.sub : '') + (L.rem && L.rem.note ? ' · ' + L.rem.note : '') }); });
+            return;
+          }
           [tot, byDay[iso], byPer[L.period] || (byPer[L.period] = blank()), byDept[normSubj(L.subject)] || (byDept[normSubj(L.subject)] = blank())].forEach((b) => { b.due++; b[s]++; });
           String(L.teacher || '').split('+').map((t) => t.trim()).filter((t) => t && !noLogin(t) && !dsNotPerson(t)).forEach((t) => {
             const k = nameKey(t), e = T[k] || (T[k] = Object.assign(blank(), { name: t, subj: {}, days: {}, list: [] }));
@@ -5468,7 +5565,8 @@
       '<text x="70" y="68" text-anchor="middle" class="ds-dn-big">' + taken + '%</text><text x="70" y="86" text-anchor="middle" class="ds-dn-sm">classes taken</text></svg>';
   }
   function dsLegend(b) {
-    return '<div class="ds-legend">' + ['ok', 'same', 'later', 'miss'].map((k) => '<div><i style="background:' + DS_COL[k] + '"></i>' + DS_ICON[k] + ' ' + DS_LBL[k] + '<b>' + b[k] + '</b><small>' + (b.due ? Math.round(100 * b[k] / b.due) : 0) + '%</small></div>').join('') + '</div>';
+    return '<div class="ds-legend">' + ['ok', 'same', 'later', 'miss'].map((k) => '<div><i style="background:' + DS_COL[k] + '"></i>' + DS_ICON[k] + ' ' + DS_LBL[k] + '<b>' + b[k] + '</b><small>' + (b.due ? Math.round(100 * b[k] / b.due) : 0) + '%</small></div>').join('') +
+      (b.rem ? '<div><i style="background:#7b4fb3"></i>📝 Remark given (leave, duty …)<b>' + b.rem + '</b><small>not counted</small></div>' : '') + '</div>';
   }
   function dsColumns(days, byDay) {
     if (!days.length) return '<p class="note">No working days in this range yet.</p>';
@@ -5550,7 +5648,7 @@
   function dsDetail(e) {
     const D = dsLast, r = e.rate, chip = (v, l) => '<div class="ds-kpi sm"><b>' + v + '</b><span>' + l + '</span></div>';
     let h = '<div class="ds-det"><div class="ds-kpis sm">' + chip(e.due, 'Lectures due') + chip(e.ok, DS_ICON.ok + ' In class') + chip(e.same, DS_ICON.same + ' Same day') + chip(e.later, DS_ICON.later + ' Later day') + chip('<span class="' + (e.miss ? 'low' : '') + '">' + e.miss + '</span>', DS_ICON.miss + ' Not marked') +
-      chip(r.score === null ? '—' : Math.round(r.score), 'Score / 100') + '</div>';
+      chip(r.score === null ? '—' : Math.round(r.score), 'Score / 100') + (e.rem ? chip(e.rem, '📝 Remarks given') : '') + '</div>';
     h += '<div class="ds-h3">Day by day</div><div class="ds-strip">' + D.days.map((d) => { const s = e.days[d]; return '<i title="' + fmtDate(d) + (s ? ' · ' + DS_LBL[s] : ' · no lecture') + '" style="background:' + (s ? DS_COL[s] : 'var(--chip-bg)') + '"></i>'; }).join('') + '</div>';
     const res = e.res;
     h += '<div class="ds-h3">Results of their classes' + (res && res.ps.length ? ' · average ' + dsPct(r.ra) + ' · pass ' + dsPct(r.rp) : '') + '</div>' +
@@ -5558,7 +5656,7 @@
         res.classes.map((c) => '<tr><td>' + esc(yearLabel(yk(c.y)) + ' · ' + c.cls) + '</td><td>' + esc(c.subj) + '</td><td class="num">' + c.n + (c.ab ? ' <small>+' + c.ab + ' abs</small>' : '') + '</td><td class="num' + (c.avg !== null && c.avg < PASS ? ' low' : '') + '">' + dsPct(c.avg) + '</td><td class="num">' + dsPct(c.pass) + '</td></tr>').join('') + '</tbody></table></div>'
         : '<p class="note" style="margin:0">No test marks for their classes yet.</p>');
     const L = e.list.slice().sort((a, b) => b.d.localeCompare(a.d) || periodIndex(a.p) - periodIndex(b.p));
-    h += '<div class="ds-h3">Lectures not marked or marked late (' + L.length + ')</div>' + (L.length ? '<ul class="ds-ul">' + L.slice(0, 80).map((x) => '<li>' + DS_ICON[x.s] + ' ' + esc(fmtDate(x.d)) + ' · Period ' + esc(x.p) + ' · ' + esc(yearLabel(x.y)) + ' ' + esc(x.cls) + ' · ' + esc(x.subj) + (x.part ? ' <small>(' + esc(x.part) + ')</small>' : '') + '</li>').join('') + '</ul>' : '<p class="note" style="margin:0">✅ Every lecture marked in class.</p>');
+    h += '<div class="ds-h3">Lectures not marked, marked late or with a remark (' + L.length + ')</div>' + (L.length ? '<ul class="ds-ul">' + L.slice(0, 80).map((x) => '<li>' + DS_ICON[x.s] + ' ' + esc(fmtDate(x.d)) + ' · Period ' + esc(x.p) + ' · ' + esc(yearLabel(x.y)) + ' ' + esc(x.cls) + ' · ' + esc(x.subj) + (x.part ? ' <small>(' + esc(x.part) + ')</small>' : '') + '</li>').join('') + '</ul>' : '<p class="note" style="margin:0">✅ Every lecture marked in class.</p>');
     h += '<button class="btn-secondary" data-print-t="' + esc(e.k) + '" style="margin-top:8px">🖨 Print this teacher’s record</button></div>';
     return h;
   }
@@ -5579,7 +5677,8 @@
       '<table class="dsp-t"><thead><tr><th>#</th><th>Teacher</th><th>Subject</th><th>Due</th><th>Taken</th><th>In class</th><th>Not marked</th><th>Results avg</th><th>Rating</th></tr></thead><tbody>' +
       list.map((e, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(e.name) + '</td><td>' + esc(Object.keys(e.subj).slice(0, 2).join(', ')) + '</td><td>' + e.due + '</td><td>' + dsPct(e.rate.taken) + '</td><td>' + dsPct(e.rate.ontime) + '</td><td><b>' + e.miss + '</b></td><td>' + dsPct(e.rate.ra) + '</td><td>' + (e.rate.score === null ? '—' : e.rate.stars + ' ★ · ' + (DS_BAND[e.rate.band] || '')) + '</td></tr>').join('') + '</tbody></table>';
     h += list.map((e) => { const L = e.list.filter((x) => x.s === 'miss').sort((a, b) => a.d.localeCompare(b.d) || periodIndex(a.p) - periodIndex(b.p));
-      return '<div class="dsp-one"><b>' + esc(e.name) + '</b> — ' + e.due + ' due · ' + dsPct(e.rate.taken) + ' taken · ' + e.miss + ' not marked · ' + e.same + ' marked later the same day · ' + e.later + ' on a later day' + (e.rate.ra !== null ? ' · results average ' + dsPct(e.rate.ra) + ', pass ' + dsPct(e.rate.rp) : '') +
+      const RM = e.list.filter((x) => x.s === 'rem');
+      return '<div class="dsp-one"><b>' + esc(e.name) + '</b> — ' + e.due + ' due · ' + dsPct(e.rate.taken) + ' taken · ' + e.miss + ' not marked · ' + e.same + ' marked later the same day · ' + e.later + ' on a later day' + (RM.length ? ' · ' + RM.length + ' with a remark (' + esc([...new Set(RM.map((x) => x.part.split(' · ')[0]))].join(', ')) + ')' : '') + (e.rate.ra !== null ? ' · results average ' + dsPct(e.rate.ra) + ', pass ' + dsPct(e.rate.rp) : '') +
         (L.length ? '<ol>' + L.map((x) => '<li>' + esc(fmtDate(x.d)) + ' · Period ' + esc(x.p) + ' · ' + esc(yearLabel(x.y)) + ' ' + esc(x.cls) + ' · ' + esc(x.subj) + (x.part ? ' (' + esc(x.part) + ')' : '') + '</li>').join('') + '</ol>' : '<div><small>No lecture left unmarked.</small></div>') + '</div>'; }).join('');
     h += '<div class="dsp-sign"><span>Prepared by</span><span>Vice Principal</span><span>Principal</span></div><p class="dsp-note">Generated by the GGCS RWP app on ' + esc(fmtDate(todayISO())) + '. A lecture counts as taken when its attendance was marked in the app; days on which nobody marked attendance are treated as holidays.</p></div>';
     let box = $('dsPrint'); if (!box) { box = document.createElement('div'); box.id = 'dsPrint'; document.body.appendChild(box); }
