@@ -3100,6 +3100,15 @@
   }
   const nowMinLocal = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const isAdminUser = () => !!(attAuth && attAuth.role === 'Admin');
+  /* v13.8: role, owner, PIN viewer, Controller scope and duties come fresh from the server (a phone signed in before a change keeps working) */
+  function meApply(j) { if (!attAuth || !j) return; attAuth.role = j.role || attAuth.role; if ('owner' in j) attAuth.owner = !!j.owner; if ('pins' in j) attAuth.pins = !!j.pins; if ('ctrl' in j) attAuth.ctrl = j.ctrl || ''; if (j.duty) attAuth.duty = j.duty; }
+  let meFreshAt = 0;
+  async function refreshMe() {
+    if (!attAuth || !navigator.onLine || Date.now() - meFreshAt < 15 * 60 * 1000) return;
+    meFreshAt = Date.now();
+    try { const j = await attApi('scope'); const before = JSON.stringify([attAuth.role, attAuth.owner, attAuth.pins, attAuth.ctrl, attAuth.duty]); meApply(j); store.set('attAuth', JSON.stringify(attAuth)); if (JSON.stringify([attAuth.role, attAuth.owner, attAuth.pins, attAuth.ctrl, attAuth.duty]) !== before) { $('mgYear') && ($('mgYear').dataset.for = ''); render(); } }
+    catch (e) { if (/PIN|sign in/i.test(e.message || '')) { recSignOut(); render(); } }
+  }
   /* v13.3: duties — timetable incharge (Prof. Amin Iqbal), 1st/2nd Year student lists (Dr. Ateeq ul Jaleel), BS student lists (Dr. Muhammad Ismaeel) */
   const myDuty = () => (attAuth && attAuth.duty) || {};
   const dutyTT = () => isOwnerUser() || !!myDuty().tt;
@@ -3440,7 +3449,7 @@
     $('attWho').textContent = attAuth.name;
     if (!$('attDate').value) $('attDate').value = todayISO();
     if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS || !teachFresh) && navigator.onLine) {   // v12.8: subjects refreshed once per app start
-      attApi('scope').then((j) => { teachFresh = true; attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
+      attApi('scope').then((j) => { teachFresh = true; meApply(j); attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; pickClassYear('att'); fillAttGroups(); }).catch(() => {});
     }
     pickClassYear('att');
     if (!$('attGroup').options.length || $('attGroup').dataset.who !== attAuth.name) fillAttGroups();
@@ -3637,7 +3646,7 @@
           res.push({ group: p.group, section: p.section, students: r.students, marks: s2.marks });
         }
       }
-      res.forEach((p) => rcPut(p.group, p.section, p.students, y)); paintOffNote();
+      res.forEach((p) => { if (!p.limited) rcPut(p.group, p.section, p.students, y); }); paintOffNote();   // v13.8: a course taken by only some students is not kept as the group's list
     } catch (err) {
       if (!err.offline) throw err;
       res = attMulti.parts.map((p) => { const e = rcGet(p.group, p.section, y); return e ? { group: p.group, section: p.section, students: e.students, marks: queuedMarks({ date, period: c.period, subject: c.subject, group: p.group, section: p.section, year: y }) } : null; });
@@ -3716,7 +3725,7 @@
       let r, s, fromPhone = null;
       try {
         [r, s] = await Promise.all([attApi('roster', attCtx), attApi('getSession', attCtx)]);
-        rcPut(attCtx.group, attCtx.section, r.students, attCtx.year); paintOffNote();
+        if (!r.limited) rcPut(attCtx.group, attCtx.section, r.students, attCtx.year); paintOffNote();
       } catch (err) {
         if (!err.offline) throw err;
         fromPhone = rcGet(attCtx.group, attCtx.section, attCtx.year);
@@ -3939,7 +3948,7 @@
     $('mkWho').textContent = attAuth.name + (isAdmin() ? ' (Admin)' : '');
     fillMkTests();
     if ((!attAuth.teaches || !attAuth.teaches2 || !attAuth.teachesBS || !teachFresh) && navigator.onLine) {   // v12.8: subjects refreshed once per app start
-      try { const j = await attApi('scope'); teachFresh = true; attAuth.role = j.role; attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
+      try { const j = await attApi('scope'); teachFresh = true; meApply(j); attAuth.teaches = j.teaches || []; if (j.teaches2) attAuth.teaches2 = j.teaches2; if (j.teachesBS) attAuth.teachesBS = j.teachesBS; store.set('attAuth', JSON.stringify(attAuth)); myClassesCache = {}; }
       catch (e) { if (/PIN|sign in/i.test(e.message)) { recSignOut(); renderMarks(); return; } }
     }
     pickClassYear('mk');
@@ -3995,7 +4004,7 @@
     $('mkLoad').disabled = true; $('mkLoad').textContent = 'Loading…';
     try {
       let j, fromPhone = null;
-      try { j = await attApi('marksSheet', mkCtx); rcPut(mkCtx.group, mkCtx.section, j.students, mkCtx.year); }
+      try { j = await attApi('marksSheet', mkCtx); if (!j.limited) rcPut(mkCtx.group, mkCtx.section, j.students, mkCtx.year); }
       catch (err) {
         if (!err.offline) throw err;
         fromPhone = rcGet(mkCtx.group, mkCtx.section, mkCtx.year);
@@ -5964,7 +5973,7 @@
     const q = $('mgSearch').value.trim().toLowerCase(), g = $('mgGroup').value, sh = $('mgShow').value;
     const rows = mgData.students.filter((s) => (!g || s.group === g) && (!sh || (sh === 'inactive') === !!s.inactive) && (!q || String(s.roll) === q || String(s.roll).indexOf(q) === 0 || s.name.toLowerCase().indexOf(q) >= 0));
     const off = mgData.students.filter((s) => s.inactive).length;
-    $('mgSum').textContent = mgData.students.length + ' students in ' + yearLabel(mgData.y) + (off ? ' (' + off + ' inactive)' : '') + (g || q || sh ? ' · showing ' + rows.length : '') + ' · ' + mgData.students.filter((s) => s.photo).length + ' with photos. Tap a student to edit, change roll number or photo, make inactive, or remove.';
+    $('mgSum').textContent = mgData.students.length + ' students in ' + yearLabel(mgData.y) + (off ? ' (' + off + ' inactive)' : '') + (g || q || sh ? ' · showing ' + rows.length : '') + ' · ' + mgData.students.filter((s) => s.photo).length + ' with photos. ' + (dutyStu(mgData.y) || isOwnerUser() ? 'Tap a student to edit, change roll number or photo, make inactive, or remove.' : dutyAnyStu() ? '👁 View only for this class — choose ' + (myDuty().bs ? 'a BS semester' : '1st or 2nd Year') + ' above to add or remove students.' : 'View only.');
     const show = rows.slice(0, 150);
     $('mgList').innerHTML = show.length ? show.map((s) => '<div class="mg-row' + (s.inactive ? ' off' : '') + '" data-roll="' + s.roll + '"><span class="roll">' + s.roll + '</span>' + avatar(s.roll) +
       '<span class="nm"><b>' + esc(s.name) + (s.inactive ? '<span class="mg-off">⏸ inactive</span>' : '') + '</b><small>' + esc(s.group) + (s.father ? ' · ' + esc(s.father) : '') + (s.photo ? '' : ' · no photo') + (s.inactive ? ' · ' + esc(String(s.status).replace(/^inactive\s*[—-]?\s*/i, '')) : '') + '</small></span><span class="chev">&rsaquo;</span></div>').join('') +
@@ -6481,6 +6490,8 @@
     applyChrome();
     render();
     fetchLiveNotices();
+    setTimeout(refreshMe, 1500);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshMe(); });
     Promise.all([refreshTTC(true), refreshTTS(true)]).then((ch) => { if ((ch[0] || ch[1]) && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
