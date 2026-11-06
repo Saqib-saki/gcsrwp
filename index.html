@@ -348,6 +348,7 @@
   .rem-chips { display: flex; flex-wrap: wrap; gap: 6px; } .chip-btn { border: 1px solid var(--border); background: var(--chip-bg); color: var(--chip-text); border-radius: 999px; padding: 6px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
   .chip-btn.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   .bd-b.b-rem { background: #efe6fa; color: #5b2f99; }
+  .bs-only { color: #5b2f99 !important; font-weight: 600; }
   @media print { body.print-ds > *:not(#dsPrint) { display: none !important; } body.print-ds #dsPrint { display: block !important; } }
   .dsp { font-size: 9.5pt; color: #000; } .dsp-head { display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #10345c; padding-bottom: 6px; margin-bottom: 8px; }
   .dsp-head img { width: 46px; height: 46px; } .dsp-head b { font-size: 12pt; } .dsp-head div div { font-weight: 700; font-size: 11pt; color: #b3261e; }
@@ -2598,6 +2599,14 @@
     A7: 'F.A Humanities — Sociology, History, Health & P.E.', D: 'DIT (Semester 1)'
   };
 
+  /* v13.9: courses taken by only some students of a group (server tab 'Course Students', sent with the timetable) → their roll numbers, or null */
+  function courseOnlyFor(y, g, subj) {
+    const L = (TTS && TTS.courses) || []; if (!L.length) return null;
+    const yv = String(yk(y)), G = String(g || '').toUpperCase(), n = (x) => String(x || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const code = (x) => { const m = /\(([A-Z]{1,6}\s*-?\s*\d{2,4}[A-Z]?)\)/i.exec(String(x || '')); return m ? m[1].replace(/\s+/g, '').toUpperCase() : ''; };
+    const r = L.find((c) => c.y === yv && c.g === G && (n(c.s) === n(subj) || (code(c.s) && code(c.s) === code(subj))));
+    return r ? r.rolls : null;
+  }
   /* ---------- BS timetables (by semester and programme) ---------- */
   const SEM_FULL = { 1: '1st', 3: '3rd', 5: '5th', 7: '7th' };
   function renderBsTimetable(sem) {
@@ -2618,7 +2627,7 @@
       if (!rs.length) { if (!shared) h += '<tr class="bs-free"><td class="period">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td><td colspan="3">—</td></tr>'; return; }
       rs.forEach((r, i) => {
         h += '<tr>' + (i ? '<td></td>' : '<td class="period" rowspan="1">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td>') +
-          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (bsRowDaysStr(r) ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(bsRowDaysStr(r))) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
+          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (() => { const pc = Object.keys(BS_PROG).find((k) => BS_PROG[k] === cur), only = pc ? courseOnlyFor('B' + sem, pc, r.course) : null; return only ? '<span class="ttnote bs-only">👥 Only roll no. ' + esc(only.join(', ')) + ' take this course</span>' : ''; })() + (bsRowDaysStr(r) ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(bsRowDaysStr(r))) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
           '<td>' + esc(r.teacher || '—') + '</td><td>' + esc(r.room || '—') + '</td></tr>';
       });
     });
@@ -4925,7 +4934,8 @@
     classes.forEach((c) => {
       if (!tOk(c.t)) return;
       const si = subjIdx(c.subj); if (uSel !== '' && si !== Number(uSel)) return;
-      const studs = base.filter((r) => !r[4] && r[2] === c.g && secOk(c.sec, r[0], c.g)); if (!studs.length) return;
+      const only = courseOnlyFor(recYear, c.g, c.subj);   // v13.9: a course taken by only some students of the group
+      const studs = base.filter((r) => !r[4] && r[2] === c.g && secOk(c.sec, r[0], c.g) && (!only || only.indexOf(r[0]) >= 0)); if (!studs.length) return;
       const by = {};
       tis.forEach((ti) => { const b = { ps: [], ab: 0 }; if (si >= 0) studs.forEach((r) => { const cell = r[5].find((x) => x[0] === ti && x[1] === si); if (!cell) return; if (cell[4]) b.ab++; else b.ps.push(100 * cell[2] / cell[3]); }); by[ti] = b; });
       rows.push({ t: c.t, g: c.g, sec: c.sec, subj: c.subj, si, N: studs.length, by });
@@ -5484,8 +5494,8 @@
       const si = subjIdx(x.subject); if (si < 0) return;
       String(x.teacher || '').split('+').map((t) => t.trim()).filter((t) => t && !isVacant(t)).forEach((t) => {
         const key = nameKey(t) + '|' + x.group + '|' + x.section + '|' + si; if (seen[key]) return; seen[key] = 1;
-        const ps = []; let ab = 0;
-        d.rows.forEach((r) => { if (r[4] || r[2] !== x.group || !secOk(x.section, r[0], x.group)) return; r[5].forEach((c) => { if (c[1] !== si) return; if (c[4]) ab++; else if (c[3]) ps.push(100 * c[2] / c[3]); }); });
+        const ps = []; let ab = 0, only = courseOnlyFor(y, x.group, x.subject);
+        d.rows.forEach((r) => { if (r[4] || r[2] !== x.group || !secOk(x.section, r[0], x.group) || (only && only.indexOf(r[0]) < 0)) return; r[5].forEach((c) => { if (c[1] !== si) return; if (c[4]) ab++; else if (c[3]) ps.push(100 * c[2] / c[3]); }); });
         if (!ps.length && !ab) return;
         const o = out[nameKey(t)] || (out[nameKey(t)] = { ps: [], ab: 0, classes: [] });
         o.ps.push(...ps); o.ab += ab;
