@@ -294,6 +294,20 @@
   .sp-det[open] summary { margin-bottom: 8px; } .sp-rules { margin-top: 4px; font-size: .8rem; } .sp-rules summary { cursor: pointer; color: var(--accent); font-weight: 700; }
   .sp-ge-row { border-bottom: 1px solid var(--border); padding: 10px 0; } .sp-ge-h { margin-bottom: 6px; } .sp-sqr { align-items: center; } .sp-mt td, .sp-mt th { padding: 6px 8px; }
   .field textarea { width: 100%; font-size: .95rem; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit; }
+  .sp-hero2 { margin-bottom: 10px; } .sp-live { background: #e53935; color: #fff; border-radius: 6px; padding: 1px 6px; font-weight: 800; font-size: .72rem; animation: spPulse 1.6s infinite; }
+  @keyframes spPulse { 50% { opacity: .55; } }
+  .sp-cta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; border: 2px dashed #d9822b; } .sp-cta .btn-primary { background: linear-gradient(120deg, #1a7f4e, #2b6cb0); }
+  .sp-me { margin-bottom: 12px; border: 0; box-shadow: 0 4px 14px rgba(16,52,92,.12); }
+  .sp-me-top { display: flex; align-items: center; gap: 12px; background: var(--wc); color: #fff; padding: 12px 14px; }
+  .sp-me-l { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.22); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.3rem; flex: none; }
+  .sp-me-n { font-weight: 800; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .sp-me-w { font-size: .78rem; opacity: .9; }
+  .sp-me-e { background: rgba(255,255,255,.2); color: #fff; border: 0; border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: .78rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .sp-me-b { padding: 10px 14px 12px; } .sp-me-nx { margin-top: 8px; font-size: .84rem; color: var(--text); }
+  .sp-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--chip-bg); border-radius: 14px; padding: 4px; margin-bottom: 12px; position: sticky; top: calc(60px + env(safe-area-inset-top, 0px)); z-index: 5; }
+  .sp-tabs button { border: 0; background: transparent; border-radius: 10px; padding: 7px 2px; font-family: inherit; font-weight: 700; font-size: .78rem; color: var(--muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .sp-tabs button span { font-size: 1.15rem; } .sp-tabs button.on { background: var(--card-bg); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .sp-lead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--card-bg); border: 1px solid var(--border); border-left: 5px solid var(--wc); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: .9rem; }
+  .sp-lead span:last-child { margin-left: auto; color: var(--muted); font-size: .78rem; }
   .sp-x { display: block; margin: 4px 0 0 !important; color: var(--red) !important; font-size: .76rem; }
   .field label.sp-gm, .sp-edit label.sp-gm { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .86rem; font-weight: 600; margin: 0; }
   .field .sp-gen label, .sp-edit .sp-gen label, .field label.sp-only { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .9rem; font-weight: 600; margin: 0; }
@@ -1628,7 +1642,7 @@
     records:       { view: 'view-rec',           title: () => 'Student Records', parent: '/' },
     marks:         { view: 'view-marks',         title: () => 'Enter Marks',        parent: '/' },
     my:            { view: 'view-my',            title: () => 'My Attendance & Results', parent: '/' },
-    sports:        { view: 'view-sports',        title: () => ({ reg: 'Registration', wings: 'Wings', matches: 'Match Schedule', games: 'Games', admin: 'Sports in-charge' })[spSub] || 'Sports Gala', parent: () => (spSub ? spBase() : '/') },
+    sports:        { view: 'view-sports',        title: () => ({ reg: 'Registration', games: 'Games & rules', admin: 'Sports in-charge' })[spSub] || 'Sports Gala', parent: () => (/^(reg|games|admin)$/.test(spSub) ? spBase() : '/') },
     board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     signin:        { view: 'view-signin',        title: () => 'Staff sign-in',      parent: '/' },
     pins:          { view: 'view-pins',          title: () => 'Staff PIN slips',    parent: '/faculty' },
@@ -1641,7 +1655,7 @@
     const [a, ...rest] = raw.split('/');
     const arg = rest.length ? decodeURIComponent(rest.join('/')) : null;
     if (!a) return { key: 'home' };
-    if (a === 'sports' || a === 'staffsports') { spMode = a === 'staffsports' ? 'staff' : 'student'; spSub = /^(reg|wings|matches|games|admin)$/.test(arg || '') ? arg : ''; return { key: 'sports', arg: spSub }; }
+    if (a === 'sports' || a === 'staffsports') { spMode = a === 'staffsports' ? 'staff' : 'student'; spSub = /^(reg|wings|matches|games|admin|medals|today)$/.test(arg || '') ? arg : ''; return { key: 'sports', arg: spSub }; }
     if (a === 'faculty') {
       if (!arg) return { key: 'faculty' };
       if (arg === 'new') return { key: 'faculty-edit', arg: '' };
@@ -5929,38 +5943,78 @@
       if (sub === 'reg') return spPaintReg();
       if (sub === 'wings') return spPaintWings();
       if (sub === 'matches') return spPaintMatches();
+      if (sub === 'medals') return spPaintMedals();
       if (sub === 'games') return spPaintGames();
       if (sub === 'admin') return spPaintAdmin();
-      spPaintMenu();
+      spPaintToday2();
     };
     if (sub === 'admin') { spAdm = null; paint(); if (!spInfo) spLoadInfo(); return; }
     if (!spInfo) out.innerHTML = '<div class="empty">Loading the Sports Gala…</div>';
     else paint();
     spLoadInfo().then((ok) => { if (ok) paint(); else if (!spInfo) out.innerHTML = '<div class="empty">You need internet to open the Sports Gala the first time.</div>'; });
   }
+  /** v15.1: the hub — hero with countdown, "me" card, four tabs (Today · Schedule · Medals · Wings) */
+  function spPhase() {
+    const S = (spInfo && spInfo.settings) || {}, t = todayISO(); if (!S.from) return '';
+    const to = S.to || S.from, day = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
+    if (t < S.from) { const n = day(t, S.from); return '⏳ Starts in ' + n + ' day' + (n === 1 ? '' : 's'); }
+    if (t <= to) return '<span class="sp-live">● LIVE</span> Day ' + (day(S.from, t) + 1) + ' of ' + (day(S.from, to) + 1);
+    return '✅ Completed';
+  }
+  function spMeCard() {
+    const m = spMine(), S = (spInfo && spInfo.settings) || {}, open = S.regOpen !== false;
+    if (spMode === 'staff' && !attAuth) return '<div class="card pad sp-cta"><div><b>Staff games</b><div class="sp-sub">Sign in to register and see your matches.</div></div><button class="btn-primary" data-go="/signin">🔒 Sign in</button></div>';
+    if (!m || !m.wing) return '<div class="card pad sp-cta"><div><b>' + (open ? 'Take part in the gala' : 'Registration is closed') + '</b><div class="sp-sub">' + (open ? 'Register, choose your games and get your wing.' : 'Already registered? Open your card to see your matches.') + '</div></div>' +
+      '<button class="btn-primary" data-go="' + spBase() + '/reg">' + (open ? '📝 Register now' : '🎫 My sports card') + '</button>' + (open ? '<button class="link-btn" data-go="' + spBase() + '/reg" style="margin:6px 0 0">Registered already? Show my card</button>' : '') + '</div>';
+    const nx = spNext(m, 1)[0];
+    return '<div class="card sp-me" style="--wc:' + (SP_WC[m.wing] || '#10345c') + '"><div class="sp-me-top"><span class="sp-me-l">' + esc(m.wing.charAt(0)) + '</span><div style="flex:1;min-width:0"><div class="sp-me-n">' + esc(m.name) + '</div><div class="sp-me-w">' + esc(m.wing) + ' wing · ' + esc(m.cat || '') + '</div></div>' +
+      '<button class="sp-me-e" data-go="' + spBase() + '/reg">My card ›</button></div><div class="sp-me-b"><div class="sp-chips">' + (m.games || []).map((g) => '<span class="sp-chip">' + spEmo(g) + ' ' + esc(g) + '</span>').join('') + '</div>' +
+      ((m.squads || []).length ? '<div class="sp-sel" style="margin-top:6px">' + m.squads.map((x) => '✅ ' + esc(x.game) + ' squad' + (x.role && x.role !== 'Player' ? ' (' + esc(x.role) + ')' : '')).join(' · ') + '</div>' : '') +
+      '<div class="sp-me-nx">' + (nx ? '⏭ Next: ' + spEmo(nx.game) + ' <b>' + esc(nx.game) + '</b>' + (nx.date ? ' · ' + esc(new Date(nx.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) : ' · date not fixed') + (nx.time ? ' · ' + esc(nx.time) : '') + (nx.venue ? ' · ' + esc(nx.venue) : '') : 'No match fixed yet for your games.') + '</div></div></div>';
+  }
+  function spShell(tab) {
+    const S = (spInfo && spInfo.settings) || { title: 'Sports Gala' }, ph = spPhase();
+    const dates = S.from ? fmtDate(S.from).replace(/\s*\d{4}$/, '') + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : ' ' + S.from.slice(0, 4)) : '';
+    const reg = spInfo && spInfo.counts ? SP_WINGS.reduce((a, w) => a + ((spInfo.counts[w] || {})[spMode === 'staff' ? 'staff' : 'students'] || 0), 0) : 0;
+    let h = '<div class="sp-hero sp-hero2"><div class="sp-hero-t">🏆 ' + esc(S.title || 'Sports Gala') + '</div><div class="sp-hero-s">' + [ph, dates ? esc(dates) : '', (spMode === 'staff' ? 'Staff' : 'Students') + ' · ' + reg + ' registered'].filter(Boolean).join(' · ') + '</div>' + (S.note ? '<div class="sp-hero-n">' + linkify(S.note) + '</div>' : '') + '</div>';
+    h += spMeCard();
+    if (spMode === 'staff' && spCanView()) h += '<button class="mark-btn sp-inc" data-go="/staffsports/admin" style="margin:0 0 12px"><span style="font-size:1.2rem">⚙️</span><span><div class="q-title">Sports in-charge</div><div class="q-sub">' + (spIsInc() ? 'Registrations, squads, schedule, results, certificates' : 'View only') + '</div></span><span class="chev">&rsaquo;</span></button>';
+    if (tab) h += '<div class="sp-tabs" id="spTabs">' + [['today', '⚡', 'Today'], ['matches', '📅', 'Schedule'], ['medals', '🏅', 'Medals'], ['wings', '🛡️', 'Wings']].map((x) => '<button data-sptab="' + x[0] + '"' + (x[0] === tab ? ' class="on"' : '') + '><span>' + x[1] + '</span>' + x[2] + '</button>').join('') + '</div>';
+    h += '<div id="spBody"></div>';
+    $('spOut').innerHTML = h;
+    if ($('spTabs')) $('spTabs').querySelectorAll('button').forEach((b) => { b.onclick = () => { const t = b.dataset.sptab; history.replaceState(history.state, '', '#' + spBase() + (t === 'today' ? '' : '/' + t)); render(); }; });
+    return $('spBody');
+  }
+  function spPaintToday2() {
+    const body = spShell('today'), who = spWho(), t = todayISO(), all = ((spInfo && spInfo.matches) || []).filter((m) => spCatIn(m.cat, who)), m = spMine();
+    let h = '';
+    if (spMode === 'staff') { const D = spSort(spMyDuties().filter((x) => x.status !== 'Cancelled' && (!x.date || x.date >= t))); if (D.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🧑‍⚖️ My duties <small>referee / judge</small></div>' + spMatchList(D) + '</div>'; }
+    const today = all.filter((x) => x.date === t && x.status !== 'Cancelled');
+    if (today.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">⚡ Today’s matches <small>' + today.length + '</small></div>' + spMatchList(today) + '</div>';
+    if (m && m.wing) { const nx = spNext(m, 3).filter((x) => x.date !== t); if (nx.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">📅 My coming matches</div>' + spMatchList(nx) + '</div>'; }
+    if (!today.length) { const up = spSort(all.filter((x) => x.date && x.date > t && ['Cancelled', 'Played', 'Walkover'].indexOf(x.status) < 0)).slice(0, 5);
+      h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">⏭ Next up</div>' + (up.length ? spMatchList(up) : '<div class="sp-sub" style="margin-top:6px">No dates fixed yet. The schedule appears here as soon as the sports in-charge sets it.</div>') + '</div>'; }
+    const res = spSort(all.filter((x) => (spDone(x) || (x.places || []).some(Boolean)) && x.date !== t)).reverse().slice(0, 4);
+    if (res.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🏁 Latest results</div>' + spMatchList(res) + '<button class="link-btn" data-sptab2="medals" style="margin:8px 0 0">Medal table ›</button></div>';
+    const M = spMedalTable(all, who); if (M.champ) h = '<div class="sp-lead" style="--wc:' + SP_WC[M.champ] + '">🏆 Leading: ' + spWB(M.champ) + ' <b>' + M.t[M.champ].pts + ' pts</b><span>' + M.order.slice(1, 3).map((w) => esc(w) + ' ' + M.t[w].pts).join(' · ') + '</span></div>' + h;
+    body.innerHTML = h || '<div class="empty">Nothing yet.</div>';
+    body.querySelectorAll('[data-sptab2]').forEach((b) => { b.onclick = () => { history.replaceState(history.state, '', '#' + spBase() + '/medals'); render(); }; });
+  }
+  function spPaintMedals() {
+    const body = spShell('medals'), who = spWho(), all = ((spInfo && spInfo.matches) || []).filter((m) => spCatIn(m.cat, who));
+    let h = spMedalHtml(all, who) || '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🏅 Medal table</div><div class="sp-sub" style="margin-top:6px">Medals appear here when the first results are entered. 1st = 5 points, 2nd = 3, 3rd = 1 — the wing with the most points wins the gala.</div></div>';
+    h += spBestHtml(all, who, (spInfo && spInfo.games) || []);
+    const placed = spSort(all.filter((x) => (x.places || []).some(Boolean) || spDone(x))).reverse();
+    if (placed.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🏁 All results</div>' + spMatchList(placed) + '</div>';
+    const past = (spInfo && spInfo.past) || [];
+    if (past.length) h += '<div class="card pad"><div class="ds-h">📚 Past galas</div>' + past.slice().reverse().map((x) => { const c = (x.champ || {})[who]; return '<div class="sp-pt"><b>' + esc(x.title) + '</b><span class="sp-sub">' + esc(x.from ? fmtDate(x.from) : '') + '</span><span style="margin-left:auto">' + (c ? '🏆 ' + spWB(c) : '<span class="sp-sub">—</span>') + '</span></div>'; }).join('') + '</div>';
+    body.innerHTML = h;
+  }
   function spHero(sub) {
     const S = (spInfo && spInfo.settings) || { title: 'Sports Gala' };
     const dates = S.from ? fmtDate(S.from) + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : '') : '';
     return '<div class="sp-hero"><div class="sp-hero-t">🏆 ' + esc(S.title || 'Sports Gala') + '</div><div class="sp-hero-s">' + (spMode === 'staff' ? 'Staff' : 'Students') + (dates ? ' · ' + esc(dates) : '') +
       ' · Registration ' + (S.regOpen === false ? '<b>closed</b>' : '<b>open</b>') + (sub ? '' : (spInfo && spInfo.counts ? ' · ' + SP_WINGS.reduce((a, w) => a + ((spInfo.counts[w] || {})[spMode === 'staff' ? 'staff' : 'students'] || 0), 0) + ' registered' : '')) + '</div>' + (S.note && !sub ? '<div class="sp-hero-n">' + linkify(S.note) + '</div>' : '') + '</div>';
-  }
-  function spPaintMenu() {
-    const m = spMine();
-    let h = spHero('');
-    if (m && m.wing) h += '<div class="card pad sp-mine" style="--wc:' + (SP_WC[m.wing] || '#10345c') + '"><div>' + spWB(m.wing, true) + '</div><div><b>' + esc(m.name) + '</b><div class="sp-sub">' + esc(m.wing) + ' wing · ' + esc((m.games || []).join(', ') || 'no games yet') + '</div>' +
-      ((m.squads || []).length ? '<div class="sp-sel" style="margin-top:4px">' + m.squads.map((x) => '✅ ' + esc(x.game) + ' squad' + (x.role && x.role !== 'Player' ? ' (' + esc(x.role) + ')' : '')).join(' · ') + '</div>' : '') + '</div></div>';
-    if (spMode === 'staff') { const D = spSort(spMyDuties().filter((x) => x.status !== 'Cancelled' && (!x.date || x.date >= todayISO()))); if (D.length) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🧑‍⚖️ My duties <small>referee / judge</small></div>' + spMatchList(D) + '</div>'; }
-    if (m && m.wing) {
-      const nx = spNext(m, 4);
-      h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">📅 My next matches</div>' + (nx.length ? spMatchList(nx) + '<button class="link-btn" data-go="' + spBase() + '/matches" style="margin:8px 0 0">All my matches ›</button>' : '<div class="sp-sub" style="margin-top:6px">No match fixed yet for ' + esc((m.games || []).join(', ')) + '. Days and times show here as soon as the sports in-charge sets them.</div>') + '</div>';
-    } else if (spInfo && (spInfo.matches || []).length) h += '<p class="note" style="margin:0 0 12px">Registered already? Open <b>Registration</b> once on this phone' + (spMode === 'staff' ? '' : ' with your roll number') + ' to see your own match days and times here.</p>';
-    const tile = (go, e, t, s) => '<button class="tile sp-tile" data-go="' + spBase() + go + '"><div class="emoji">' + e + '</div><div class="tlabel">' + t + '</div><div class="tsub">' + s + '</div></button>';
-    h += '<div class="grid-tiles sp-grid">' + tile('/reg', '📝', 'Registration', spMode === 'staff' ? 'Your games' : 'Roll no. + B-Form / CNIC') + tile('/wings', '🛡️', 'Wings', 'Jinnah · Tipu · Sir Syed · Iqbal · Fatima') +
-      tile('/matches', '📅', 'Match Schedule', 'Dates, times, results') + tile('/games', '🏅', 'Games', 'Team and individual games') + '</div>';
-    const past = (spInfo && spInfo.past) || [];
-    if (past.length) h += '<div class="card pad" style="margin-top:12px"><div class="ds-h">📚 Past galas</div>' + past.slice().reverse().map((x) => { const c = (x.champ || {})[spWho()]; return '<div class="sp-pt"><b>' + esc(x.title) + '</b><span class="sp-sub">' + esc(x.from ? fmtDate(x.from) : '') + '</span><span style="margin-left:auto">' + (c ? '🏆 ' + spWB(c) : '<span class="sp-sub">—</span>') + '</span></div>'; }).join('') + '</div>';
-    if (spMode === 'staff' && spCanView()) h += '<button class="mark-btn sp-inc" data-go="/staffsports/admin"><span style="font-size:1.4rem">⚙️</span><span><div class="q-title">Sports in-charge</div><div class="q-sub">' + (spIsInc() ? 'Registrations, squads, schedule, results, certificates, settings' : 'View registrations, squads, schedule and results (view only)') + '</div></span><span class="chev">&rsaquo;</span></button>';
-    $('spOut').innerHTML = h;
   }
   /* ---------- registration ---------- */
   function spPaintReg() {
@@ -6053,10 +6107,10 @@
   /* ---------- wings ---------- */
   function spPaintWings() {
     const C = (spInfo && spInfo.counts) || {}, W = spWins(), who = spWho(), staff = who === 'staff';
-    let h = spHero('wings') + '<p class="note" style="margin:0 0 10px">' + (staff ? '👤 Staff games — staff play only against staff.' : '🎓 Students’ games — staff games are kept separate.') + '</p>';
+    const body = spShell('wings');
+    let h = '<p class="note" style="margin:0 0 10px">' + (staff ? '👤 Staff games — staff play only against staff.' : '🎓 Students’ games — staff games are kept separate.') + '</p>';
     const order = SP_WINGS.slice().sort((a, b) => (W[b].won - W[a].won) || 0);
     const anyPlayed = SP_WINGS.some((w) => W[w].played);
-    h += spMedalHtml((spInfo && spInfo.matches) || [], who) + spBestHtml((spInfo && spInfo.matches) || [], who, (spInfo && spInfo.games) || []);
     if (anyPlayed) h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">🏅 Match wins <small>wins in matches played</small></div>' + order.map((w, i) => '<div class="sp-pt"><span class="sp-rank">' + (i + 1) + '</span>' + spWB(w) + '<span class="sp-bar"><i style="width:' + (W[order[0]].won ? 100 * W[w].won / W[order[0]].won : 0) + '%;background:' + SP_WC[w] + '"></i></span><b>' + W[w].won + '</b><small>/' + W[w].played + '</small></div>').join('') + '</div>';
     h += '<div class="sp-wings">' + SP_WINGS.map((w) => {
       const c = C[w] || { students: 0, staff: 0, games: {} }, G = spCountsOf(c, who), top = Object.keys(G).sort((a, b) => G[b] - G[a]).slice(0, 4);
@@ -6066,7 +6120,7 @@
     }).join('') + '</div>';
     h += '<div class="card pad"><div class="ds-h">How is my wing decided?</div><p class="sp-sub" style="margin:6px 0 0;line-height:1.5"><b>Boys</b> (1st Year, 2nd Year and every BS semester): college roll number ÷ 4 → remainder <b>1 = Jinnah</b>, <b>2 = Tipu</b>, <b>3 = Sir Syed</b>, <b>0 = Iqbal</b> (e.g. roll 433 → Jinnah, 436 → Iqbal). Every class and semester is shared out equally between the four wings.<br><b>Girls</b> (BS): <b>Fatima</b> wing.</p>' + '</div>';
     if (staff) h = h.replace(/<div class="card pad"><div class="ds-h">How is my wing decided\?<\/div>[\s\S]*$/, '<div class="card pad"><div class="ds-h">How is my wing decided?</div><p class="sp-sub" style="margin:6px 0 0;line-height:1.5"><b>Male staff</b>: shared out in turn across Jinnah, Tipu, Sir Syed and Iqbal by the staff seniority list. <b>Female staff</b>: Fatima wing. Staff teams play only against staff teams.</p></div>');
-    $('spOut').innerHTML = h;
+    body.innerHTML = h;
   }
   /* ---------- matches ---------- */
   function spMyMatches(m) {
@@ -6097,15 +6151,18 @@
     if (!spOnlyMineSet && mineInfo && mineInfo.wing) { spOnlyMine = true; spOnlyMineSet = true; }
     const cats = [''].concat(SP_GROUP[who]); if (cats.indexOf(spMatchCat) < 0) spMatchCat = '';
     const games = [...new Set(all.map((m) => m.game))].sort(); if (games.indexOf(spMatchGame) < 0) spMatchGame = '';
-    let h = spHero('matches') + '<div class="seg" id="spCats">' + cats.map((c) => '<button data-c="' + esc(c) + '"' + (c === spMatchCat ? ' class="on"' : '') + '>' + (c || (who === 'staff' ? 'All staff' : 'All students')) + '</button>').join('') + '</div>' +
+    const body = spShell('matches');
+    let h = '<div class="seg" id="spCats">' + cats.map((c) => '<button data-c="' + esc(c) + '"' + (c === spMatchCat ? ' class="on"' : '') + '>' + (c || (who === 'staff' ? 'All staff' : 'All students')) + '</button>').join('') + '</div>' +
       '<div class="field-row"><div class="field"><label for="spMG">Game</label><select id="spMG"><option value="">All games</option>' + games.map((g) => '<option' + (g === spMatchGame ? ' selected' : '') + '>' + esc(g) + '</option>').join('') + '</select></div>' +
-      '<div class="field"><label>&nbsp;</label>' + (mineInfo && mineInfo.wing ? '<label class="sp-only"><input type="checkbox" id="spMine"' + (spOnlyMine ? ' checked' : '') + '> Only my matches (' + esc(mineInfo.wing) + ')</label>' : '<span class="sp-sub">Register to see your own matches</span>') + '</div></div>';
+      '<div class="field"><label>&nbsp;</label>' + (mineInfo && mineInfo.wing ? '<label class="sp-only"><input type="checkbox" id="spMine"' + (spOnlyMine ? ' checked' : '') + '> Only my matches (' + esc(mineInfo.wing) + ')</label>' : '<span class="sp-sub">Register to see your own matches</span>') + '</div></div>' +
+      (spMatchGame ? (() => { const g = ((spInfo && spInfo.games) || []).find((x) => x.game === spMatchGame); return g && (g.rules || g.size) ? '<details class="sp-rules card pad" style="margin-bottom:12px"><summary>📜 ' + esc(g.game) + ' rules' + (g.size ? ' · squad up to ' + g.size : '') + '</summary><div style="margin-top:6px">' + (g.rules ? linkify(g.rules).replace(/\n/g, '<br>') : '') + '</div></details>' : ''; })() : '');
     let L = spOnlyMine && mineInfo ? spMyMatches(mineInfo) : all;
     L = L.filter((m) => (!spMatchCat || m.cat === spMatchCat) && (!spMatchGame || m.game === spMatchGame));
     const kos = spMatchGame ? [spMatchGame] : [...new Set(all.filter((m) => spIsSemi(m) || spIsFinal(m)).map((m) => m.game))];
     kos.forEach((g) => SP_GROUP[who].filter((c) => !spMatchCat || c === spMatchCat).forEach((c) => { h += spBracketHtml(all, g, c) + (spMatchGame ? spStandHtml(all, g, c) : ''); }));
     h += '<div class="card pad">' + (all.length ? spMatchList(L) : '<div class="empty">The match schedule will appear here once the sports in-charge makes it.</div>') + '</div>';
-    $('spOut').innerHTML = h;
+    h += '<button class="link-btn" data-go="' + spBase() + '/games" style="margin:12px auto 0;display:block">🎮 All games &amp; rules ›</button>';
+    body.innerHTML = h;
     $('spCats').querySelectorAll('button').forEach((b) => { b.onclick = () => { spMatchCat = b.dataset.c; spPaintMatches(); }; });
     $('spMG').onchange = () => { spMatchGame = $('spMG').value; spPaintMatches(); };
     if ($('spMine')) $('spMine').onchange = () => { spOnlyMine = $('spMine').checked; spOnlyMineSet = true; spPaintMatches(); };
