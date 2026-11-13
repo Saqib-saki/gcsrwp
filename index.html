@@ -880,7 +880,7 @@
         <div class="tsub" id="resTileSub">Useful links</div>
       </button>
     </div>
-    <button class="sp-banner" data-go="/sports"><span class="sp-ban-e">🏆</span><span><div class="q-title" id="spBanTitle">Sports Gala</div><div class="q-sub">Registration · Wings · Match schedule · Games</div></span><span class="chev">&rsaquo;</span></button>
+    <button class="sp-banner" data-go="/sports"><span class="sp-ban-e">🏆</span><span><div class="q-title" id="spBanTitle">Sports Gala</div><div class="q-sub" id="spBanSub">Registration · Wings · Match schedule · Games</div></span><span class="chev">&rsaquo;</span></button>
     <div id="staffArea" style="display:none">
     <div class="section-title staff-head">🔒 Staff area <span class="lock-chip" id="staffWhoChip">teachers only · PIN</span></div>
     <div class="grid-tiles grid-staff4 grid-staff">
@@ -924,6 +924,11 @@
     <button class="mark-btn mark-btn-3" id="dutyTTBtn" style="display:none">
       <span style="font-size:1.4rem">🗓️</span>
       <span><div class="q-title">Timetable management</div><div class="q-sub">Timetable incharge · open the timetable Google Sheet, check it, master timetable</div></span>
+      <span class="chev">&rsaquo;</span>
+    </button>
+    <button class="mark-btn sp-inc" id="dutySpBtn" data-go="/staffsports/admin" style="display:none">
+      <span style="font-size:1.4rem">🏆</span>
+      <span><div class="q-title">Sports in-charge</div><div class="q-sub">Sports Gala · registrations, match schedule, results, settings</div></span>
       <span class="chev">&rsaquo;</span>
     </button>
     <button class="mark-btn mark-btn-3" id="dutyStuBtn" style="display:none">
@@ -1743,6 +1748,7 @@
     { const D = myDuty(), own = isOwnerUser();
       $('dutyTTBtn').style.display = DATA.attendanceApi && signedIn && !own && D.tt ? 'flex' : 'none';
       $('dutyStuBtn').style.display = DATA.attendanceApi && signedIn && !own && (D.inter || D.bs) ? 'flex' : 'none';
+      $('dutySpBtn').style.display = DATA.attendanceApi && signedIn && !own && D.sports ? 'flex' : 'none';
       if (D.inter || D.bs) { $('dutyStuTitle').textContent = 'Student management — ' + (D.inter && D.bs ? 'all classes' : D.bs ? 'BS students' : '1st & 2nd Year students'); } }
     $('staffSigninRow').style.display = signedIn || !DATA.attendanceApi ? 'none' : 'block';
     $('staffSignoutRow').style.display = signedIn ? 'block' : 'none';
@@ -1753,7 +1759,13 @@
     $('greetLine').textContent = hr >= 5 && hr < 12 ? 'Good Morning ☀️' : hr >= 12 && hr < 17 ? 'Good Afternoon 🌤️' : 'Good Evening 🌙';
     $('todayLine').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     $('facultyTileSub').textContent = '🔒 Your profile & workload';
-    try { if (spInfo && spInfo.settings && spInfo.settings.title) $('spBanTitle').textContent = spInfo.settings.title; } catch (e) {}
+    try {
+      if (spInfo && spInfo.settings && spInfo.settings.title) $('spBanTitle').textContent = spInfo.settings.title;
+      let sub = 'Registration · Wings · Match schedule · Games';
+      const mm = (() => { try { return JSON.parse(store.get('sp.mine.student') || 'null'); } catch (e) { return null; } })();
+      if (mm && mm.wing && spInfo) { const nx = spNext(mm, 1)[0]; sub = nx && nx.date ? 'Your next match: ' + spEmo(nx.game) + ' ' + nx.game + ' · ' + new Date(nx.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + (nx.time ? ' · ' + nx.time : '') : mm.wing + ' wing · ' + (mm.games || []).join(', '); }
+      $('spBanSub').textContent = sub;
+    } catch (e) {}
     const nn = allNotices().length;
     $('noticeTileSub').textContent = nn ? nn + ' notice' + (nn > 1 ? 's' : '') : 'No notices yet';
     const unseen = unseenCount();
@@ -5859,6 +5871,7 @@
   const spEmo = (g) => { const k = String(g || '').toLowerCase(); const hit = Object.keys(SP_GE).find((x) => k.indexOf(x) >= 0); return hit ? SP_GE[hit] : '🏅'; };
   const spWB = (w, big) => { const c = SP_WC[w]; return c ? '<span class="sp-w' + (big ? ' big' : '') + '" style="--wc:' + c + '">' + esc(w) + '</span>' : esc(w || '—'); };
   const spSide = (x) => { const w = SP_WINGS.find((k) => k.toLowerCase() === String(x || '').trim().toLowerCase()); return w ? spWB(w) : '<b>' + esc(x || '—') + '</b>'; };
+  let spOnlyMineSet = false;
   let spInfo = null, spMe = null, spAdm = null, spAdmTab = 'reg', spMatchCat = '', spMatchGame = '', spOnlyMine = false, spEditId = '', spRegEditKey = '';
   try { spInfo = JSON.parse(store.get('sp.info') || 'null'); } catch (e) { spInfo = null; }
   const spMineKey = () => 'sp.mine.' + spMode;
@@ -5905,6 +5918,10 @@
     const m = spMine();
     let h = spHero('');
     if (m && m.wing) h += '<div class="card pad sp-mine" style="--wc:' + (SP_WC[m.wing] || '#10345c') + '"><div>' + spWB(m.wing, true) + '</div><div><b>' + esc(m.name) + '</b><div class="sp-sub">' + esc(m.wing) + ' wing · ' + esc((m.games || []).join(', ') || 'no games yet') + '</div></div></div>';
+    if (m && m.wing) {
+      const nx = spNext(m, 4);
+      h += '<div class="card pad" style="margin-bottom:12px"><div class="ds-h">📅 My next matches</div>' + (nx.length ? spMatchList(nx) + '<button class="link-btn" data-go="' + spBase() + '/matches" style="margin:8px 0 0">All my matches ›</button>' : '<div class="sp-sub" style="margin-top:6px">No match fixed yet for ' + esc((m.games || []).join(', ')) + '. Days and times show here as soon as the sports in-charge sets them.</div>') + '</div>';
+    } else if (spInfo && (spInfo.matches || []).length) h += '<p class="note" style="margin:0 0 12px">Registered already? Open <b>Registration</b> once on this phone' + (spMode === 'staff' ? '' : ' with your roll number') + ' to see your own match days and times here.</p>';
     const tile = (go, e, t, s) => '<button class="tile sp-tile" data-go="' + spBase() + go + '"><div class="emoji">' + e + '</div><div class="tlabel">' + t + '</div><div class="tsub">' + s + '</div></button>';
     h += '<div class="grid-tiles sp-grid">' + tile('/reg', '📝', 'Registration', spMode === 'staff' ? 'Your games' : 'Roll no. + B-Form / CNIC') + tile('/wings', '🛡️', 'Wings', 'Jinnah · Tipu · Sir Syed · Iqbal · Fatima') +
       tile('/matches', '📅', 'Match Schedule', 'Dates, times, results') + tile('/games', '🏅', 'Games', 'Team and individual games') + '</div>';
@@ -6021,6 +6038,8 @@
     const mine = (s) => { const t = String(s || '').trim().toLowerCase(); return !t || t === m.wing.toLowerCase() || /^all/.test(t) || (m.name && t.indexOf(String(m.name).toLowerCase()) >= 0); };
     return ((spInfo && spInfo.matches) || []).filter((x) => x.cat === m.cat && g[String(x.game).toLowerCase()] && (mine(x.a) || mine(x.b)));
   }
+  /** my matches still to come (today or later, or no date yet), soonest first */
+  const spNext = (m, n) => { const t = todayISO(); return spSort(spMyMatches(m).filter((x) => x.status !== 'Played' && x.status !== 'Cancelled' && (!x.date || x.date >= t))).slice(0, n || 99); };
   const spSort = (L) => L.slice().sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || String(a.time || '').localeCompare(String(b.time || '')));
   function spMatchList(L, edit) {
     let h = '', day = null;
@@ -6036,6 +6055,7 @@
   }
   function spPaintMatches() {
     const all = (spInfo && spInfo.matches) || [], mineInfo = spMine();
+    if (!spOnlyMineSet && mineInfo && mineInfo.wing) { spOnlyMine = true; spOnlyMineSet = true; }
     const cats = spMode === 'staff' ? ['', 'Male staff', 'Female staff', 'Boys', 'Girls'] : ['', 'Boys', 'Girls', 'Male staff', 'Female staff'];
     const games = [...new Set(all.map((m) => m.game))].sort();
     let h = spHero('matches') + '<div class="seg" id="spCats">' + cats.map((c) => '<button data-c="' + esc(c) + '"' + (c === spMatchCat ? ' class="on"' : '') + '>' + (c || 'All') + '</button>').join('') + '</div>' +
@@ -6047,7 +6067,7 @@
     $('spOut').innerHTML = h;
     $('spCats').querySelectorAll('button').forEach((b) => { b.onclick = () => { spMatchCat = b.dataset.c; spPaintMatches(); }; });
     $('spMG').onchange = () => { spMatchGame = $('spMG').value; spPaintMatches(); };
-    if ($('spMine')) $('spMine').onchange = () => { spOnlyMine = $('spMine').checked; spPaintMatches(); };
+    if ($('spMine')) $('spMine').onchange = () => { spOnlyMine = $('spMine').checked; spOnlyMineSet = true; spPaintMatches(); };
   }
   /* ---------- games ---------- */
   function spPaintGames() {
@@ -6190,6 +6210,7 @@
     };
   }
 
+  if (store.get('sp.mine.student')) setTimeout(() => { spLoadInfo().then((ok) => { if (ok && parseHash().key === 'home') renderHome(); }); }, 3500);   // keep "Your next match" on the home banner fresh
   function applyChrome() {
     $('footCollege').textContent = DATA.collegeName || '';
     const pat = DATA.patron || 'Prof. Dr. Athar Qaseem', patRole = DATA.patronRole || 'Principal';
