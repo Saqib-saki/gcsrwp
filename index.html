@@ -279,6 +279,7 @@
   .sp-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; } .sp-chip { font-size: .68rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-text); }
   .sp-chip.c-girls, .sp-chip.c-female { background: #fbe3ee; color: #9c1650; } .sp-chip.c-boys, .sp-chip.c-male { background: #e1ecfa; color: #1f4f8f; }
   .sp-edit { margin-top: 8px; padding: 10px; border: 1px dashed var(--border); border-radius: 10px; }
+  .sp-x { display: block; margin: 4px 0 0 !important; color: var(--red) !important; font-size: .76rem; }
   .field label.sp-gm, .sp-edit label.sp-gm { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .86rem; font-weight: 600; margin: 0; }
   .field .sp-gen label, .sp-edit .sp-gen label, .field label.sp-only { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .9rem; font-weight: 600; margin: 0; }
   .field .sp-gen label small { color: var(--muted); font-weight: 500; }
@@ -6101,26 +6102,87 @@
   function spAdmRegs() {
     const A = spAdm, ed = !!A.edit, games = A.games.map((g) => g.game), classes = [...new Set(A.regs.map((r) => r.clsName))];
     const pick = (id, label, opts) => '<div class="field"><label for="' + id + '">' + label + '</label><select id="' + id + '"><option value="">All</option>' + opts.map((o) => '<option>' + esc(o) + '</option>').join('') + '</select></div>';
-    let h = '<div class="card pad"><div class="ms-bar">' + pick('spFW', 'Wing', SP_WINGS) + pick('spFG', 'Game', games) + pick('spFC', 'Class', classes) + '<div class="field"><label for="spFQ">Find</label><input id="spFQ" type="search" placeholder="Name or roll"></div></div><div id="spRL"></div>' +
-      '<div class="btn-row"><button class="btn-secondary" id="spCsv">⬇ Excel (CSV)</button><button class="btn-secondary" id="spPrint">🖨 Print team lists</button></div></div>';
+    let h = (ed ? '<div class="card pad" id="spAddBox" style="margin-bottom:12px"></div>' : '') + '<div class="card pad"><div class="ds-h" style="margin-bottom:8px">Players <small>choose a wing and a game for a team list</small></div><div class="ms-bar">' + pick('spFW', 'Wing', SP_WINGS) + pick('spFG', 'Game', games) + pick('spFC', 'Class', classes) + '<div class="field"><label for="spFQ">Find</label><input id="spFQ" type="search" placeholder="Name or roll"></div></div><div id="spRL"></div>' +
+      '<div class="btn-row"><button class="btn-secondary" id="spCsv">⬇ Players list (Excel)</button><button class="btn-secondary" id="spPrint">🖨 Team lists (print / PDF)</button></div><p class="note" id="spDlNote"></p></div>';
     // wing × game table
     const cnt = {}; A.regs.forEach((r) => r.games.forEach((g) => { const k = g + '|' + r.wing; cnt[k] = (cnt[k] || 0) + 1; }));
     h += '<div class="card pad" style="margin-top:12px"><div class="ds-h">Players per wing</div><div style="overflow-x:auto"><table class="wl sum"><thead><tr><th>Game</th>' + SP_WINGS.map((w) => '<th class="num">' + spWB(w) + '</th>').join('') + '</tr></thead><tbody>' +
       games.map((g) => '<tr><td>' + spEmo(g) + ' ' + esc(g) + '</td>' + SP_WINGS.map((w) => '<td class="num">' + (cnt[g + '|' + w] || '') + '</td>').join('') + '</tr>').join('') + '</tbody></table></div></div>';
     $('spAB').innerHTML = h;
+    if (ed) spAddForm();
     const paint = () => {
       const w = $('spFW').value, g = $('spFG').value, c = $('spFC').value, q = $('spFQ').value.trim().toLowerCase();
       const L = A.regs.filter((r) => (!w || r.wing === w) && (!g || r.games.indexOf(g) >= 0) && (!c || r.clsName === c) && (!q || (r.name + ' ' + r.id).toLowerCase().indexOf(q) >= 0))
         .sort((a, b) => SP_WINGS.indexOf(a.wing) - SP_WINGS.indexOf(b.wing) || a.clsName.localeCompare(b.clsName) || (Number(a.id) || 0) - (Number(b.id) || 0) || a.name.localeCompare(b.name));
       $('spRL').innerHTML = '<div class="sp-sub" style="margin-bottom:6px">' + L.length + ' shown</div>' + (L.length ? '<div class="card" style="margin:0">' + L.map((r) => '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + esc(r.name) + '</div><div class="bd-s">' + (r.kind === 'staff' ? esc(r.sub || 'Staff') : esc(r.clsName) + ' · Roll ' + esc(r.id) + (r.group ? ' · ' + esc(r.group) : '')) + ' · ' + (r.gender === 'F' ? 'F' : 'M') + '<br>' + r.games.map((x) => spEmo(x) + ' ' + esc(x)).join(', ') + '</div>' +
         (spRegEditKey === r.key ? spRegEditHtml(r) : '') + '</div><div style="text-align:right">' + spWB(r.wing) + (ed && spRegEditKey !== r.key ? '<br><button class="link-btn" data-spreg="' + esc(r.key) + '" style="margin:6px 0 0">Edit</button>' : '') + '</div></div>').join('') + '</div>' : '<div class="empty">Nobody in this list.</div>');
+      if (ed && g) $('spRL').querySelectorAll('.bd-row').forEach((row, i) => { const r = L[i]; if (!r || spRegEditKey === r.key) return; const b = document.createElement('button'); b.className = 'link-btn sp-x'; b.textContent = '✕ Remove from ' + g; b.onclick = () => spDropGame(r, g); row.querySelector('.bd-main').appendChild(b); });
+      $('spDlNote').textContent = 'Downloads follow the Wing and Game boxes: ' + (w || 'all wings') + ' · ' + (g || 'all games') + '. Print → “Save as PDF” gives a PDF.';
       $('spRL').querySelectorAll('[data-spreg]').forEach((b) => { b.onclick = () => { spRegEditKey = b.dataset.spreg; paint(); }; });
       spBindRegEdit(paint);
     };
     ['spFW', 'spFG', 'spFC'].forEach((id) => { $(id).onchange = paint; }); $('spFQ').oninput = paint; paint();
-    $('spCsv').onclick = () => csvDownload('Sports_registrations_' + todayISO() + '.csv', [['Wing', 'Name', 'Class', 'Roll no. / Staff', 'Group / Subject', "Father's name / Designation", 'Gender', 'Games', 'Registered at']].concat(
-      A.regs.slice().sort((a, b) => SP_WINGS.indexOf(a.wing) - SP_WINGS.indexOf(b.wing) || a.clsName.localeCompare(b.clsName) || (Number(a.id) || 0) - (Number(b.id) || 0)).map((r) => [r.wing, r.name, r.clsName, r.kind === 'staff' ? 'Staff' : r.id, r.group, r.sub, r.gender === 'F' ? 'Female' : 'Male', r.games.join('; '), r.at])));
-    $('spPrint').onclick = () => spPrintTeams();
+    $('spCsv').onclick = () => {
+      const w = $('spFW').value, g = $('spFG').value, rows = [];
+      SP_WINGS.filter((x) => !w || x === w).forEach((wg) => games.filter((x) => !g || x === g).forEach((gm) => {
+        A.regs.filter((r) => r.wing === wg && r.games.indexOf(gm) >= 0).sort(spRegSort).forEach((r, k) => rows.push([wg, gm, k + 1, r.name, r.kind === 'staff' ? (r.sub || 'Staff') : r.clsName, r.kind === 'staff' ? '' : r.id, r.group, r.kind === 'staff' ? '' : r.sub, r.gender === 'F' ? 'Female' : 'Male']));
+      }));
+      if (!rows.length) { toast('Nobody in this list'); return; }
+      csvDownload('Sports_players_' + (w || 'all_wings').replace(/\s+/g, '_') + (g ? '_' + g.replace(/[^A-Za-z0-9]+/g, '_') : '') + '_' + todayISO() + '.csv', [['Wing', 'Game', 'No.', 'Name', 'Class / Designation', 'Roll no.', 'Group / Subject', "Father's name", 'Gender']].concat(rows));
+    };
+    $('spPrint').onclick = () => spPrintTeams($('spFW').value, $('spFG').value);
+  }
+  const spRegSort = (a, b) => (a.kind === 'staff') - (b.kind === 'staff') || a.clsName.localeCompare(b.clsName) || (Number(a.id) || 0) - (Number(b.id) || 0) || a.name.localeCompare(b.name);
+  async function spDropGame(r, g) {
+    const rest = r.games.filter((x) => x !== g);
+    if (!confirm(rest.length ? 'Remove ' + r.name + ' from ' + g + '? (' + rest.join(', ') + ' stay)' : g + ' is the only game of ' + r.name + ' — remove the registration?')) return;
+    try { await attApi('sportsRegEdit', rest.length ? { key: r.key, games: rest, gender: r.gender } : { key: r.key, remove: true }); toast('Removed from ' + g); spAdm = null; spLoadInfo(); spLoadAdmin(); }
+    catch (e) { toast(e.offline ? 'You need internet.' : e.message); }
+  }
+  let spAddKind = 'student', spAddCard = null, spAddQ = null;
+  function spAddForm() {
+    const A = spAdm, box = $('spAddBox'); if (!box) return;
+    const staffOpts = (A.staff || []).slice().sort((a, b) => a.name.localeCompare(b.name)).map((p) => '<option value="' + esc(p.id) + '">' + esc(p.name) + (p.designation ? ' — ' + esc(p.designation) : '') + '</option>').join('');
+    box.innerHTML = '<div class="ds-h" style="margin-bottom:8px">➕ Add a player</div><div class="seg" id="spAK"><button data-k="student"' + (spAddKind === 'student' ? ' class="on"' : '') + '>🎓 Student</button><button data-k="staff"' + (spAddKind === 'staff' ? ' class="on"' : '') + '>👤 Staff</button></div>' +
+      (spAddKind === 'student' ? '<div class="field-row"><div class="field"><label for="spAY">Class</label><select id="spAY">' + [['1', '1st Year'], ['2', '2nd Year'], ['B1', 'BS · 1st Semester'], ['B3', 'BS · 3rd Semester'], ['B5', 'BS · 5th Semester'], ['B7', 'BS · 7th Semester']].map((o) => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select></div><div class="field"><label for="spAR">Roll number</label><input id="spAR" type="number" inputmode="numeric" placeholder="e.g. 433"></div></div>'
+        : '<div class="field"><label for="spAS">Staff member</label><select id="spAS"><option value="">— choose —</option>' + staffOpts + '</select></div>') +
+      '<button class="btn-secondary" id="spAF" style="width:100%">🔍 Find</button><div class="tt-error" id="spAE"></div><div id="spAC"></div>';
+    $('spAK').querySelectorAll('button').forEach((b) => { b.onclick = () => { spAddKind = b.dataset.k; spAddCard = null; spAddForm(); }; });
+    const find = async () => {
+      $('spAE').textContent = ''; $('spAC').innerHTML = '';
+      const q = spAddKind === 'staff' ? { kind: 'staff', staffId: $('spAS').value } : { kind: 'student', year: $('spAY').value, roll: parseInt($('spAR').value, 10) };
+      if (spAddKind === 'staff' ? !q.staffId : !q.roll) { $('spAE').textContent = spAddKind === 'staff' ? 'Choose a staff member.' : 'Enter the roll number.'; return; }
+      $('spAF').disabled = true;
+      try { const j = await attApi('sportsRegAdd', Object.assign({ preview: true }, q)); spAddCard = j.card; spAddQ = q; spAddPaint(); }
+      catch (e) { $('spAE').textContent = e.offline ? 'You need internet.' : /Unknown action/.test(e.message) ? 'The server needs the v14.6 update first.' : e.message; }
+      $('spAF').disabled = false;
+    };
+    $('spAF').onclick = find; if ($('spAR')) $('spAR').onkeydown = (e) => { if (e.key === 'Enter') find(); };
+  }
+  function spAddPaint() {
+    const c = spAddCard, staff = c.kind === 'staff';
+    $('spAC').innerHTML = '<div class="sp-card-top" style="margin-top:12px"><img class="sp-ph" src="' + esc(c.photo || PH_BLANK) + '" alt=""><div class="sp-who"><div class="sp-name">' + esc(c.name) + '</div><div class="sp-sub">' + (staff ? esc([c.sub, c.group].filter(Boolean).join(' · ')) : (c.sub ? 'Father: ' + esc(c.sub) + '<br>' : '') + esc(c.clsName) + ' · Roll ' + esc(c.roll) + (c.group ? ' · ' + esc(c.group) : '')) + '</div>' +
+      '<div style="margin-top:6px" id="spAW">' + (c.wing ? spWB(c.wing, true) : '') + '</div>' + (c.registered ? '<div class="sp-sub" style="margin-top:4px">Already registered: ' + esc(c.games.join(', ') || '—') + '</div>' : '') + '</div></div>' +
+      (c.askGender ? '<div class="sp-gen" style="margin-top:10px"><label><input type="radio" name="spAG" value="M"' + (c.gender === 'M' ? ' checked' : '') + '> Male</label><label><input type="radio" name="spAG" value="F"' + (c.gender === 'F' ? ' checked' : '') + '> Female (Fatima wing)</label></div>' : '') +
+      '<div class="sp-games" id="spAGm" style="margin-top:10px"></div><button class="btn-primary" id="spAOk" style="margin-top:12px">' + (c.registered ? 'Save games' : '➕ Add player') + '</button>';
+    const paintG = () => {
+      const g = c.askGender ? (document.querySelector('input[name="spAG"]:checked') || {}).value : 'M';
+      const cat = staff ? (g === 'F' ? 'Female staff' : g === 'M' ? 'Male staff' : '') : (g === 'F' ? 'Girls' : g === 'M' ? 'Boys' : '');
+      if (!cat) { $('spAGm').innerHTML = '<div class="sp-sub">Choose Male or Female first.</div>'; return; }
+      const have = {}; c.games.forEach((x) => { have[x] = 1; });
+      $('spAGm').innerHTML = spAdm.games.filter((x) => x.active !== false && x.for.indexOf(cat) >= 0).map((x) => '<label class="sp-gm' + (have[x.game] ? ' on' : '') + '"><input type="checkbox" value="' + esc(x.game) + '"' + (have[x.game] ? ' checked' : '') + '> <span>' + spEmo(x.game) + ' ' + esc(x.game) + '</span></label>').join('');
+      $('spAGm').querySelectorAll('input').forEach((i) => { i.onchange = () => i.closest('label').classList.toggle('on', i.checked); });
+    };
+    paintG(); document.querySelectorAll('input[name="spAG"]').forEach((r) => { r.onchange = paintG; });
+    $('spAOk').onclick = async () => {
+      const gender = c.askGender ? (document.querySelector('input[name="spAG"]:checked') || {}).value : 'M';
+      const games = Array.from($('spAGm').querySelectorAll('input:checked')).map((i) => i.value);
+      if (!gender) { $('spAE').textContent = 'Choose Male or Female.'; return; }
+      if (!games.length) { $('spAE').textContent = 'Choose at least one game.'; return; }
+      $('spAOk').disabled = true;
+      try { const j = await attApi('sportsRegAdd', Object.assign({}, spAddQ, { gender: gender, games: games })); toast('✅ ' + c.name + ' → ' + j.wing + ' wing'); spAddCard = null; spAdm = null; spLoadInfo(); spLoadAdmin(); }
+      catch (e) { $('spAE').textContent = e.offline ? 'You need internet.' : e.message; $('spAOk').disabled = false; }
+    };
   }
   function spRegEditHtml(r) {
     const cats = r.kind === 'staff' ? ['Male staff', 'Female staff'] : ['Boys', 'Girls'];
@@ -6143,14 +6205,15 @@
     $('spREdel').onclick = () => { if (confirm('Remove ' + r.name + ' from the Sports Gala?')) send({ remove: true }); };
     $('spREcancel').onclick = () => { spRegEditKey = ''; repaint(); };
   }
-  function spPrintTeams() {
+  function spPrintTeams(onlyW, onlyG) {
     const A = spAdm, w = window.open('', '_blank'); if (!w) { toast('Allow pop-ups to print'); return; }
     const S = A.settings || {};
     let h = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(S.title) + ' — team lists</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:18px}h1{font-size:18px;margin:0}h2{font-size:15px;margin:18px 0 4px;padding:4px 8px;color:#fff}table{border-collapse:collapse;width:100%;margin-bottom:6px}td,th{border:1px solid #bbb;padding:3px 6px;text-align:left}th{background:#eee}.pb{page-break-before:always}</style></head><body>';
-    SP_WINGS.forEach((wg, i) => {
-      const L = A.regs.filter((r) => r.wing === wg); if (!L.length) return;
-      h += '<div' + (i ? ' class="pb"' : '') + '><h1>' + esc(DATA.collegeName || 'GGCS Rawalpindi') + ' · ' + esc(S.title) + '</h1><h2 style="background:' + SP_WC[wg] + '">' + esc(wg) + ' wing — ' + L.length + ' registered</h2>';
-      A.games.forEach((g) => {
+    let first = true;
+    SP_WINGS.filter((x) => !onlyW || x === onlyW).forEach((wg) => {
+      const L = A.regs.filter((r) => r.wing === wg && (!onlyG || r.games.indexOf(onlyG) >= 0)).sort(spRegSort); if (!L.length) return;
+      h += '<div' + (first ? '' : ' class="pb"') + '>'; first = false; h += '<h1>' + esc(DATA.collegeName || 'GGCS Rawalpindi') + ' · ' + esc(S.title) + '</h1><h2 style="background:' + SP_WC[wg] + '">' + esc(wg) + ' wing — ' + L.length + ' registered</h2>';
+      A.games.filter((g) => !onlyG || g.game === onlyG).forEach((g) => {
         const P = L.filter((r) => r.games.indexOf(g.game) >= 0); if (!P.length) return;
         h += '<b>' + esc(g.game) + ' (' + P.length + ')</b><table><tr><th>#</th><th>Name</th><th>Class / Designation</th><th>Roll no.</th><th>Group</th></tr>' + P.map((r, k) => '<tr><td>' + (k + 1) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.kind === 'staff' ? r.sub : r.clsName) + '</td><td>' + esc(r.kind === 'staff' ? '' : r.id) + '</td><td>' + esc(r.group) + '</td></tr>').join('') + '</table>';
       });

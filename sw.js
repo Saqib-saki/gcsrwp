@@ -3,7 +3,7 @@
  * shows up straight away), falling back to the saved copy when offline.
  * You never need to edit this file when you update data.json or index.html.
  */
-const CACHE = 'gcs-portal-v82';
+const CACHE = 'gcs-portal-v83';
 const SHELL = [
   './',
   './index.html',
