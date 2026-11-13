@@ -5867,7 +5867,8 @@
      Match schedule · Games. The sports in-charge ("Sports" in the Teachers tab) makes the schedule and enters results. */
   const SP_WC = { Jinnah: '#1a7f4e', Tipu: '#d9822b', 'Sir Syed': '#2b6cb0', Iqbal: '#7b3fa0', Fatima: '#c2185b' };
   const SP_WINGS = ['Jinnah', 'Tipu', 'Sir Syed', 'Iqbal', 'Fatima'];
-  const SP_GE = { cricket: '🏏', football: '⚽', volleyball: '🏐', hockey: '🏑', 'tug of war': '🪢', relay: '🏃', badminton: '🏸', 'table tennis': '🏓', race: '🏃', 'long jump': '🤸', chess: '♟️', 'musical chairs': '🪑', basketball: '🏀', kabaddi: '🤼', swimming: '🏊' };
+  const SP_GE = { cricket: '🏏', futsal: '⚽', football: '⚽', volleyball: '🏐', hockey: '🏑', 'tug of war': '🪢', badminton: '🏸', 'table tennis': '🏓', javelin: '🎯', athletics: '🏃', race: '🏃', relay: '🏃', 'long jump': '🤸', chess: '♟️', 'musical chairs': '🪑',
+    charades: '🎭', bucket: '🪣', parcel: '🎁', 'arm wrestling': '💪', basketball: '🏀', kabaddi: '🤼', swimming: '🏊' };
   const spEmo = (g) => { const k = String(g || '').toLowerCase(); const hit = Object.keys(SP_GE).find((x) => k.indexOf(x) >= 0); return hit ? SP_GE[hit] : '🏅'; };
   const spWB = (w, big) => { const c = SP_WC[w]; return c ? '<span class="sp-w' + (big ? ' big' : '') + '" style="--wc:' + c + '">' + esc(w) + '</span>' : esc(w || '—'); };
   const spSide = (x) => { const w = SP_WINGS.find((k) => k.toLowerCase() === String(x || '').trim().toLowerCase()); return w ? spWB(w) : '<b>' + esc(x || '—') + '</b>'; };
