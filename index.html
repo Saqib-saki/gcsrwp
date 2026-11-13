@@ -2627,11 +2627,12 @@
       if (!rs.length) { if (!shared) h += '<tr class="bs-free"><td class="period">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td><td colspan="3">—</td></tr>'; return; }
       rs.forEach((r, i) => {
         h += '<tr>' + (i ? '<td></td>' : '<td class="period" rowspan="1">' + p + '<span class="ttnote">' + esc(PERIOD_TIMES[p] || '') + '</span></td>') +
-          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (() => { const pc = Object.keys(BS_PROG).find((k) => BS_PROG[k] === cur), only = pc ? courseOnlyFor('B' + sem, pc, r.course) : null; return only ? '<span class="ttnote bs-only">👥 Only roll no. ' + esc(only.join(', ')) + ' take this course</span>' : ''; })() + (bsRowDaysStr(r) ? '<span class="ttnote bs-days">📅 ' + esc(bsDayLabel(bsRowDaysStr(r))) + '</span>' : '') + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
+          '<td><b>' + esc(r.course) + '</b>' + (r.code && r.course.indexOf(r.code) < 0 ? '<span class="ttnote">' + esc(r.code) + '</span>' : '') + (() => { const pc = Object.keys(BS_PROG).find((k) => BS_PROG[k] === cur), only = pc ? courseOnlyFor('B' + sem, pc, r.course) : null; return only ? '<span class="ttnote bs-only">👥 Only roll no. ' + esc(only.join(', ')) + ' take this course</span>' : ''; })() + (() => { const rd = bsDays(bsRowDaysStr(r)); if (!rd) return ''; const cd = bsCapDays(rd, sem), sd = bsSemDays(sem) || []; if (cd.join() === sd.join()) return ''; return '<span class="ttnote bs-days">📅 ' + esc(cd.length === 1 ? BS_DAY[cd[0]] : BS_DAY[cd[0]] + ' – ' + BS_DAY[cd[cd.length - 1]]) + '</span>'; })() + (r.note ? '<span class="ttnote">' + esc(r.note) + '</span>' : '') + '</td>' +
           '<td>' + esc(r.teacher || '—') + '</td><td>' + esc(r.room || '—') + '</td></tr>';
       });
     });
     h += '</tbody></table></div></div>';
+    const sd = bsSemDays(sem); if (sd) h = '<p class="note bs-week">📅 ' + (SEM_FULL[sem] || sem) + ' Semester classes: <b>' + BS_DAY[sd[0]] + ' – ' + BS_DAY[sd[sd.length - 1]] + '</b> only.</p>' + h;
     h += '<p class="note">' + (shared ? 'Courses shared by students of several programmes.' : full ? 'From the official timetable. Period times are Mon–Thu & Sat; Friday periods are 30 minutes.' :
       'Only the courses sent by the department are shown (“—” = not listed yet). Please confirm the rest with your department.') + '</p>';
     $('bsOut').innerHTML = h;
@@ -2953,13 +2954,23 @@
   /** v12.2: a BS row's days — the days column, or the "(3-4)" written in the course name (3 = Wed, 4 = Thu) */
   const bsRowDaysStr = (r) => (bsDays(r.days) ? r.days : ((/\(([1-6]-[1-6])\)/.exec(r.course || '') || [])[1] || ''));
   function bsDayLabel(v) { const d = bsDays(v); if (!d) return ''; return d.length === 1 ? BS_DAY[d[0]] : d.length === 6 ? 'Mon – Sat' : BS_DAY[d[0]] + ' – ' + BS_DAY[d[d.length - 1]]; }
+  /* v14.0: BS teaching days — 1st Semester Monday to Friday, 3rd / 5th / 7th Monday to Thursday (data.json "bsSemesterDays" can change it).
+     A course's own days (e.g. Tarjuma-tul-Quran (1-1)) are kept, cut to the semester's days. */
+  const BS_SEM_DAYS_DEFAULT = { 1: [1, 2, 3, 4, 5], 2: [1, 2, 3, 4, 5], 3: [1, 2, 3, 4], 4: [1, 2, 3, 4], 5: [1, 2, 3, 4], 6: [1, 2, 3, 4], 7: [1, 2, 3, 4], 8: [1, 2, 3, 4] };
+  function bsSemDays(sem) { const o = (DATA && DATA.bsSemesterDays) || BS_SEM_DAYS_DEFAULT, v = o[sem] || o[String(sem)]; return Array.isArray(v) && v.length ? v.map(Number) : null; }
+  function bsCapDays(rowDays, sem) {
+    const sd = bsSemDays(sem); if (!sd) return rowDays;
+    if (!rowDays) return sd.slice();
+    const cut = rowDays.filter((d) => sd.indexOf(d) >= 0);
+    return cut.length ? cut : rowDays;   // a course printed only on another day keeps its printed day
+  }
   function bsLectures(y) {
     if (bsLecCache[y]) return bsLecCache[y];
     const sem = bsSemOf(y), out = [], seen = {};
     if (typeof BS_TT !== 'undefined') BS_TT.forEach((r) => {
       if (r.sem !== sem) return; const g = BS_CODE_OF[r.program]; if (!g || !r.course) return;
       const k = g + '|' + r.period + '|' + r.course; if (seen[k]) return; seen[k] = 1;
-      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '', days: bsDays(bsRowDaysStr(r)) });
+      out.push({ group: g, section: 'All', period: r.period, subject: r.course, teacher: r.teacher || '', room: r.room || '', days: bsCapDays(bsDays(bsRowDaysStr(r)), sem) });
     });
     out.sort((a, b) => periodIndex(a.period) - periodIndex(b.period) || a.group.localeCompare(b.group));
     bsLecCache[y] = out;
@@ -3173,7 +3184,7 @@
   function groupRange(code, y) { return yrCfg(y).ranges.find((g) => g[0] === code); }
 
   function lecturesFor(group, section, y) {
-    if (isBS(y)) return bsLectures(y).filter((l) => l.group === group).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher }));
+    if (isBS(y)) return bsLectures(y).filter((l) => l.group === group).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher, days: l.days }));
     if (group === 'STAR') return starLectures(y).filter((l) => section === 'All' || l.section === section).map((l) => ({ period: l.period, subject: l.subject, teacher: l.teacher }));
     const cfg = yrCfg(y), buildSchedule = cfg.build;
     const g = groupRange(group, y); if (!g || !buildSchedule) return [];
