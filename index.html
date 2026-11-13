@@ -1150,6 +1150,11 @@
           <button data-tab="dash" class="on">📊 At a glance</button>
           <button data-tab="day">📋 Day board</button>
           <button data-tab="week">📅 Weekly report</button>
+          <button data-tab="use">📱 App usage</button>
+        </div>
+        <div id="bdUse" style="display:none">
+          <div class="card pad"><button class="btn-primary" id="usGo">↻ Refresh</button><div class="tt-error" id="usErr"></div></div>
+          <div id="usOut" style="margin-top:12px"></div>
         </div>
         <div id="bdDash">
           <div class="card pad">
@@ -1492,6 +1497,22 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
   }
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  /* v14.1: once a day the app tells the server this device's random id, whether it runs installed, and who uses it
+     (the signed-in staff member, or the roll number remembered for the timetable) — for the Principal's "App usage" counts */
+  function devId() { let d = store.get('devId'); if (!d) { d = 'd' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36); store.set('devId', d); } return d; }
+  const platName = () => (/iphone|ipad|ipod/i.test(navigator.userAgent) ? 'iPhone' : /android/i.test(navigator.userAgent) ? 'Android' : 'Computer');
+  let helloBusy = false;
+  async function sayHello(force) {
+    try {
+      if (helloBusy || !DATA || !DATA.attendanceApi || !navigator.onLine) return;
+      const inst = isStandalone() || (typeof installedNow !== 'undefined' && installedNow) ? 1 : 0;
+      const key = todayISO() + '|' + inst + '|' + (attAuth ? attAuth.name : '') + '|' + (store.get('roll') || '') + '|' + (store.get('rollYear') || '');
+      if (!force && store.get('helloKey') === key) return;
+      helloBusy = true;
+      await fetch(DATA.attendanceApi, { method: 'POST', body: JSON.stringify({ action: 'hello', dev: devId(), inst, plat: platName(), roll: store.get('roll') || '', ry: store.get('rollYear') || '', auth: attAuth ? { name: attAuth.name, pin: attAuth.pin } : null }) });
+      store.set('helloKey', key);
+    } catch (e) {} finally { helloBusy = false; }
+  }
 
   /* ---------- data ---------- */
   const APP_NAME = 'GGCS RWP';
@@ -4549,7 +4570,7 @@
     if (!navigator.onLine) { $('myErr').textContent = 'You need internet to see your record.'; return; }
     $('myGo').disabled = true; $('myGo').textContent = 'Checking…';
     try {
-      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, cnic4, year: myY }) });
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'myRecord', roll, cnic4, year: myY, dev: devId(), inst: isStandalone() ? 1 : 0, plat: platName() }) });
       const j = await res.json();
       if (!j.ok) throw new Error(/PIN|sign in/i.test(j.error || '') ? 'This service is being updated — please try again a little later.' : (j.error || 'Something went wrong.'));
       store.set('roll', String(roll));
@@ -5245,7 +5266,9 @@
     $('bdDay').style.display = tab === 'day' ? 'block' : 'none';
     $('bdWeek').style.display = tab === 'week' ? 'block' : 'none';
     $('bdDash').style.display = tab === 'dash' ? 'block' : 'none';
-    $('bdYearSeg').style.display = tab === 'dash' ? 'none' : '';
+    $('bdUse').style.display = tab === 'use' ? 'block' : 'none';
+    $('bdYearSeg').style.display = tab === 'dash' || tab === 'use' ? 'none' : '';
+    if (tab === 'use' && !usData) usLoad(false);
     if (tab === 'day') loadBoardDay();
     if (tab === 'dash') { document.body.classList.add('wide'); if (!dsLast) dsLoad(false); } else document.body.classList.remove('wide');
   }
@@ -5726,6 +5749,48 @@
   $('dsRange').addEventListener('change', () => { $('dsCustom').style.display = $('dsRange').value === 'custom' ? '' : 'none'; if ($('dsRange').value !== 'custom') dsLoad(false); });
   $('dsClass').addEventListener('change', () => dsLoad(false));
 
+  /* ---------- v14.1: Principal's Board → App usage (staff and students using / installed) ---------- */
+  let usData = null;
+  async function usLoad(fresh) {
+    $('usErr').textContent = ''; $('usGo').disabled = true; $('usGo').textContent = 'Loading…';
+    try { usData = await attApi('usageStats', { fresh: !!fresh }); usPaint(); }
+    catch (e) { if (!recAuthFail(e)) $('usErr').textContent = e.offline ? 'You need internet.' : /Unknown action/.test(e.message) ? 'The server needs the v14.1 update first.' : e.message; }
+    $('usGo').disabled = false; $('usGo').textContent = '↻ Refresh';
+  }
+  $('usGo').addEventListener('click', () => usLoad(true));
+  const US_COL = { installed: '#1a7f4e', browser: '#d9a400', never: '#c9ced6' };
+  const usBar = (a, b, n) => '<span class="ds-bt" style="height:14px">' + (a ? '<i style="width:' + (100 * a / n).toFixed(1) + '%;background:' + US_COL.installed + '" title="Installed: ' + a + '"></i>' : '') + (b ? '<i style="width:' + (100 * b / n).toFixed(1) + '%;background:' + US_COL.browser + '" title="Using in the browser: ' + b + '"></i>' : '') + '</span>';
+  const usPc = (x, n) => (n ? Math.round(100 * x / n) : 0) + '%';
+  function usPaint() {
+    const d = usData; if (!d) return;
+    const S = d.staff || [], nS = S.length, sI = S.filter((x) => x.st === 'installed').length, sB = S.filter((x) => x.st === 'browser').length, sN = nS - sI - sB;
+    const C = d.classes || [], tot = C.reduce((a, c) => a + c.total, 0), seen = C.reduce((a, c) => a + c.seen, 0), inst = C.reduce((a, c) => a + c.inst, 0);
+    const kpi = (v, l, cls) => '<div class="ds-kpi ' + (cls || '') + '"><b>' + v + '</b><span>' + l + '</span></div>';
+    let h = '<div class="ds-hero"><div class="ds-hero-t">📱 Who is using the app</div><div class="ds-hero-s">Counting since ' + esc(d.since ? fmtDate(d.since.slice(0, 10)) : 'today') + ' · ' + d.devices + ' devices seen · ' + d.devInstalled + ' with the app installed · updated ' + esc(String(d.at).slice(11)) + '</div></div>';
+    h += '<div class="ds-kpis">' + kpi(sI + ' / ' + nS, 'Staff: app installed', 'good') + kpi(sB, 'Staff: browser only', 'mid') + kpi(sN, 'Staff: not yet', sN ? 'bad' : 'good') +
+      kpi(inst + ' / ' + tot, 'Students: app installed', 'good') + kpi(seen - inst, 'Students: browser only', 'mid') + kpi(tot - seen, 'Students: not yet', 'bad') + '</div>';
+    h += '<div class="card pad"><div class="ds-h">Teaching staff <small>' + nS + ' profiles</small></div>' + usBar(sI, sB, nS) +
+      '<div class="ds-legend" style="margin-top:6px"><div><i style="background:' + US_COL.installed + '"></i>Installed<b>' + sI + '</b><small>' + usPc(sI, nS) + '</small></div><div><i style="background:' + US_COL.browser + '"></i>Using in the browser, not installed<b>' + sB + '</b><small>' + usPc(sB, nS) + '</small></div><div><i style="background:' + US_COL.never + '"></i>Not used yet<b>' + sN + '</b><small>' + usPc(sN, nS) + '</small></div></div></div>';
+    h += '<div class="card pad"><div class="ds-h">Students by class <small>active students; counted when they open their timetable or record on a phone</small></div><div class="ds-bars">' +
+      C.map((c) => '<div class="ds-bar" style="grid-template-columns:130px 1fr 150px"><span class="ds-bl">' + esc(c.name) + '</span>' + usBar(c.inst, c.seen - c.inst, c.total) + '<span class="ds-bv">' + c.inst + ' inst. · ' + c.seen + ' / ' + c.total + ' <small style="color:var(--muted)">(' + usPc(c.seen, c.total) + ')</small></span></div>').join('') + '</div>' +
+      '<details style="margin-top:8px"><summary>Group-wise</summary><div style="overflow-x:auto"><table class="wl sum"><thead><tr><th>Class</th><th>Group</th><th class="num">Students</th><th class="num">Using</th><th class="num">Installed</th><th class="num">Not yet</th></tr></thead><tbody>' +
+      C.map((c) => c.groups.sort((a, b) => a.group.localeCompare(b.group, undefined, { numeric: true })).map((g) => '<tr><td>' + esc(c.name) + '</td><td>' + esc(g.group) + '</td><td class="num">' + g.total + '</td><td class="num">' + g.seen + '</td><td class="num">' + g.inst + '</td><td class="num">' + (g.total - g.seen) + '</td></tr>').join('')).join('') + '</tbody></table></div></details>' +
+      (d.unknown ? '<p class="note" style="margin-bottom:0">Also ' + d.unknown + ' other device' + (d.unknown === 1 ? '' : 's') + ' (' + d.unknownInstalled + ' installed) opened the app without a roll number or sign-in, e.g. only notices or a class timetable.</p>' : '') + '</div>';
+    h += '<div class="card pad"><div class="ds-h" style="margin-bottom:8px">Staff list</div><div class="field-row"><div class="field"><label for="usShow">Show</label><select id="usShow"><option value="never">Not used yet (' + sN + ')</option><option value="browser">Browser only (' + sB + ')</option><option value="installed">Installed (' + sI + ')</option><option value="">Everyone (' + nS + ')</option></select></div><div class="field"><label for="usQ">Find</label><input id="usQ" type="search" placeholder="Name or subject"></div></div><div id="usList"></div>' +
+      '<div class="btn-row"><button class="btn-secondary" id="usCsv">⬇ Excel (CSV)</button><button class="btn-secondary" id="usCopy">📋 Copy names of staff not using it</button></div></div>';
+    h += '<p class="note">A phone or computer is counted once it opens this version of the app: “installed” = opened from the home-screen icon; “browser” = opened as a web page. Staff are matched by their sign-in; students by the roll number they check (own record or timetable). Counting started with this update, so the numbers grow over the next days as people open the app.</p>';
+    $('usOut').innerHTML = h;
+    const paintL = () => {
+      const f = $('usShow').value, q = $('usQ').value.trim().toLowerCase();
+      const L = S.filter((x) => (!f || x.st === f) && (!q || (x.name + ' ' + x.subject + ' ' + x.designation).toLowerCase().indexOf(q) >= 0)).sort((a, b) => a.name.localeCompare(b.name));
+      const tag = { installed: '<span class="bd-b b-ok">📱 Installed</span>', browser: '<span class="bd-b b-late">🌐 Browser</span>', never: '<span class="bd-b b-miss">Not yet</span>' };
+      $('usList').innerHTML = L.length ? '<div class="card" style="margin:0 0 8px">' + L.map((x) => '<div class="bd-row"><div class="bd-main"><div class="bd-t">' + esc(x.name) + '</div><div class="bd-s">' + esc([x.designation, x.subject].filter(Boolean).join(' · ')) + (x.last ? ' · last used ' + esc(fmtDate(x.last.slice(0, 10))) : '') + (x.plat ? ' · ' + esc(x.plat) : '') + (!x.login ? ' · no sign-in yet' : '') + '</div></div>' + tag[x.st] + '</div>').join('') + '</div>' : '<div class="empty">Nobody in this list. 👍</div>';
+    };
+    $('usShow').onchange = paintL; $('usQ').oninput = paintL; paintL();
+    $('usCsv').onclick = () => csvDownload('App_usage_' + todayISO() + '.csv', [['Name', 'Designation', 'Subject', 'Status', 'Last used', 'Device', 'Has sign-in']].concat(S.map((x) => [x.name, x.designation, x.subject, x.st === 'installed' ? 'Installed' : x.st === 'browser' ? 'Browser only' : 'Not used yet', x.last, x.plat, x.login ? 'yes' : 'no'])).concat([[]], [['Class', 'Group', 'Students', 'Using', 'Installed', 'Not yet']], C.flatMap((c) => c.groups.map((g) => [c.name, g.group, g.total, g.seen, g.inst, g.total - g.seen]))));
+    $('usCopy').onclick = async () => { const t = 'Not yet using the GGCS RWP app:\n' + S.filter((x) => x.st === 'never').map((x) => '• ' + x.name).join('\n'); try { await navigator.clipboard.writeText(t); toast('Copied — paste it in WhatsApp'); } catch (e) { window.prompt('Copy this:', t); } };
+  }
+
   function applyChrome() {
     $('footCollege').textContent = DATA.collegeName || '';
     const pat = DATA.patron || 'Prof. Dr. Athar Qaseem', patRole = DATA.patronRole || 'Principal';
@@ -5796,7 +5861,7 @@
   $('instSheetLater').addEventListener('click', () => { $('installSheet').style.display = 'none'; });
   $('installSheet').addEventListener('click', (e) => { if (e.target === $('installSheet')) $('installSheet').style.display = 'none'; });
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; paintInstall(); });
-  window.addEventListener('appinstalled', () => { installedNow = true; hideInstall(); toast('Installed — find GGCS RWP on your home screen'); });
+  window.addEventListener('appinstalled', () => { installedNow = true; hideInstall(); toast('Installed — find GGCS RWP on your home screen'); setTimeout(() => sayHello(true), 1500); });
   paintInstall();
 
   /* ---------- service worker ---------- */
@@ -6512,7 +6577,8 @@
     render();
     fetchLiveNotices();
     setTimeout(refreshMe, 1500);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshMe(); });
+    setTimeout(() => sayHello(false), 4000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshMe(); sayHello(false); } });
     Promise.all([refreshTTC(true), refreshTTS(true)]).then((ch) => { if ((ch[0] || ch[1]) && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
