@@ -6126,7 +6126,8 @@
   function spMyMatches(m) {
     if (!m || !m.wing) return [];
     const g = {}; (m.games || []).forEach((x) => { g[x.toLowerCase()] = 1; });
-    const mine = (s) => { const t = String(s || '').trim().toLowerCase(); return !t || t === m.wing.toLowerCase() || /^all/.test(t) || (m.name && t.indexOf(String(m.name).toLowerCase()) >= 0); };
+    // v15.2: girls and female staff are all in Fatima, so every match of their game is theirs (sides may be classes, e.g. "BS 1st" vs "BS 3rd")
+    const mine = (s) => { const t = String(s || '').trim().toLowerCase(); return m.wing === 'Fatima' || !t || t === m.wing.toLowerCase() || t.indexOf(m.wing.toLowerCase()) >= 0 || /^all/.test(t) || (m.name && t.indexOf(String(m.name).toLowerCase()) >= 0); };
     return ((spInfo && spInfo.matches) || []).filter((x) => x.cat === m.cat && g[String(x.game).toLowerCase()] && (mine(x.a) || mine(x.b)));
   }
   /** my matches still to come (today or later, or no date yet), soonest first */
