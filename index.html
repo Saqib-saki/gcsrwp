@@ -308,6 +308,12 @@
   .sp-tabs button span { font-size: 1.15rem; } .sp-tabs button.on { background: var(--card-bg); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
   .sp-lead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--card-bg); border: 1px solid var(--border); border-left: 5px solid var(--wc); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: .9rem; }
   .sp-lead span:last-child { margin-left: auto; color: var(--muted); font-size: .78rem; }
+  .sp-sop { margin-bottom: 12px; border-left: 5px solid #c9a227; } .sp-sop summary { cursor: pointer; font-weight: 800; color: var(--accent); } .sp-sop summary small { color: var(--muted); font-weight: 600; }
+  .sp-sop ol { margin: 8px 0 0; padding-left: 20px; font-size: .86rem; line-height: 1.5; } .sp-sop li { margin: 3px 0; }
+  .sp-soplink { display: block; margin: 8px auto 0; font-size: .82rem; }
+  .sp-tp { margin-bottom: 10px; } .sp-tp-g { margin-bottom: 6px; font-size: .9rem; } .sp-tp-r { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .sp-tb { border: 2px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 10px; padding: 7px 2px; font-family: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: .78rem; }
+  .sp-tb small { color: var(--muted); font-size: .68rem; } .sp-tb.on { border-color: var(--wc); background: var(--wc); color: #fff; } .sp-tb.on small { color: #fff; } .sp-tb:disabled { opacity: .45; cursor: not-allowed; }
   .sp-x { display: block; margin: 4px 0 0 !important; color: var(--red) !important; font-size: .76rem; }
   .field label.sp-gm, .sp-edit label.sp-gm { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .86rem; font-weight: 600; margin: 0; }
   .field .sp-gen label, .sp-edit .sp-gen label, .field label.sp-only { display: flex; text-transform: none; letter-spacing: 0; color: var(--text); font-size: .9rem; font-weight: 600; margin: 0; }
@@ -911,6 +917,7 @@
       </button>
     </div>
     <button class="sp-banner" data-go="/sports"><span class="sp-ban-e">🏆</span><span><div class="q-title" id="spBanTitle">Sports Gala</div><div class="q-sub" id="spBanSub">Registration · Wings · Match schedule · Games</div></span><span class="chev">&rsaquo;</span></button>
+    <button class="link-btn sp-soplink" data-go="/sports/sop">📋 Sports Gala SOPs — read the rules</button>
     <div id="spToday"></div>
     <div id="staffArea" style="display:none">
     <div class="section-title staff-head">🔒 Staff area <span class="lock-chip" id="staffWhoChip">teachers only · PIN</span></div>
@@ -928,7 +935,7 @@
       <button class="tile" data-go="/staffsports">
         <div class="emoji">🏆</div>
         <div class="tlabel">Sports Gala</div>
-        <div class="tsub">Staff games &amp; matches</div>
+        <div class="tsub">Staff games, matches &amp; SOPs</div>
       </button>
       <button class="tile" data-go="/faculty">
         <div class="emoji">🎓</div>
@@ -1642,7 +1649,7 @@
     records:       { view: 'view-rec',           title: () => 'Student Records', parent: '/' },
     marks:         { view: 'view-marks',         title: () => 'Enter Marks',        parent: '/' },
     my:            { view: 'view-my',            title: () => 'My Attendance & Results', parent: '/' },
-    sports:        { view: 'view-sports',        title: () => ({ reg: 'Registration', games: 'Games & rules', admin: 'Sports in-charge' })[spSub] || 'Sports Gala', parent: () => (/^(reg|games|admin)$/.test(spSub) ? spBase() : '/') },
+    sports:        { view: 'view-sports',        title: () => ({ reg: 'Registration', games: 'Games & rules', admin: 'Sports in-charge', sop: 'Sports Gala SOPs' })[spSub] || 'Sports Gala', parent: () => (/^(reg|games|admin)$/.test(spSub) ? spBase() : '/') },
     board:         { view: 'view-board',         title: () => 'Principal’s Board',  parent: '/' },
     signin:        { view: 'view-signin',        title: () => 'Staff sign-in',      parent: '/' },
     pins:          { view: 'view-pins',          title: () => 'Staff PIN slips',    parent: '/faculty' },
@@ -1655,7 +1662,7 @@
     const [a, ...rest] = raw.split('/');
     const arg = rest.length ? decodeURIComponent(rest.join('/')) : null;
     if (!a) return { key: 'home' };
-    if (a === 'sports' || a === 'staffsports') { spMode = a === 'staffsports' ? 'staff' : 'student'; spSub = /^(reg|wings|matches|games|admin|medals|today)$/.test(arg || '') ? arg : ''; return { key: 'sports', arg: spSub }; }
+    if (a === 'sports' || a === 'staffsports') { spMode = a === 'staffsports' ? 'staff' : 'student'; spSub = /^(reg|wings|matches|games|admin|medals|today|sop)$/.test(arg || '') ? arg : ''; return { key: 'sports', arg: spSub }; }
     if (a === 'faculty') {
       if (!arg) return { key: 'faculty' };
       if (arg === 'new') return { key: 'faculty-edit', arg: '' };
@@ -5944,6 +5951,7 @@
       if (sub === 'wings') return spPaintWings();
       if (sub === 'matches') return spPaintMatches();
       if (sub === 'medals') return spPaintMedals();
+      if (sub === 'sop') return spPaintSop();
       if (sub === 'games') return spPaintGames();
       if (sub === 'admin') return spPaintAdmin();
       spPaintToday2();
@@ -5977,6 +5985,7 @@
     const dates = S.from ? fmtDate(S.from).replace(/\s*\d{4}$/, '') + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : ' ' + S.from.slice(0, 4)) : '';
     const reg = spInfo && spInfo.counts ? SP_WINGS.reduce((a, w) => a + ((spInfo.counts[w] || {})[spMode === 'staff' ? 'staff' : 'students'] || 0), 0) : 0;
     let h = '<div class="sp-hero sp-hero2"><div class="sp-hero-t">🏆 ' + esc(S.title || 'Sports Gala') + '</div><div class="sp-hero-s">' + [ph, dates ? esc(dates) : '', (spMode === 'staff' ? 'Staff' : 'Students') + ' · ' + reg + ' registered'].filter(Boolean).join(' · ') + '</div>' + (S.note ? '<div class="sp-hero-n">' + linkify(S.note) + '</div>' : '') + '</div>';
+    h += spSopHtml(!spMine());
     h += spMeCard();
     if (spMode === 'staff' && spCanView()) h += '<button class="mark-btn sp-inc" data-go="/staffsports/admin" style="margin:0 0 12px"><span style="font-size:1.2rem">⚙️</span><span><div class="q-title">Sports in-charge</div><div class="q-sub">' + (spIsInc() ? 'Registrations, squads, schedule, results, certificates' : 'View only') + '</div></span><span class="chev">&rsaquo;</span></button>';
     if (tab) h += '<div class="sp-tabs" id="spTabs">' + [['today', '⚡', 'Today'], ['matches', '📅', 'Schedule'], ['medals', '🏅', 'Medals'], ['wings', '🛡️', 'Wings']].map((x) => '<button data-sptab="' + x[0] + '"' + (x[0] === tab ? ' class="on"' : '') + '><span>' + x[1] + '</span>' + x[2] + '</button>').join('') + '</div>';
@@ -5984,6 +5993,16 @@
     $('spOut').innerHTML = h;
     if ($('spTabs')) $('spTabs').querySelectorAll('button').forEach((b) => { b.onclick = () => { const t = b.dataset.sptab; history.replaceState(history.state, '', '#' + spBase() + (t === 'today' ? '' : '/' + t)); render(); }; });
     return $('spBody');
+  }
+  /** v15.4: the SOPs of the Sports Week (in-charge edits them in Settings) */
+  function spSopHtml(open) {
+    const S = (spInfo && spInfo.settings) || {}, L = String(S.sop || '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
+    if (!L.length) return '';
+    return '<details class="card pad sp-sop"' + (open ? ' open' : '') + '><summary>📋 SOPs — rules of the ' + esc(S.title || 'Sports Gala') + ' <small>' + L.length + '</small></summary><ol>' + L.map((x) => '<li>' + linkify(x.replace(/^[-•➢>\s]+/, '')) + '</li>').join('') + '</ol></details>';
+  }
+  function spPaintSop() {
+    const S = (spInfo && spInfo.settings) || {};
+    $('spOut').innerHTML = spHero('sop') + (spSopHtml(true) || '<div class="empty">No SOPs yet.</div>') + '<button class="btn-primary" data-go="' + spBase() + '" style="margin-top:12px">🏆 Open the Sports Gala</button>';
   }
   function spPaintToday2() {
     const body = spShell('today'), who = spWho(), t = todayISO(), all = ((spInfo && spInfo.matches) || []).filter((m) => spCatIn(m.cat, who)), m = spMine();
@@ -6066,7 +6085,7 @@
     if (me.needGender) {
       h += '<div class="field" style="margin-top:12px"><label>' + (me.kind === 'staff' ? 'You are' : 'You are a') + '</label><div class="sp-gen"><label><input type="radio" name="spGen" value="M"> ' + (me.kind === 'staff' ? 'Male' : 'Boy') + ' <small>(Jinnah, Tipu, Sir Syed or Iqbal)</small></label><label><input type="radio" name="spGen" value="F"> ' + (me.kind === 'staff' ? 'Female' : 'Girl') + ' <small>(Fatima wing)</small></label></div><p class="note" style="margin-top:4px">Asked only once. Only the sports in-charge can change it later.</p></div>';
     }
-    h += '<div class="field" style="margin-top:12px"><label>Choose your game(s)</label><div id="spGames" class="sp-games"></div></div>';
+    h += '<div class="field" style="margin-top:12px"><label>Choose your game(s)</label><div id="spGames" class="sp-games"></div></div><div id="spTeamPick"></div>';
     h += open ? '<button class="btn-primary" id="spSave">✅ Save my games</button>' : '<p class="note"><b>Registration is closed.</b> Ask the sports in-charge for any change.</p>';
     h += '<div class="tt-error" id="spErr"></div>';
     if (me.registered) h += '<p class="note">Registered on ' + esc(fmtDate(String(me.at).slice(0, 10))) + '. You can change your games while registration is open.' + (open ? ' <button class="link-btn" id="spWithdraw" style="margin:0">Withdraw</button>' : '') + '</p>';
@@ -6090,16 +6109,34 @@
       const have = {}; (me.games || []).forEach((x) => { have[x] = 1; });
       const list = ((spInfo && spInfo.games) || []).filter((x) => x.for.indexOf(cat) >= 0);
       $('spGames').innerHTML = list.length ? list.map((x) => '<label class="sp-gm' + (have[x.game] ? ' on' : '') + '"><input type="checkbox" value="' + esc(x.game) + '"' + (have[x.game] ? ' checked' : '') + (open ? '' : ' disabled') + '> <span>' + spEmo(x.game) + ' ' + esc(x.game) + '</span><small>' + x.type + '</small></label>').join('') : '<div class="sp-sub">No games set for ' + esc(cat) + ' yet.</div>';
-      $('spGames').querySelectorAll('input').forEach((i) => { i.onchange = () => i.closest('label').classList.toggle('on', i.checked); });
+      $('spGames').querySelectorAll('input').forEach((i) => { i.onchange = () => { i.closest('label').classList.toggle('on', i.checked); paintTeams(); }; });
+      paintTeams();
+    };
+    // v15.4: boys choose their house team (Jinnah 1 – 4) for cricket, futsal, badminton and table tennis
+    const T = spMe.teams, pick = {}; (me.squads || []).forEach((x) => { if (x.team) pick[x.game] = x.team; });
+    const paintTeams = () => {
+      const box = $('spTeamPick'); if (!box) return;
+      const g = me.needGender ? (document.querySelector('input[name="spGen"]:checked') || {}).value : me.gender;
+      const games = $('spGames') ? Array.from($('spGames').querySelectorAll('input:checked')).map((i) => i.value).filter((x) => T && T.games.indexOf(x) >= 0) : [];
+      if (!T || g !== 'M' || !games.length) { box.innerHTML = ''; return; }
+      box.innerHTML = '<div class="field"><label>Choose your team</label>' + games.map((gm) => { const cap = T.cap[gm] || 0;
+        return '<div class="sp-tp"><div class="sp-tp-g">' + spEmo(gm) + ' <b>' + esc(gm) + '</b>' + (cap ? ' <small class="sp-sub">' + cap + ' players per team</small>' : '') + '</div><div class="sp-tp-r">' + [1, 2, 3, 4].map((n) => {
+          const c = (T.counts[gm] || {})[n] || 0, full = cap && c >= cap && pick[gm] !== n, on = pick[gm] === n;
+          return '<button type="button" class="sp-tb' + (on ? ' on' : '') + '" data-g="' + esc(gm) + '" data-n="' + n + '"' + (full || !open ? ' disabled' : '') + ' style="--wc:' + (SP_WC[T.wing] || '#10345c') + '"><b>' + esc(T.wing) + ' ' + n + '</b><small>' + (full ? 'full' : (c + (on ? 1 : 0)) + (cap ? ' / ' + cap : '')) + '</small></button>'; }).join('') + '</div></div>'; }).join('') +
+        '<p class="note" style="margin-top:0">Each house has 4 teams. You play your matches with the team you choose. The sports in-charge may move players to keep teams fair.</p></div>';
+      box.querySelectorAll('.sp-tb').forEach((b) => { b.onclick = () => { pick[b.dataset.g] = Number(b.dataset.n); if ($('spErr')) $('spErr').textContent = ''; paintTeams(); }; });
     };
     paintGames();
     document.querySelectorAll('input[name="spGen"]').forEach((r) => { r.onchange = paintGames; });
     if ($('spSave')) $('spSave').onclick = () => {
       const games = Array.from($('spGames').querySelectorAll('input:checked')).map((i) => i.value);
+      const need = $('spTeamPick') && $('spTeamPick').innerHTML ? games.filter((x) => T && T.games.indexOf(x) >= 0) : [];
+      const miss = need.filter((x) => !pick[x]); if (miss.length) { $('spErr').textContent = 'Choose your team for ' + miss.join(', ') + '.'; return; }
+      const teams = {}; need.forEach((x) => { teams[x] = pick[x]; });
       const gender = me.needGender ? (document.querySelector('input[name="spGen"]:checked') || {}).value : me.gender;
       if (!gender) { $('spErr').textContent = me.kind === 'staff' ? 'Choose Male or Female.' : 'Choose Boy or Girl.'; return; }
       if (!games.length) { $('spErr').textContent = 'Choose at least one game.'; return; }
-      spFetchMe(spMe.q, { games: games, gender: gender });
+      spFetchMe(spMe.q, { games: games, gender: gender, teams: teams });
     };
     if ($('spWithdraw')) $('spWithdraw').onclick = () => { if (confirm('Withdraw your registration from all games?')) spFetchMe(spMe.q, { remove: true, games: [], gender: me.gender }); };
     if ($('spOther')) $('spOther').onclick = () => { spMe = null; spPaintReg(); };
@@ -6372,6 +6409,7 @@
       '<div class="field-row"><div class="field"><label for="spFr">From</label><input id="spFr" type="date" value="' + esc(S.from) + '"' + dis + '></div><div class="field"><label for="spTo">To</label><input id="spTo" type="date" value="' + esc(S.to) + '"' + dis + '></div></div>' +
       '<div class="field"><label class="sp-only"><input type="checkbox" id="spOpen"' + (S.regOpen !== false ? ' checked' : '') + dis + '> Registration open (students and staff can register and change games)</label></div>' +
       '<div class="field"><label for="spNo">Message on the Sports Gala page</label><textarea id="spNo" rows="3"' + dis + '>' + esc(S.note) + '</textarea></div>' +
+      '<div class="field"><label for="spSop">SOPs — one rule per line (shown to students and staff)</label><textarea id="spSop" rows="9"' + dis + '>' + esc(S.sop || '') + '</textarea></div>' +
       (ed ? '<button class="btn-primary" id="spSset">Save settings</button><div class="tt-error" id="spSerr"></div>' : '') +
       '<p class="note">Games: add, rename or switch off games in the <b>Sports Games</b> tab of the 1st Year Attendance Google Sheet (column “For”: Boys, Girls, Male staff, Female staff; “Type”: Team or Individual; “Active”: Yes / No). Changes show in the app within 2 minutes.</p></div>' +
       '<div class="card pad" style="margin-top:12px"><div class="ds-h">📦 Close this gala and start a new one</div><p class="sp-sub" style="margin:6px 0 10px;line-height:1.5">When the gala is over: print the report and certificates first (Results tab). Closing keeps a copy of all registrations, squads and matches as separate tabs in the Google Sheet, saves the medal table under “Past galas”, and starts an empty gala for next year.</p>' +
@@ -6385,7 +6423,7 @@
       catch (e) { $('spAerr').textContent = e.offline ? 'You need internet.' : /Unknown action/.test(e.message) ? 'The server needs the v15.0 update first.' : e.message; }
     };
     if ($('spSset')) $('spSset').onclick = async () => {
-      try { const j = await attApi('sportsSettings', { title: $('spTi').value, from: $('spFr').value, to: $('spTo').value, regOpen: $('spOpen').checked, note: $('spNo').value }); spAdm.settings = j.settings; toast('Settings saved'); spLoadInfo().then(() => { if (parseHash().key === 'sports') spPaintAdmin(); }); }
+      try { const j = await attApi('sportsSettings', { title: $('spTi').value, from: $('spFr').value, to: $('spTo').value, regOpen: $('spOpen').checked, note: $('spNo').value, sop: $('spSop').value }); spAdm.settings = j.settings; toast('Settings saved'); spLoadInfo().then(() => { if (parseHash().key === 'sports') spPaintAdmin(); }); }
       catch (e) { $('spSerr').textContent = e.offline ? 'You need internet.' : e.message; }
     };
   }
