@@ -6545,7 +6545,7 @@
   }
   /* ---------- in-charge: squads ---------- */
   let spSqGame = '', spSqWing = 'Jinnah';
-  const SP_TEAM_GAMES = ['Cricket', 'Futsal', 'Badminton', 'Table Tennis'], SP_GIRL_TEAM_GAMES = ['Arm Wrestling', 'Tug of War', 'Putting the Bucket'];
+  const SP_TEAM_GAMES = ['Cricket', 'Futsal', 'Badminton', 'Table Tennis', 'Chess', 'Tug of War', 'Athletics'], SP_GIRL_TEAM_GAMES = ['Arm Wrestling', 'Tug of War', 'Putting the Bucket'];
   const spSqLabel = (x) => (x.team ? esc(x.wing + ' ' + x.team) + ' · ' : '') + esc(x.game) + (x.role && x.role !== 'Player' ? ' (' + esc(x.role) + ')' : '');
   function spAdmSquads() {
     const A = spAdm, ed = !!A.edit, who = spAdmWho, G = spGamesOf(A.games, who);
