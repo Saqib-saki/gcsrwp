@@ -6113,17 +6113,20 @@
       paintTeams();
     };
     // v15.4: boys choose their house team (Jinnah 1 – 4) for cricket, futsal, badminton and table tennis
-    const T = spMe.teams, pick = {}; (me.squads || []).forEach((x) => { if (x.team) pick[x.game] = x.team; });
+    const pick = {}; (me.squads || []).forEach((x) => { if (x.team) pick[x.game] = x.team; });
+    const teamsFor = (g) => (g === 'F' ? spMe.teamsF || null : g === 'M' ? spMe.teams || null : null);   // v15.6: girls choose Fatima 1 – 4
+    let T = null;
     const paintTeams = () => {
       const box = $('spTeamPick'); if (!box) return;
       const g = me.needGender ? (document.querySelector('input[name="spGen"]:checked') || {}).value : me.gender;
+      T = teamsFor(g);
       const games = $('spGames') ? Array.from($('spGames').querySelectorAll('input:checked')).map((i) => i.value).filter((x) => T && T.games.indexOf(x) >= 0) : [];
-      if (!T || g !== 'M' || !games.length) { box.innerHTML = ''; return; }
+      if (!T || !games.length) { box.innerHTML = ''; return; }
       box.innerHTML = '<div class="field"><label>Choose your team</label>' + games.map((gm) => { const cap = T.cap[gm] || 0;
         return '<div class="sp-tp"><div class="sp-tp-g">' + spEmo(gm) + ' <b>' + esc(gm) + '</b>' + (cap ? ' <small class="sp-sub">' + cap + ' players per team</small>' : '') + '</div><div class="sp-tp-r">' + [1, 2, 3, 4].map((n) => {
           const c = (T.counts[gm] || {})[n] || 0, full = cap && c >= cap && pick[gm] !== n, on = pick[gm] === n;
           return '<button type="button" class="sp-tb' + (on ? ' on' : '') + '" data-g="' + esc(gm) + '" data-n="' + n + '"' + (full || !open ? ' disabled' : '') + ' style="--wc:' + (SP_WC[T.wing] || '#10345c') + '"><b>' + esc(T.wing) + ' ' + n + '</b><small>' + (full ? 'full' : (c + (on ? 1 : 0)) + (cap ? ' / ' + cap : '')) + '</small></button>'; }).join('') + '</div></div>'; }).join('') +
-        '<p class="note" style="margin-top:0">Each house has 4 teams. You play your matches with the team you choose. The sports in-charge may move players to keep teams fair.</p></div>';
+        '<p class="note" style="margin-top:0">' + (T.wing === 'Fatima' ? 'Fatima wing has 4 teams in each game.' : 'Each house has 4 teams.') + ' You play your matches with the team you choose. The sports in-charge may move players to keep teams fair.</p></div>';
       box.querySelectorAll('.sp-tb').forEach((b) => { b.onclick = () => { pick[b.dataset.g] = Number(b.dataset.n); if ($('spErr')) $('spErr').textContent = ''; paintTeams(); }; });
     };
     paintGames();
@@ -6201,8 +6204,9 @@
       (spMatchGame ? (() => { const g = ((spInfo && spInfo.games) || []).find((x) => x.game === spMatchGame); return g && (g.rules || g.size) ? '<details class="sp-rules card pad" style="margin-bottom:12px"><summary>📜 ' + esc(g.game) + ' rules' + (g.size ? ' · squad up to ' + g.size : '') + '</summary><div style="margin-top:6px">' + (g.rules ? linkify(g.rules).replace(/\n/g, '<br>') : '') + '</div></details>' : ''; })() : '');
     let L = spOnlyMine && mineInfo ? spMyMatches(mineInfo) : all;
     L = L.filter((m) => (!spMatchCat || m.cat === spMatchCat) && (!spMatchGame || m.game === spMatchGame));
-    const kos = spMatchGame ? [spMatchGame] : [...new Set(all.filter((m) => spIsSemi(m) || spIsFinal(m)).map((m) => m.game))];
-    kos.forEach((g) => SP_GROUP[who].filter((c) => !spMatchCat || c === spMatchCat).forEach((c) => { h += spBracketHtml(all, g, c) + (spMatchGame ? spStandHtml(all, g, c) : ''); }));
+    // knockout charts only for the games (and categories) in the list shown — "only my matches" shows only mine
+    const kos = [...new Set(L.filter((m) => (spIsSemi(m) || spIsFinal(m)) && m.b).map((m) => m.game))];
+    kos.forEach((g) => SP_GROUP[who].filter((c) => (!spMatchCat || c === spMatchCat) && L.some((m) => m.game === g && m.cat === c)).forEach((c) => { h += spBracketHtml(all, g, c) + (spMatchGame ? spStandHtml(all, g, c) : ''); }));
     h += '<div class="card pad">' + (all.length ? spMatchList(L) : '<div class="empty">The match schedule will appear here once the sports in-charge makes it.</div>') + '</div>';
     h += '<button class="link-btn" data-go="' + spBase() + '/games" style="margin:12px auto 0;display:block">🎮 All games &amp; rules ›</button>';
     body.innerHTML = h;
@@ -6364,7 +6368,7 @@
       const cat = spCatFor(who, wg);
       spGamesOf(A.games, who).filter((g) => (!onlyG || g.game === onlyG) && g.for.indexOf(cat) >= 0).forEach((g) => {
         const sq = SQ.filter((x) => x.cat === cat && x.game === g.game && x.wing === wg); if (!sq.length) return;
-        const teamed = sq.some((x) => x.team), cap = g.size ? (teamed ? Math.ceil(g.size / 4) : g.size) : 0;
+        const teamed = sq.some((x) => x.team), cap = teamed && cat === 'Girls' ? 8 : g.size ? (teamed ? Math.ceil(g.size / 4) : g.size) : 0;
         let b = '';
         if (teamed) { [1, 2, 3, 4].forEach((n) => { const P = sq.filter((x) => x.team === n); b += '<div class="tm"><h2><span>' + esc(wg + ' ' + n) + ' — ' + esc(g.game) + '</span><span>' + P.length + (cap ? ' / ' + cap : '') + '</span></h2>' + table(P) + '</div>'; });
           const loose = sq.filter((x) => !x.team); if (loose.length) b += '<div class="tm"><h2><span>' + esc(wg) + ' — no team number yet</span><span>' + loose.length + '</span></h2>' + table(loose) + '</div>'; }
@@ -6499,7 +6503,7 @@
   const spIsSemi = (m) => /semi/i.test(m.stage || ''), spIsFinal = (m) => /final/i.test(m.stage || '') && !/semi|quarter/i.test(m.stage || '');
   function spBracketHtml(matches, game, cat) {
     const L = (matches || []).filter((m) => m.game === game && m.cat === cat), semis = L.filter(spIsSemi).sort((a, b) => String(a.stage).localeCompare(String(b.stage))), fin = L.filter(spIsFinal)[0];
-    if (!semis.length && !fin) return '';
+    if (!semis.length && (!fin || !fin.b)) return '';
     const box = (m, label) => { if (!m) return '<div class="sp-bk-m sp-bk-tbd"><div class="sp-bk-l">' + label + '</div><div class="sp-sub">to be decided</div></div>';
       const w = spWingOf(m.winner), side = (s) => '<div class="sp-bk-s' + (w && spWingOf(s) === w ? ' win' : '') + '">' + spSide(s || '—') + (w && spWingOf(s) === w ? ' ✔' : '') + '</div>';
       return '<div class="sp-bk-m"><div class="sp-bk-l">' + esc(m.stage || label) + (m.date ? ' · ' + esc(fmtDate(m.date).replace(/\s*\d{4}$/, '')) : '') + (m.time ? ' ' + esc(m.time) : '') + '</div>' + side(m.a) + side(m.b) + '</div>'; };
@@ -6541,7 +6545,7 @@
   }
   /* ---------- in-charge: squads ---------- */
   let spSqGame = '', spSqWing = 'Jinnah';
-  const SP_TEAM_GAMES = ['Cricket', 'Futsal', 'Badminton', 'Table Tennis'];
+  const SP_TEAM_GAMES = ['Cricket', 'Futsal', 'Badminton', 'Table Tennis'], SP_GIRL_TEAM_GAMES = ['Arm Wrestling', 'Tug of War', 'Putting the Bucket'];
   const spSqLabel = (x) => (x.team ? esc(x.wing + ' ' + x.team) + ' · ' : '') + esc(x.game) + (x.role && x.role !== 'Player' ? ' (' + esc(x.role) + ')' : '');
   function spAdmSquads() {
     const A = spAdm, ed = !!A.edit, who = spAdmWho, G = spGamesOf(A.games, who);
@@ -6554,8 +6558,9 @@
     else {
       const P = A.regs.filter((r) => r.wing === spSqWing && spRegCat(r) === cat && r.games.indexOf(g.game) >= 0).sort(spRegSort);
       const sq = {}, tm = {}; (A.squads || []).filter((x) => x.cat === cat && x.game === g.game && x.wing === spSqWing).forEach((x) => { sq[x.key] = x.role; tm[x.key] = x.team || 0; });
-      const teams = SP_TEAM_GAMES.indexOf(g.game) >= 0 && cat === 'Boys';   // v15.3: 4 house teams (fixture page)
-      h += '<div class="sp-sub" style="margin-bottom:6px">' + esc(cat) + ' · ' + P.length + ' registered · squad size: <b>' + (g.size || 'no limit') + '</b>' + (teams && g.size ? ' (4 teams × ' + Math.ceil(g.size / 4) + ')' : '') + ' · selected <b id="spSqN">' + Object.keys(sq).length + '</b>' + (teams ? ' · <span id="spSqT"></span>' : '') + '</div>';
+      const teams = (SP_TEAM_GAMES.indexOf(g.game) >= 0 && cat === 'Boys') || (SP_GIRL_TEAM_GAMES.indexOf(g.game) >= 0 && cat === 'Girls');   // v15.3 / v15.6: 4 teams (Jinnah 1 – 4 … Fatima 1 – 4)
+      const perTeam = cat === 'Girls' ? 8 : g.size ? Math.ceil(g.size / 4) : 0;
+      h += '<div class="sp-sub" style="margin-bottom:6px">' + esc(cat) + ' · ' + P.length + ' registered · ' + (teams && cat === 'Girls' ? '<b>4 teams × 8</b>' : 'squad size: <b>' + (g.size || 'no limit') + '</b>' + (teams && perTeam ? ' (4 teams × ' + perTeam + ')' : '')) + ' · selected <b id="spSqN">' + Object.keys(sq).length + '</b>' + (teams ? ' · <span id="spSqT"></span>' : '') + '</div>';
       h += P.length ? '<div class="card" style="margin:0">' + P.map((r) => '<div class="bd-row sp-sqr"><label class="sp-only" style="flex:1"><input type="checkbox" data-k="' + esc(r.key) + '"' + (sq[r.key] ? ' checked' : '') + (ed ? '' : ' disabled') + '> <span><b>' + esc(r.name) + '</b><br><small class="sp-sub">' + esc(r.kind === 'staff' ? r.sub : r.clsName + ' · Roll ' + r.id) + '</small></span></label>' +
         (teams ? '<select class="mini-sel" data-t="' + esc(r.key) + '"' + (ed ? '' : ' disabled') + ' style="margin-right:6px"><option value="0">Team —</option>' + [1, 2, 3, 4].map((n) => '<option value="' + n + '"' + (tm[r.key] === n ? ' selected' : '') + '>' + esc(spSqWing) + ' ' + n + '</option>').join('') + '</select>' : '') +
         '<select class="mini-sel" data-r="' + esc(r.key) + '"' + (ed ? '' : ' disabled') + '>' + ['Player', 'Captain', 'Vice-captain'].map((o) => '<option' + ((sq[r.key] || 'Player') === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div>').join('') + '</div>' : '<div class="empty">Nobody of ' + esc(spSqWing) + ' has registered for ' + esc(g.game) + ' yet.</div>';
