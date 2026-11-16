@@ -6166,7 +6166,10 @@
     // v15.2: girls and female staff are all in Fatima, so every match of their game is theirs (sides may be classes, e.g. "BS 1st" vs "BS 3rd")
     const mine = (s) => { const t = String(s || '').trim().toLowerCase(); return m.wing === 'Fatima' || !t || t === m.wing.toLowerCase() || t.indexOf(m.wing.toLowerCase()) >= 0 || /^all/.test(t) || (m.name && t.indexOf(String(m.name).toLowerCase()) >= 0); };
     const team = {}; (m.squads || []).forEach((x) => { if (x.team) team[String(x.game).toLowerCase()] = x.team; });
-    const ok = (x, s) => { const n = new RegExp('^' + m.wing + '\\s+([1-9])$', 'i').exec(String(s || '').trim()); const my = team[String(x.game).toLowerCase()]; return n && my ? Number(n[1]) === my : mine(s); };   // v15.3: "Jinnah 2" only for team 2
+    // v15.3 / v15.5: "Jinnah 2" or "Jinnah 2 or Tipu 2" only for team 2 of Jinnah
+    const ok = (x, s) => { const my = team[String(x.game).toLowerCase()], re = new RegExp('^' + m.wing + '\\s+([1-9])$', 'i');
+      const nums = String(s || '').split(/\s+or\s+|\s*\/\s*/i).map((p) => re.exec(p.replace(/\(.*$/, '').trim())).filter(Boolean);
+      return nums.length && my ? nums.some((n) => Number(n[1]) === my) : mine(s); };
     return ((spInfo && spInfo.matches) || []).filter((x) => x.cat === m.cat && g[String(x.game).toLowerCase()] && (ok(x, x.a) || ok(x, x.b)));
   }
   /** my matches still to come (today or later, or no date yet), soonest first */
@@ -6344,27 +6347,40 @@
     $('spREdel').onclick = () => { if (confirm('Remove ' + r.name + ' from the Sports Gala?')) send({ remove: true }); };
     $('spREcancel').onclick = () => { spRegEditKey = ''; repaint(); };
   }
+  /** v15.5: the squads only, each house team separately (Jinnah 1, Jinnah 2 …), one page per wing and game */
   function spPrintTeams(onlyW, onlyG, who) {
-    const A = spAdm, w = window.open('', '_blank'); if (!w) { toast('Allow pop-ups to print'); return; }
-    const S = A.settings || {};
-    let h = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(S.title) + ' — team lists</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:18px}h1{font-size:18px;margin:0}h2{font-size:15px;margin:18px 0 4px;padding:4px 8px;color:#fff}table{border-collapse:collapse;width:100%;margin-bottom:6px}td,th{border:1px solid #bbb;padding:3px 6px;text-align:left}th{background:#eee}.pb{page-break-before:always}</style></head><body>';
-    let first = true;
+    const A = spAdm, S = A.settings || {}, staff = who === 'staff', SQ = A.squads || [];
+    const css = '@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:0}.pg{page-break-after:always}.pg:last-child{page-break-after:auto}' +
+      'h1{font-size:15px;margin:0 0 2px;color:#10345c}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--wc);padding-bottom:4px;margin-bottom:10px}' +
+      '.wg{background:var(--wc);color:#fff;border-radius:12px;padding:3px 12px;font-weight:bold;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
+      '.tm{border:2px solid var(--wc);border-radius:8px;overflow:hidden;page-break-inside:avoid}.tm h2{margin:0;background:var(--wc);color:#fff;font-size:13px;padding:5px 8px;display:flex;justify-content:space-between}' +
+      'table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:3px 6px;text-align:left}th{background:#f3f5f8;font-size:10px}.r{font-weight:bold;color:var(--wc)}.n{color:#666;font-size:10px;margin-top:8px}.e{color:#999;padding:8px}';
+    const line = (r) => { const reg = A.regs.find((x) => x.key === r.key); return reg ? (reg.kind === 'staff' ? reg.sub || 'Staff' : reg.clsName) : ''; };
+    const roll = (r) => { const reg = A.regs.find((x) => x.key === r.key); return reg && reg.kind !== 'staff' ? reg.id : ''; };
+    const order = { Captain: 0, 'Vice-captain': 1, Player: 2 };
+    const table = (P) => P.length ? '<table><tr><th>#</th><th>Name</th><th>' + (staff ? 'Designation' : 'Class') + '</th>' + (staff ? '' : '<th>Roll no.</th>') + '<th>Role</th></tr>' + P.slice().sort((a, b) => order[a.role] - order[b.role] || a.name.localeCompare(b.name)).map((r, k) => '<tr><td>' + (k + 1) + '</td><td>' + esc(r.name) + '</td><td>' + esc(line(r)) + '</td>' + (staff ? '' : '<td>' + esc(roll(r)) + '</td>') + '<td class="r">' + (r.role === 'Captain' ? 'Captain (C)' : r.role === 'Vice-captain' ? 'Vice-captain (VC)' : '') + '</td></tr>').join('') + '</table>' : '<div class="e">No players yet.</div>';
+    const pages = [];
     SP_WINGS.filter((x) => !onlyW || x === onlyW).forEach((wg) => {
-      const L = A.regs.filter((r) => r.wing === wg && (r.kind === 'staff') === (who === 'staff') && (!onlyG || r.games.indexOf(onlyG) >= 0)).sort(spRegSort); if (!L.length) return;
-      h += '<div' + (first ? '' : ' class="pb"') + '>'; first = false; h += '<h1>' + esc(DATA.collegeName || 'GGCS Rawalpindi') + ' · ' + esc(S.title) + '</h1><h2 style="background:' + SP_WC[wg] + '">' + esc(wg) + ' wing — ' + (who === 'staff' ? 'Staff' : 'Students') + ' — ' + L.length + ' registered</h2>';
-      A.games.filter((g) => !onlyG || g.game === onlyG).forEach((g) => {
-        const P = L.filter((r) => r.games.indexOf(g.game) >= 0); if (!P.length) return;
-        const SQ = {}; (A.squads || []).filter((x) => x.game === g.game && x.wing === wg).forEach((x) => { SQ[x.key] = x.role; });
-        h += '<b>' + esc(g.game) + ' (' + P.length + ')</b><table><tr><th>#</th><th>Name</th><th>Class / Designation</th><th>Roll no.</th><th>Group</th></tr>' + P.map((r, k) => '<tr><td>' + (k + 1) + '</td><td>' + esc(r.name) + (SQ[r.key] ? ' <b>✔ squad' + (SQ[r.key] !== 'Player' ? ' (' + (SQ[r.key] === 'Captain' ? 'C' : 'VC') + ')' : '') + '</b>' : '') + '</td><td>' + esc(r.kind === 'staff' ? r.sub : r.clsName) + '</td><td>' + esc(r.kind === 'staff' ? '' : r.id) + '</td><td>' + esc(r.group) + '</td></tr>').join('') + '</table>';
+      const cat = spCatFor(who, wg);
+      spGamesOf(A.games, who).filter((g) => (!onlyG || g.game === onlyG) && g.for.indexOf(cat) >= 0).forEach((g) => {
+        const sq = SQ.filter((x) => x.cat === cat && x.game === g.game && x.wing === wg); if (!sq.length) return;
+        const teamed = sq.some((x) => x.team), cap = g.size ? (teamed ? Math.ceil(g.size / 4) : g.size) : 0;
+        let b = '';
+        if (teamed) { [1, 2, 3, 4].forEach((n) => { const P = sq.filter((x) => x.team === n); b += '<div class="tm"><h2><span>' + esc(wg + ' ' + n) + ' — ' + esc(g.game) + '</span><span>' + P.length + (cap ? ' / ' + cap : '') + '</span></h2>' + table(P) + '</div>'; });
+          const loose = sq.filter((x) => !x.team); if (loose.length) b += '<div class="tm"><h2><span>' + esc(wg) + ' — no team number yet</span><span>' + loose.length + '</span></h2>' + table(loose) + '</div>'; }
+        else b += '<div class="tm"><h2><span>' + esc(wg) + ' — ' + esc(g.game) + ' squad</span><span>' + sq.length + (cap ? ' / ' + cap : '') + '</span></h2>' + table(sq) + '</div>';
+        const notIn = A.regs.filter((r) => r.wing === wg && spRegCat(r) === cat && r.games.indexOf(g.game) >= 0 && !sq.some((x) => x.key === r.key)).length;
+        pages.push('<div class="pg" style="--wc:' + SP_WC[wg] + '"><div class="hd"><div><h1>' + esc(DATA.collegeName || 'GGCS Rawalpindi') + '</h1><div>' + esc(S.title || 'Sports Gala') + ' · ' + spEmo(g.game) + ' <b>' + esc(g.game) + '</b> · ' + esc(cat) + '</div></div><span class="wg">' + esc(wg) + '</span></div>' +
+          '<div class="grid">' + b + '</div>' + (notIn ? '<div class="n">' + notIn + ' more registered for ' + esc(g.game) + ' in ' + esc(wg) + ' but not in a team yet (Squads tab).</div>' : '') + '<div class="n">Printed ' + esc(fmtDate(todayISO())) + ' · Sports In-charge: ____________________</div></div>');
       });
-      h += '</div>';
     });
-    w.document.write(h + '<script>setTimeout(function(){window.print()},300)<\/script></body></html>'); w.document.close();
+    if (!pages.length) { toast('No squads picked yet for this wing / game'); return; }
+    spPrintWin((S.title || 'Sports Gala') + ' — team squads', css, pages.join(''));
   }
   function spAdmMatches() {
     const A = spAdm, ed = !!A.edit;
     let h = '';
-    const loaded = A.matches.some((m) => /^House round/.test(m.stage || ''));
+    const loaded = A.matches.some((m) => /^(Round 1|House round)/.test(m.stage || ''));
     h += '<div class="card pad" style="margin-bottom:12px"><div class="btn-row" style="margin:0;flex-wrap:wrap">' + (ed ? '<button class="' + (loaded ? 'btn-secondary' : 'btn-primary') + '" id="spLoad" style="flex:1 1 100%">📥 ' + (loaded ? 'Load any missing fixtures' : 'Load the Sports Week fixtures (18 – 26 Nov)') + '</button>' : '') +
       '<button class="btn-secondary" id="spPrintSch">🖨 Print the schedule (PDF)</button></div><div class="tt-error" id="spLoadErr"></div>' + (ed && !loaded ? '<p class="note">Loads all matches of the fixture page (4 teams per house → house champion → semi-finals → final) for Cricket, Futsal, Badminton and Table Tennis, plus Tug of War, Chess, Athletics, girls’ and staff events, with times and venues — and the SOP team sizes and rules.</p>' : '') + '</div>';
     if (ed) h += '<div class="card pad" id="spMF"></div>';
@@ -6545,8 +6561,11 @@
         '<select class="mini-sel" data-r="' + esc(r.key) + '"' + (ed ? '' : ' disabled') + '>' + ['Player', 'Captain', 'Vice-captain'].map((o) => '<option' + ((sq[r.key] || 'Player') === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div>').join('') + '</div>' : '<div class="empty">Nobody of ' + esc(spSqWing) + ' has registered for ' + esc(g.game) + ' yet.</div>';
       if (ed && P.length) h += '<button class="btn-primary" id="spSqSave" style="margin-top:12px">Save ' + esc(spSqWing) + ' ' + esc(g.game) + ' squad</button><div class="tt-error" id="spSqErr"></div>';
     }
-    h += '<p class="note">Selected players see “✅ Selected in the squad” (with captain / vice-captain) on their sports card. Squads are used for the match attendance list and the clash check.</p></div>';
+    h += '<div class="btn-row"><button class="btn-secondary" id="spSqPr1">🖨 Print ' + esc(spSqWing) + ' ' + esc(g.game) + ' teams</button><button class="btn-secondary" id="spSqPrA">🖨 Print all teams (every wing and game)</button></div>' +
+      '<p class="note">Selected players see “✅ Selected in …” on their sports card. Squads are used for the match attendance list and the clash check. Printing → “Save as PDF” gives the file.</p></div>';
     $('spAB').innerHTML = h;
+    $('spSqPr1').onclick = () => spPrintTeams(spSqWing, g.game, who);
+    $('spSqPrA').onclick = () => spPrintTeams('', '', who);
     $('spSqG').onchange = () => { spSqGame = $('spSqG').value; spAdmSquads(); };
     $('spSqW').onchange = () => { spSqWing = $('spSqW').value; spAdmSquads(); };
     const sqCount = () => { if (!$('spSqN')) return; $('spSqN').textContent = $('spAB').querySelectorAll('input[data-k]:checked').length;
