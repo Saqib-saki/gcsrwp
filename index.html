@@ -1769,14 +1769,40 @@
     if (!DATA.attendanceApi || !navigator.onLine) return;
     try {
       const res = await fetch(DATA.attendanceApi, { method: 'POST', body: JSON.stringify({ action: 'notices' }) });
-      const j = await res.json();
+      applyLiveNotices(await res.json());
+    } catch (e) { /* offline or server busy: keep the phone copy */ }
+  }
+  function applyLiveNotices(j) {
+    {
       if (!j || !j.ok || !Array.isArray(j.notices)) return;
       const before = JSON.stringify(liveNotices);
       liveNotices = j.notices; store.set('noticesLive', JSON.stringify(liveNotices));
       if (JSON.stringify(liveNotices) === before) return;
       const k = parseHash().key;
       if (k === 'home') renderHome(); else if (k === 'notices') renderNotices();
-    } catch (e) { /* offline or server busy: keep the phone copy */ }
+    }
+  }
+  /* v16.1: ONE server call when the app opens (notices + timetable changes + timetable sheet only if the phone's copy is old);
+     opened again within 3 minutes → no call at all. Older server → the three separate calls as before. */
+  async function bootApp() {
+    const TTK = ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'];
+    if (!DATA.attendanceApi || !navigator.onLine) return;
+    let last = 0; try { last = Number(store.get('bootAt') || 0); } catch (e) {}
+    if (Date.now() - last < 3 * 60e3) { ttcAt = ttsAt = last; return; }
+    try {
+      const res = await fetch(DATA.attendanceApi, { method: 'POST', body: JSON.stringify({ action: 'boot', ttVer: TTS && TTS.ver ? TTS.ver : '' }) });
+      const j = await res.json(); if (!j || !j.ok || !j.notices) throw new Error('old server');
+      try { store.set('bootAt', String(Date.now())); } catch (e) {}
+      ttcAt = ttsAt = Date.now();
+      applyLiveNotices(j.notices);
+      let ch = false;
+      if (j.ttChanges && j.ttChanges.ok && Array.isArray(j.ttChanges.changes) && JSON.stringify(j.ttChanges.changes) !== JSON.stringify(TTC)) { setTTC(j.ttChanges.changes); ch = true; }
+      if (j.ttBase && j.ttBase.ok && !j.ttBase.same) ch = setTTS(j.ttBase.has ? j.ttBase : null) || ch;
+      if (ch && TTK.indexOf(parseHash().key) >= 0) render();
+    } catch (e) {
+      fetchLiveNotices();
+      Promise.all([refreshTTC(true), refreshTTS(true)]).then((ch) => { if ((ch[0] || ch[1]) && TTK.indexOf(parseHash().key) >= 0) render(); });
+    }
   }
   function sortedNotices() {
     return allNotices().slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.date || '').localeCompare(String(a.date || '')));
@@ -2902,7 +2928,7 @@
     if (newest) store.set('noticesSeen', newest);
     store.set('noticesSeenIds', JSON.stringify(liveNotices.map((n) => n.id)));
     loadNoticePictures();
-    if (!fetched) fetchLiveNotices();
+    if (!fetched && Date.now() - Number(store.get('bootAt') || 0) > 60e3) fetchLiveNotices();   // v16.1: just fetched by the start call
   }
   /* v10.9: pictures / PDFs kept in the sheet are fetched when shown (not stored on the phone: that space keeps unsent attendance) */
   const ntFiles = {};
@@ -6110,7 +6136,7 @@
       if (parseHash().key === 'sports') spPaintReg();
     } catch (e) {
       if (btn) { btn.disabled = false; btn.textContent = save ? '✅ Save my games' : 'Show my sports card'; }
-      const msg = e.offline ? 'You need internet for this.' : /Unknown action/.test(e.message) ? 'The server needs the v14.3 update first.' : e.message;
+      const msg = e.offline ? 'You need internet for this.' : /Unknown action/.test(e.message) ? 'The server needs the v14.3 update first.' : String(e.message).replace(/^BUSY:\s*/, '');
       if ($('spErr')) $('spErr').textContent = msg; else toast(msg);
       if (spMode === 'staff' && !save && $('spOut')) $('spOut').innerHTML = spHero('reg') + '<div class="card pad"><div class="tt-error">' + esc(msg) + '</div></div>';
     }
@@ -7721,11 +7747,10 @@
     try { ttcApplyData(); } catch (e) { console.warn('timetable changes', e); }
     applyChrome();
     render();
-    fetchLiveNotices();
+    bootApp();
     setTimeout(refreshMe, 1500);
     setTimeout(() => sayHello(false), 4000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshMe(); sayHello(false); } });
-    Promise.all([refreshTTC(true), refreshTTS(true)]).then((ch) => { if ((ch[0] || ch[1]) && ['tt-bs', 'tt-star', 'tt-dit', 'timetable', 'timetable-one', 'faculty-one'].indexOf(parseHash().key) >= 0) render(); });
   });
 })();
 </script>

@@ -1,9 +1,9 @@
 /* GCS Rawalpindi Portal — service worker
- * Strategy: network-first for everything (so anything you upload to the website
- * shows up straight away), falling back to the saved copy when offline.
+ * Strategy (v16.1): saved copy first, so the app opens at once even on slow mobile data;
+ * every file is refreshed in the background, so an upload shows the next time the app is opened.
  * You never need to edit this file when you update data.json or index.html.
  */
-const CACHE = 'gcs-portal-v95';
+const CACHE = 'gcs-portal-v96';
 const SHELL = [
   './',
   './index.html',
@@ -59,24 +59,19 @@ self.addEventListener('fetch', (event) => {
   const isPage = req.mode === 'navigate';
   const cacheKey = isPage ? './index.html' : url.pathname.endsWith('/data.json') ? './data.json' : req;
 
+  // a file asked for with "?v=…" (e.g. the fixture file) always comes from the network
+  if (url.search && /[?&]v=/.test(url.search)) return;
+  // v16.1: the app opens at once from the phone's saved copy; a fresh copy is fetched in the background and used next time.
+  // Only when nothing is saved yet does it wait for the network.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    try {
-      const fresh = await withTimeout(isPage ? fetch(req) : fetch(req, { cache: 'no-cache' }), NETWORK_TIMEOUT_MS);
-      if (fresh && fresh.ok) {
-        cache.put(cacheKey, fresh.clone());
-        return fresh;
-      }
-      const cached = await cache.match(cacheKey, { ignoreSearch: true });
-      return cached || fresh;
-    } catch (err) {
-      const cached = await cache.match(cacheKey, { ignoreSearch: true });
-      if (cached) return cached;
-      if (isPage) {
-        const shell = await cache.match('./index.html');
-        if (shell) return shell;
-      }
-      return new Response('Offline and not saved yet.', { status: 503, headers: { 'Content-Type': 'text/plain' } });
-    }
+    const cached = await cache.match(cacheKey, { ignoreSearch: true }) || (isPage ? await cache.match('./index.html') : null);
+    const net = fetch(isPage ? req : new Request(req, { cache: 'no-cache' })).then((fresh) => {
+      if (fresh && fresh.ok) cache.put(cacheKey, fresh.clone());
+      return fresh;
+    });
+    if (cached) { event.waitUntil(net.catch(() => {})); return cached; }
+    try { return await withTimeout(net, 15000); }
+    catch (err) { return new Response('Offline and not saved yet.', { status: 503, headers: { 'Content-Type': 'text/plain' } }); }
   })());
 });
