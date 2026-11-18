@@ -175,6 +175,8 @@
   .att-bar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 14px; display: flex; gap: 8px; }
   .att-bar .btn-primary { box-shadow: 0 6px 18px rgba(0,0,0,.18); }
   .pending-banner { background: #fff3d6; color: #5c3d00; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; margin-bottom: 12px; display: none; align-items: center; gap: 8px; }
+  .pend-list { margin: -6px 0 12px; } .pend-row { display: flex; gap: 8px; align-items: center; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; font-size: .8rem; }
+  .pend-row.bad { border-color: #e8a29c; background: #fff4f3; } .pend-why { color: var(--muted); margin-top: 2px; } .pend-row.bad .pend-why { color: #9b1c1c; } .pend-row .link-btn { margin-left: auto; color: #b3261e; }
   .pending-banner button { margin-left: auto; background: #5c3d00; color: #fff; border: none; border-radius: 8px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-family: inherit; }
   table.sum td.low { color: var(--red); font-weight: 800; }
   /* enter marks */
@@ -1101,6 +1103,7 @@
   <!-- MARK ATTENDANCE -->
   <section class="view" id="view-att">
     <div class="pending-banner" id="attPending"><span id="attPendingText"></span><button id="attSendNow">Send now</button></div>
+    <div class="pend-list" id="attPendList"></div>
 
     <div class="card pad" id="attLogin">
       <p class="screen-title" style="margin-top:0">Teachers only. Sign in with the name and PIN given to you by the admin.</p>
@@ -1169,6 +1172,7 @@
   <!-- ENTER MARKS -->
   <section class="view" id="view-marks">
     <div class="pending-banner" id="mkPending"><span id="mkPendingText"></span><button id="mkSendNow">Send now</button></div>
+    <div class="pend-list" id="mkPendList"></div>
     <div class="card pad" id="mkLogin">
       <p class="screen-title" style="margin-top:0">Teachers only. Sign in with the same name and PIN you use for Mark Attendance.</p>
       <div class="field"><label for="mkName">Your name</label><input id="mkName" autocomplete="username" placeholder="e.g. Prof. Saqib Munawar"></div>
@@ -3540,16 +3544,31 @@
     if (na) parts.push(na + ' attendance sheet' + (na > 1 ? 's' : ''));
     if (nm) parts.push(nm + ' marks sheet' + (nm > 1 ? 's' : ''));
     $('attPendingText').textContent = $('mkPendingText').textContent = parts.join(' + ') + ' saved on this phone, waiting to be sent.';
+    // v16.0: show each waiting sheet and why it was not accepted; a sheet the server refuses can be removed
+    const DAYN = (d) => { try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return d; } };
+    const row = (x, i) => { const p = x.payload || {}, mk = x.action === 'submitMarks';
+      const what = mk ? '✍️ ' + (p.test || 'Marks') + ' · ' + (p.subject || '') + ' · ' + (p.group || '') + (p.section && p.section !== 'All' ? ' (' + p.section + ')' : '')
+        : '✅ ' + DAYN(p.date) + ' · Period ' + (p.period || '') + ' · ' + (p.subject || '') + ' · ' + (Array.isArray(p.parts) ? p.parts.map((q) => q.group).join(', ') : (p.group || '') + (p.section && p.section !== 'All' ? ' (' + p.section + ')' : ''));
+      const busy = !x.error || /^BUSY|busy|hiccup|timed out|too many/i.test(x.error);
+      return '<div class="pend-row' + (busy ? '' : ' bad') + '"><div><b>' + esc(what) + '</b><div class="pend-why">' + (busy ? '⏳ Waiting — will be sent automatically' + (x.tries ? ' (tried ' + x.tries + '×)' : '') : '⚠️ Not accepted: ' + esc(x.error)) + '</div></div>' +
+        (busy ? '' : '<button class="link-btn" data-pdel="' + i + '">Remove</button>') + '</div>'; };
+    ['attPendList', 'mkPendList'].forEach((id) => { const el = $(id); if (!el) return;
+      el.innerHTML = n ? q.map(row).join('') : '';
+      el.querySelectorAll('[data-pdel]').forEach((b) => { b.onclick = () => {
+        const qq = attQueue.get(), it = qq[Number(b.dataset.pdel)]; if (!it) return;
+        if (!confirm('Remove this sheet from the phone? It was not accepted by the server:\n\n' + (it.error || '') + '\n\nYou can mark it again from the class list.')) return;
+        qq.splice(Number(b.dataset.pdel), 1); attQueue.set(qq); renderPending(); }; }); });
   }
 
   async function flushQueue(silent) {
     const q = attQueue.get(); if (!q.length || !navigator.onLine) { renderPending(); return; }
     const left = [];
     for (const item of q) {
-      try { await attApi(item.action || 'submit', item.payload, item.auth); } catch (e) { if (e.offline) left.push(item); else left.push(Object.assign(item, { error: e.message })); }
+      try { await attApi(item.action || 'submit', item.payload, item.auth); } catch (e) { if (e.offline) left.push(item); else left.push(Object.assign(item, { error: e.message, tries: (item.tries || 0) + 1 })); }
     }
     attQueue.set(left); renderPending();
-    if (!silent) toast(left.length ? left.length + ' could not be sent yet' : 'Saved sheets sent ✓');
+    const hard = left.filter((x) => x.error && !/^BUSY|busy|hiccup|timed out|too many/i.test(x.error));
+    if (!silent) toast(!left.length ? 'Saved sheets sent ✓' : hard.length ? '⚠️ ' + hard[0].error : left.length + ' could not be sent yet — the server is busy; it will try again in a minute');
   }
   window.addEventListener('online', () => { flushQueue(true).then(() => { if (attQueue.get().length) scheduleRetry(); }); });
   let retryTimer = null;
@@ -6647,7 +6666,7 @@
     let last = 0; try { last = Number(store.get('sp.at') || 0); } catch (e) {}
     const S = (spInfo && spInfo.settings) || {}, t = todayISO();
     const galaDays = (S.from && t >= S.from && t <= (S.to || S.from)) || ((spInfo && spInfo.matches) || []).some((m) => m.date === t);
-    const every = galaDays ? 5 * 60e3 : 6 * 3600e3;
+    const every = galaDays ? 15 * 60e3 : 6 * 3600e3;   // v16.0: lighter on the server during the gala
     if (Date.now() - last < every && spInfo) { spPaintToday(); return; }
     spLoadInfo().then((ok) => { if (ok) { store.set('sp.at', String(Date.now())); if (parseHash().key === 'home') renderHome(); } });
   }
