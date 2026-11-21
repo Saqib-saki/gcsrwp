@@ -3,7 +3,7 @@
  * every file is refreshed in the background, so an upload shows the next time the app is opened.
  * You never need to edit this file when you update data.json or index.html.
  */
-const CACHE = 'gcs-portal-v96';
+const CACHE = 'gcs-portal-v97';
 const SHELL = [
   './',
   './index.html',

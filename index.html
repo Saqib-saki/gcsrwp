@@ -1621,7 +1621,9 @@
 
   /* ---------- data ---------- */
   const APP_NAME = 'GGCS RWP';
-  let DATA = { collegeName: 'Govt. Graduate College Satellite Town, Rawalpindi', appName: 'GCS Rawalpindi Portal', faculty: {}, notices: [], resources: [] };
+  // v16.2: the server address is also built in, so a phone that could not read data.json (weak signal, old saved copy) still sends attendance
+  const API_DEFAULT = 'https://script.google.com/macros/s/AKfycbwJaHeWGXadRXS795nZ7pAtDghM-pY_2Xc6xqscH5-hW_XsVM3rMk8-cshBB9GXTsIy1Q/exec';
+  let DATA = { collegeName: 'Govt. Graduate College Satellite Town, Rawalpindi', appName: 'GCS Rawalpindi Portal', faculty: {}, notices: [], resources: [], attendanceApi: API_DEFAULT };
   let dataLoaded = false;
 
   async function loadData() {
@@ -1630,6 +1632,7 @@
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const d = await res.json();
       DATA = Object.assign({ faculty: {}, notices: [], resources: [] }, d);
+      if (!DATA.attendanceApi) DATA.attendanceApi = API_DEFAULT;
       dataLoaded = true;
     } catch (err) {
       console.error('data.json failed to load', err);
@@ -3209,8 +3212,7 @@
   window.__starGuard = starGuard;
   async function attApi(action, payload, auth) {
     payload = starGuard(action, payload);
-    const url = DATA.attendanceApi;
-    if (!url) throw new Error('Attendance service is not set up yet.');
+    const url = DATA.attendanceApi || API_DEFAULT;
     if (!navigator.onLine) { const e = new Error('offline'); e.offline = true; throw e; }
     let res;
     try {
@@ -3576,7 +3578,7 @@
     const row = (x, i) => { const p = x.payload || {}, mk = x.action === 'submitMarks';
       const what = mk ? '✍️ ' + (p.test || 'Marks') + ' · ' + (p.subject || '') + ' · ' + (p.group || '') + (p.section && p.section !== 'All' ? ' (' + p.section + ')' : '')
         : '✅ ' + DAYN(p.date) + ' · Period ' + (p.period || '') + ' · ' + (p.subject || '') + ' · ' + (Array.isArray(p.parts) ? p.parts.map((q) => q.group).join(', ') : (p.group || '') + (p.section && p.section !== 'All' ? ' (' + p.section + ')' : ''));
-      const busy = !x.error || /^BUSY|busy|hiccup|timed out|too many/i.test(x.error);
+      const busy = !x.error || /^BUSY|busy|hiccup|timed out|too many|not set up/i.test(x.error);
       return '<div class="pend-row' + (busy ? '' : ' bad') + '"><div><b>' + esc(what) + '</b><div class="pend-why">' + (busy ? '⏳ Waiting — will be sent automatically' + (x.tries ? ' (tried ' + x.tries + '×)' : '') : '⚠️ Not accepted: ' + esc(x.error)) + '</div></div>' +
         (busy ? '' : '<button class="link-btn" data-pdel="' + i + '">Remove</button>') + '</div>'; };
     ['attPendList', 'mkPendList'].forEach((id) => { const el = $(id); if (!el) return;
@@ -3594,13 +3596,15 @@
       try { await attApi(item.action || 'submit', item.payload, item.auth); } catch (e) { if (e.offline) left.push(item); else left.push(Object.assign(item, { error: e.message, tries: (item.tries || 0) + 1 })); }
     }
     attQueue.set(left); renderPending();
-    const hard = left.filter((x) => x.error && !/^BUSY|busy|hiccup|timed out|too many/i.test(x.error));
+    const hard = left.filter((x) => x.error && !/^BUSY|busy|hiccup|timed out|too many|not set up/i.test(x.error));
     if (!silent) toast(!left.length ? 'Saved sheets sent ✓' : hard.length ? '⚠️ ' + hard[0].error : left.length + ' could not be sent yet — the server is busy; it will try again in a minute');
   }
   window.addEventListener('online', () => { flushQueue(true).then(() => { if (attQueue.get().length) scheduleRetry(); }); });
   let retryTimer = null;
   function scheduleRetry() { if (retryTimer) return; retryTimer = setTimeout(async () => { retryTimer = null; await flushQueue(true); if (attQueue.get().length) scheduleRetry(); }, 45000 + Math.floor(Math.random() * 30000)); }
   if (attQueue.get().length) scheduleRetry();
+  // v16.2: sheets waiting on the phone are sent a few seconds after the app opens (not only after a minute)
+  setTimeout(() => { if (attQueue.get().length && navigator.onLine) flushQueue(true); }, 6000);
   $('attSendNow').addEventListener('click', () => flushQueue(false));
 
   /* ---------- offline class lists: roll numbers + names only, kept on this phone, removed on sign-out ---------- */
