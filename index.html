@@ -6021,7 +6021,7 @@
   }
   /** v15.1: the hub — hero with countdown, "me" card, four tabs (Today · Schedule · Medals · Wings) */
   function spPhase() {
-    const S = (spInfo && spInfo.settings) || {}, t = todayISO(); if (!S.from) return '';
+    const S = (spInfo && spInfo.settings) || {}, t = todayISO(); if (spInfo && spInfo.schedHidden) return '📅 Dates to be announced soon'; if (!S.from) return '';
     const to = S.to || S.from, day = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
     if (t < S.from) { const n = day(t, S.from); return '⏳ Starts in ' + n + ' day' + (n === 1 ? '' : 's'); }
     if (t <= to) return '<span class="sp-live">● LIVE</span> Day ' + (day(S.from, t) + 1) + ' of ' + (day(S.from, to) + 1);
@@ -6041,7 +6041,7 @@
   }
   function spShell(tab) {
     const S = (spInfo && spInfo.settings) || { title: 'Sports Gala' }, ph = spPhase();
-    const dates = S.from ? fmtDate(S.from).replace(/\s*\d{4}$/, '') + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : ' ' + S.from.slice(0, 4)) : '';
+    const dates = spInfo && spInfo.schedHidden ? '' : S.from ? fmtDate(S.from).replace(/\s*\d{4}$/, '') + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : ' ' + S.from.slice(0, 4)) : '';
     const reg = spInfo && spInfo.counts ? SP_WINGS.reduce((a, w) => a + ((spInfo.counts[w] || {})[spMode === 'staff' ? 'staff' : 'students'] || 0), 0) : 0;
     let h = '<div class="sp-hero sp-hero2"><div class="sp-hero-t">🏆 ' + esc(S.title || 'Sports Gala') + '</div><div class="sp-hero-s">' + [ph, dates ? esc(dates) : '', (spMode === 'staff' ? 'Staff' : 'Students') + ' · ' + reg + ' registered'].filter(Boolean).join(' · ') + '</div>' + (S.note ? '<div class="sp-hero-n">' + linkify(S.note) + '</div>' : '') + '</div>';
     h += spSopHtml(!spMine());
@@ -6090,7 +6090,8 @@
   }
   function spHero(sub) {
     const S = (spInfo && spInfo.settings) || { title: 'Sports Gala' };
-    const dates = S.from ? fmtDate(S.from) + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : '') : '';
+    // v16.3: while the schedule is hidden the dates are not final → "dates to be announced"
+    const dates = spInfo && spInfo.schedHidden ? '📅 Dates to be announced' : S.from ? fmtDate(S.from) + (S.to && S.to !== S.from ? ' – ' + fmtDate(S.to) : '') : '';
     return '<div class="sp-hero"><div class="sp-hero-t">🏆 ' + esc(S.title || 'Sports Gala') + '</div><div class="sp-hero-s">' + (spMode === 'staff' ? 'Staff' : 'Students') + (dates ? ' · ' + esc(dates) : '') +
       ' · Registration ' + (S.regOpen === false ? '<b>closed</b>' : '<b>open</b>') + (sub ? '' : (spInfo && spInfo.counts ? ' · ' + SP_WINGS.reduce((a, w) => a + ((spInfo.counts[w] || {})[spMode === 'staff' ? 'staff' : 'students'] || 0), 0) + ' registered' : '')) + '</div>' + (S.note && !sub ? '<div class="sp-hero-n">' + linkify(S.note) + '</div>' : '') + '</div>';
   }
